@@ -1,0 +1,9 @@
+CREATE TABLE batalon (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    birgada BOOLEAN,
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+);
