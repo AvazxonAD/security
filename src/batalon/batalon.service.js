@@ -14,7 +14,7 @@ const batalonCreateService = async (name, birgada, user_id) => {
 
 const batalonUpdateService = async (name, birgada, id) => {
     try {
-        const result = await pool.query(`UPDATE batalon SET name = $1, birgada = $2, WHERE id = $3 AND isdeleted = false RETURNING *`, [name, birgada, id])
+        const result = await pool.query(`UPDATE batalon SET name = $1, birgada = $2 WHERE id = $3 AND isdeleted = false RETURNING *`, [name, birgada, id])
         return result.rows[0]
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
@@ -23,8 +23,8 @@ const batalonUpdateService = async (name, birgada, id) => {
 
 const getBatalonService = async (user_id) => {
     try {
-        const result = await pool.query(`SELECT name, birgada FROM batalon WHERE isdeleted = false AND user_id = $1`, [user_id])
-        return result.rows[0]
+        const result = await pool.query(`SELECT id, name, birgada FROM batalon WHERE isdeleted = false AND user_id = $1`, [user_id])
+        return result.rows
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
@@ -56,7 +56,7 @@ const getByNameBatalonService = async (user_id, name) => {
 
 const deleteBatalonService = async (id) => {
     try {
-        const result = await pool.query(`UPDATE batalon SET isdeleted = false, WHERE id = $1 AND isdeleted = false RETURNING *`, [id])
+        const result = await pool.query(`UPDATE batalon SET isdeleted = true WHERE id = $1 AND isdeleted = false RETURNING *`, [id])
         return result.rows[0]
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

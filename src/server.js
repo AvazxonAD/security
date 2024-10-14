@@ -14,6 +14,9 @@ app.use(cors())
 app.use(express.static(path.join(__dirname, './public')));
 
 app.use('/auth', require('./auth/auth.routes'))
+app.use('/batalon', require('./batalon/batalon.routes'))
+app.use('/bxm', require('./bxm/bxm.routes'))
+app.use('/account', require('./accountNumber/account.number.routes'))
 
 app.use(require('./middleware/errorHandler'))
 

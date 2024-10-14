@@ -17,10 +17,18 @@ const batalionValidation = Joi.object({
   birgada: Joi.boolean()
 })
 
-
+// spravochnik validation 
+const bxmValidation = Joi.object({
+  summa: Joi.number().required().min(1)
+})
+const accountNumberValidation = Joi.object({
+  account_number: Joi.string().length(20).pattern(/^\d+$/).required()
+});
 
 module.exports = {
   authUpdateValidation,
   loginValidation,
-  batalionValidation
+  batalionValidation,
+  bxmValidation,
+  accountNumberValidation
 };
