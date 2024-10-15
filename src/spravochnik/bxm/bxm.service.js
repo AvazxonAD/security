@@ -1,5 +1,5 @@
-const pool = require('../config/db')
-const ErrorResponse = require('../utils/errorResponse')
+const pool = require('../../config/db')
+const ErrorResponse = require('../../utils/errorResponse')
 
 const bxmUpdateService = async (summa, id, user_id) => {
     try {

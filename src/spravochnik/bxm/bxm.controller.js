@@ -2,10 +2,10 @@ const {
     getbxmService,
     bxmUpdateService
 } = require("./bxm.service");
-const { bxmValidation } = require("../utils/validation");
-const { resFunc } = require("../utils/resFunc");
-const { validationResponse } = require("../utils/response.validation");
-const { errorCatch } = require('../utils/errorCatch')
+const { bxmValidation } = require("../../utils/validation");
+const { resFunc } = require("../../utils/resFunc");
+const { validationResponse } = require("../../utils/response.validation");
+const { errorCatch } = require('../../utils/errorCatch')
 
 const bxmGet = async (req, res) => {
     try {

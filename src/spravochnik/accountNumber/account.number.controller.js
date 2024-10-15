@@ -6,10 +6,10 @@ const {
     deleteaccount_numberService,
     getByaccount_numberaccount_numberService
 } = require("./account.number.service");
-const { accountNumberValidation } = require("../utils/validation");
-const { resFunc } = require("../utils/resFunc");
-const { validationResponse } = require("../utils/response.validation");
-const { errorCatch } = require('../utils/errorCatch')
+const { accountNumberValidation } = require("../../utils/validation");
+const { resFunc } = require("../../utils/resFunc");
+const { validationResponse } = require("../../utils/response.validation");
+const { errorCatch } = require('../../utils/errorCatch')
 
 const account_numberCreate = async (req, res) => {
     try {

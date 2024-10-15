@@ -24,11 +24,37 @@ const bxmValidation = Joi.object({
 const accountNumberValidation = Joi.object({
   account_number: Joi.string().length(20).pattern(/^\d+$/).required()
 });
+const doerValidation = Joi.object({
+  doer: Joi.string().required()
+})
+const bossValidation = Joi.object({
+  boss: Joi.string().required()
+})
+const adressValidation = Joi.object({
+  adress: Joi.string().required()
+})
+const bankValidation = Joi.object({
+  bank: Joi.string().required(),
+  mfo: Joi.string().pattern(/^\d+$/).required()
+})
+const strValidation = Joi.object({
+  str: Joi.string().length(9).pattern(/^\d+$/).required()
+});
+
+
+
+
+
 
 module.exports = {
   authUpdateValidation,
   loginValidation,
   batalionValidation,
   bxmValidation,
-  accountNumberValidation
+  accountNumberValidation,
+  doerValidation,
+  bossValidation,
+  adressValidation,
+  bankValidation,
+  strValidation
 };

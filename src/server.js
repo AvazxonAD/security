@@ -15,8 +15,13 @@ app.use(express.static(path.join(__dirname, './public')));
 
 app.use('/auth', require('./auth/auth.routes'))
 app.use('/batalon', require('./batalon/batalon.routes'))
-app.use('/bxm', require('./bxm/bxm.routes'))
-app.use('/account', require('./accountNumber/account.number.routes'))
+app.use('/bxm', require('./spravochnik/bxm/bxm.routes'))
+app.use('/account', require('./spravochnik/accountNumber/account.number.routes'))
+app.use('/doer', require('./spravochnik/doer/doer.routes'))
+app.use('/boss', require('./spravochnik/boss/boss.routes'))
+app.use('/adress', require('./spravochnik/adress/adress.routes'))
+app.use('/bank', require('./spravochnik/bank/bank.routes'))
+app.use('/str', require('./spravochnik/str/str.routes'))
 
 app.use(require('./middleware/errorHandler'))
 

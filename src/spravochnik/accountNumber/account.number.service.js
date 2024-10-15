@@ -1,6 +1,6 @@
 const { query } = require('express')
-const pool = require('../config/db')
-const ErrorResponse = require('../utils/errorResponse')
+const pool = require('../../config/db')
+const ErrorResponse = require('../../utils/errorResponse')
 
 
 const account_numberCreateService = async (account_number, user_id) => {

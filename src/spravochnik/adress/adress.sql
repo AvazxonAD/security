@@ -1,0 +1,8 @@
+CREATE TABLE adress (
+    id SERIAL PRIMARY KEY,
+    adress VARCHAR(1000),
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+);
