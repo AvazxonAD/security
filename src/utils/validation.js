@@ -1,6 +1,5 @@
 const Joi = require("joi");
 
-// auth validation
 const loginValidation = Joi.object({
   login: Joi.string().required().trim().required(),
   password: Joi.string().required().trim().required()
@@ -10,14 +9,10 @@ const authUpdateValidation = Joi.object({
   oldPassword: Joi.string().required().trim().required(),
   newPassword: Joi.string().required().trim().required()
 })
-
-// batalion validation 
 const batalionValidation = Joi.object({
   name: Joi.string().required().trim().required(),
   birgada: Joi.boolean()
 })
-
-// spravochnik validation 
 const bxmValidation = Joi.object({
   summa: Joi.number().required().min(1)
 })
@@ -40,14 +35,11 @@ const bankValidation = Joi.object({
 const strValidation = Joi.object({
   str: Joi.string().required().length(9).pattern(/^\d+$/).required()
 });
-
-// worker validation 
 const workerValidation = Joi.object({
   fio: Joi.string().required().trim(),
   batalon_id: Joi.number().required(),
   account_number: Joi.string().trim().required().pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)
 })
-
 const organizationValidation = Joi.object({
     name: Joi.string().trim().required(),
     address: Joi.string().trim().required(),
@@ -58,19 +50,40 @@ const organizationValidation = Joi.object({
     treasury1: Joi.string().trim().pattern(/^\d+$/).required(),
     treasury2: Joi.string().trim().pattern(/^\d+$/).required(),
 });
-
 const allQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
   limit: Joi.number().min(1).default(10),
   search: Joi.string().trim()
 })
-
 const workerQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
   limit: Joi.number().min(1).default(10),
   search: Joi.string().trim(),
   batalon_id: Joi.number().min(1)
 })
+const contractValidation = Joi.object({
+  doc_num: Joi.string().required(),
+  doc_date: Joi.date().required(),
+  period: Joi.date().required(),
+  adress: Joi.string().required(),
+  start_date: Joi.date().required(),
+  start_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
+  end_date: Joi.date().required(),
+  end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
+  discount: Joi.number().min(0).required(),
+  summa: Joi.number().min(0).required(),
+  payment: Joi.boolean().required(),
+  payment_date: Joi.date().required(),
+  organization_id: Joi.number().integer().required(),
+  account_number_id: Joi.number().integer().required(),
+  tasks: Joi.array().items(
+    Joi.object({
+      batalon_id: Joi.number().integer().min(1).required(),
+      task_time: Joi.number().integer().min(1).required(),
+      worker_number: Joi.number().integer().min(1).required()
+    })
+  ).required()
+});
 
 module.exports = {
   authUpdateValidation,
@@ -86,5 +99,6 @@ module.exports = {
   workerValidation,
   organizationValidation,
   allQueryValidation,
-  workerQueryValidation
+  workerQueryValidation,
+  contractValidation
 };

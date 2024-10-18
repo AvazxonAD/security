@@ -24,6 +24,7 @@ app.use('/bank', require('./spravochnik/bank/bank.routes'))
 app.use('/str', require('./spravochnik/str/str.routes'))
 app.use('/worker', require('./worker/worker.routes'))
 app.use('/organization', require('./organization/organization.routes'))
+app.use('/contract', require('./contract/contract.routes'))
 
 app.use(require('./middleware/errorHandler'))
 
