@@ -13,6 +13,7 @@ const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 
+
 const contractCreate = async (req, res) => {
     try {
         const user_id = req.user.id
