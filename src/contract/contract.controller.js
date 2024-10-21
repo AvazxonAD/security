@@ -5,26 +5,28 @@ const {
     contractUpdateService,
     deletecontractService,
 } = require("./contract.service");
-const { contractValidation } = require("../utils/validation");
+const { contractValidation, allQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
+const { getbxmService } = require('../spravochnik/bxm/bxm.service')
 
 
 const contractCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(contractValidation, req.body)
+        const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
         await getByIdaccount_numberService(user_id, data.account_number_id)
         for (let task of data.tasks) {
             await getByIdBatalonService(user_id, task.batalon_id)
         }
-        const result = await contractCreateService({ ...data, user_id })
-        resFunc(res, 200, result)
+        const result = await contractCreateService({ ...data, user_id, bxm })
+        resFunc(res, 201, result)
     } catch (error) {
         errorCatch(error, res)
     }
@@ -34,7 +36,8 @@ const contractGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const { page, limit, search } = validationResponse(allQueryValidation, req.query)
-        const { data, total } = await getcontractService(user_id, search)
+        const offset = (page - 1) * limit
+        const { data, total } = await getcontractService(user_id, offset, limit, search)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
@@ -62,15 +65,18 @@ const contractGetById = async (req, res) => {
 
 const contractUpdate = async (req, res) => {
     try {
-        const user_id = req.user.id
         const id = req.params.id
+        const user_id = req.user.id
+        await getByIdcontractService(user_id, id)
         const data = validationResponse(contractValidation, req.body)
-        const oldData = await getByIdcontractService(user_id, id)
-        if (oldData.str !== data.str) {
-            await getByStrcontractService(data.str, user_id)
+        const bxm = await getbxmService(user_id)
+        await getByIdorganizationService(user_id, data.organization_id)
+        await getByIdaccount_numberService(user_id, data.account_number_id)
+        for (let task of data.tasks) {
+            await getByIdBatalonService(user_id, task.batalon_id)
         }
-        const result = await contractUpdateService({ ...data, id })
-        resFunc(res, 200, result)
+        const result = await contractUpdateService({ ...data, user_id, bxm, id })
+        resFunc(res, 201, result)
     } catch (error) {
         errorCatch(error, res)
     }

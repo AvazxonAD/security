@@ -14,5 +14,10 @@ CREATE TABLE contract (
     payment_date DATE,
     organization_id INT REFERENCES organization(id),
     account_number_id INT REFERENCES account_number(id),
-    user_id INT REFERENCES users(id)
+    all_worker_number INTEGER,
+    all_task_time INTEGER,
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
 );
