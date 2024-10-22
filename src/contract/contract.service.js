@@ -26,17 +26,16 @@ const contractCreateService = async (data) => {
                 end_date, 
                 discount, 
                 summa, 
-                payment, 
-                payment_date, 
                 organization_id, 
                 account_number_id,
                 user_id,
                 start_time,
                 end_time,
                 all_worker_number,
-                all_task_time
+                all_task_time,
+                remaining_balance
             ) 
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -46,15 +45,14 @@ const contractCreateService = async (data) => {
             data.end_date,
             discount,
             summa,
-            data.payment,
-            data.payment_date,
             data.organization_id,
             data.account_number_id,
             data.user_id,
             data.start_time,
             data.end_time,
             all_worker_number, 
-            all_task_time
+            all_task_time,
+            summa
         ])
         const contract = rows[0]
         const tasks = []
@@ -102,15 +100,14 @@ const contractUpdateService = async (data) => {
                 end_date = $6, 
                 discount = $7, 
                 summa = $8, 
-                payment = $9, 
-                payment_date = $10, 
-                organization_id = $11, 
-                account_number_id = $12,
-                start_time = $13,
-                end_time = $14,
-                all_worker_number = $15,
-                all_task_time = $16 
-                WHERE id = $17 AND isdeleted = false RETURNING *
+                organization_id = $9, 
+                account_number_id = $10,
+                start_time = $11,
+                end_time = $12,
+                all_worker_number = $13,
+                all_task_time = $14,
+                remaining_balance = $16
+                WHERE id = $15 AND isdeleted = false RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -120,15 +117,14 @@ const contractUpdateService = async (data) => {
             data.end_date,
             discount,
             summa,
-            data.payment,
-            data.payment_date,
             data.organization_id,
             data.account_number_id,
             data.start_time,
             data.end_time,
             all_worker_number, 
             all_task_time,
-            data.id
+            data.id,
+            summa
         ])
         await pool.query(`DELETE FROM task WHERE contract_id = $1`, [data.id])
         const contract = rows[0]
@@ -187,6 +183,7 @@ const getcontractService = async (user_id, offset, limit, search) => {
                     c.end_time,
                     c.all_worker_number,
                     c.all_task_time,
+                    c.remaining_balance,
                     (SELECT ARRAY_AGG(row_to_json(tasks))
                         FROM (
                         SELECT 
@@ -234,7 +231,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                 c.start_date, 
                 c.end_date, 
                 c.discount, 
-                c.summa, 
+                c.summa::FLOAT, 
                 c.payment, 
                 c.payment_date, 
                 c.organization_id, 
@@ -243,13 +240,14 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                 c.end_time,
                 c.all_worker_number,
                 c.all_task_time,
+                c.remaining_balance::FLOAT,
                 (SELECT ARRAY_AGG(row_to_json(tasks))
                     FROM (
                     SELECT 
                         t.id,
                         t.batalon_id, 
                         t.task_time, 
-                        t.worker_number, 
+                        t.worker_number,
                         t.summa, 
                         t.task_date
                     FROM task AS t
@@ -277,6 +275,15 @@ const deletecontractService = async (id) => {
         throw new ErrorResponse(error, error.statusCode)
     }
 }
+
+const paymentContractService = async (id, summa, date, contract) => {
+    try {
+        let payment = true
+        await pool.query(`UPDATE contract SET summa = $1`)
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+} 
 
 module.exports = {
     contractCreateService,

@@ -5,14 +5,15 @@ const {
     contractUpdateService,
     deletecontractService,
 } = require("./contract.service");
-const { contractValidation, allQueryValidation } = require("../utils/validation");
+const { contractValidation, allQueryValidation, paymentContractValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
-const { getbxmService } = require('../spravochnik/bxm/bxm.service')
+const { getbxmService } = require('../spravochnik/bxm/bxm.service');
+const ErrorResponse = require("../utils/errorResponse");
 
 
 const contractCreate = async (req, res) => {
@@ -88,6 +89,24 @@ const contractDelete = async (req, res) => {
         const id = req.params.id
         await getByIdcontractService(user_id, id)
         await deletecontractService(id)
+        resFunc(res, 200, 'delete success true')
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
+const paymentContract = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const id = req.params.id
+        const data = validationResponse(paymentContractValidation, req.body)
+        const contract = await getByIdcontractService(user_id, id)
+        if((contract.remaining_balance === 0) > contract.summa){
+            throw new ErrorResponse('Payment has already been made for this contract', 400)
+        }
+        if(contract.summa < data.summa){
+            throw new ErrorResponse('The transferred amount exceeds the contract amount', 400)
+        }
         resFunc(res, 200, 'delete success true')
     } catch (error) {
         errorCatch(error, res)
