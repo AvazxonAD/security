@@ -59,7 +59,7 @@ const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
             FROM data
         `, params);
 
-        return {data: rows[0].data, total: rows[0].total_count}
+        return {data: rows[0]?.data || [], total: rows[0].total_count}
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode);
     }
@@ -109,11 +109,25 @@ const getByAcountNumberWorkerService = async (account_number) => {
     }
 }
 
+const getByBatalonIdAndIdWorkerService = async (batalon_id, worker_id) => {
+    try {
+        const worker = await pool.query(`SELECT * FROM worker WHERE id = $1 AND isdeleted = false AND batalon_id = $2`, [worker_id, batalon_id])
+        if(!worker.rows[0]){
+            throw new ErrorResponse('worker not found', 404)
+        }
+        return worker.rows[0]
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
+
 module.exports = {
     workerCreateService,
     getworkerService,
     getByIdworkerService,
     workerUpdateService,
     deleteworkerService,
-    getByAcountNumberWorkerService
+    getByAcountNumberWorkerService,
+    getByBatalonIdAndIdWorkerService
 }

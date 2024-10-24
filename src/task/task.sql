@@ -1,7 +1,8 @@
 CREATE TABLE task (
     id BIGSERIAL PRIMARY KEY,
     batalon_id INTEGER REFERENCES batalon(id),
-    task_time INTEGER,
+    task_time FLOAT,
+    remaining_task_time FLOAT,
     worker_number INTEGER,
     user_id INTEGER REFERENCES users(id),
     summa DECIMAL,

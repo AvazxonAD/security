@@ -64,9 +64,9 @@ const contractCreateService = async (data) => {
                 summa = summa - (summa * (data.discount / 100))
             }
             const { rows } = await pool.query(`INSERT INTO 
-                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date) 
-                VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING * 
-            `, [contract.id, task.batalon_id, task.task_time, task.worker_number, summa, data.user_id, task.task_date])
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, remaining_task_time) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING * 
+            `, [contract.id, task.batalon_id, task.task_time, task.worker_number, summa, data.user_id, task.task_date, task.task_time * task.worker_number])
             tasks.push(rows[0])
         }
         contract.tasks = tasks
@@ -137,9 +137,9 @@ const contractUpdateService = async (data) => {
                 summa = summa - (summa * (data.discount / 100))
             }
             const { rows } = await pool.query(`INSERT INTO 
-                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date) 
-                VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING * 
-            `, [contract.id, task.batalon_id, task.task_time, task.worker_number, summa, data.user_id, task.task_date])
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, remaining_task_time) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING * 
+            `, [contract.id, task.batalon_id, task.task_time, task.worker_number, summa, data.user_id, task.task_date, task.task_time * task.worker_number])
             tasks.push(rows[0])
         }
         contract.tasks = tasks
@@ -170,33 +170,8 @@ const getcontractService = async (user_id, offset, limit, search) => {
                     c.id,
                     c.doc_num, 
                     c.doc_date, 
-                    c.period, 
                     c.adress, 
-                    c.start_date, 
-                    c.end_date, 
-                    c.discount, 
-                    c.summa, 
-                    c.payment, 
-                    c.organization_id, 
-                    c.account_number_id,
-                    c.start_time,
-                    c.end_time,
-                    c.all_worker_number,
-                    c.all_task_time,
-                    c.remaining_balance,
-                    (SELECT ARRAY_AGG(row_to_json(tasks))
-                        FROM (
-                        SELECT 
-                            t.id,
-                            t.batalon_id, 
-                            t.task_time, 
-                            t.worker_number, 
-                            t.summa, 
-                            t.task_date
-                        FROM task AS t
-                        WHERE  t.user_id = $1 AND t.isdeleted = false AND t.contract_id = c.id 
-                        ) AS tasks
-                    ) AS tasks 
+                    o.name AS organization_name
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter}
@@ -246,7 +221,8 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                         t.task_time, 
                         t.worker_number,
                         t.summa, 
-                        t.task_date
+                        t.task_date,
+                        t.remaining_task_time
                     FROM task AS t
                     WHERE  t.user_id = $1 AND t.isdeleted = false AND t.contract_id = c.id 
                     ) AS tasks

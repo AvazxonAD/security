@@ -14,7 +14,7 @@ CREATE TABLE contract (
     organization_id INT REFERENCES organization(id),
     account_number_id INT REFERENCES account_number(id),
     all_worker_number INTEGER,
-    all_task_time INTEGER,
+    all_task_time  FLOAT,
     remaining_balance DECIMAL DEFAULT 0,
     user_id INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

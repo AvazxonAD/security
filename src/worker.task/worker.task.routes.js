@@ -4,18 +4,14 @@ const router = Router();
 const protect = require("../middleware/auth");
 
 const {
-    workerCreate,
-    workerGet,
-    workerGetById,
-    workerUpdate,
-    workerDelete
-} = require('./worker.controller')
+    workerTaskCreate
+} = require('./worker.task.controller')
 
-router.post('/',  protect, workerCreate)
-    .put('/:id', protect, workerUpdate)
-    .get('/:id', protect, workerGetById)
-    .get('/', protect, workerGet)
-    .delete('/:id', protect, workerDelete)
+router.post('/',  protect, workerTaskCreate)
+    .put('/:id', protect, )
+    .get('/:id', protect, )
+    .get('/', protect, )
+    .delete('/:id', protect, )
 
 
 module.exports = router;

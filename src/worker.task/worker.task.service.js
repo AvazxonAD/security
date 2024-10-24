@@ -1,119 +1,126 @@
-const { query } = require('express')
-const pool = require('../config/db')
-const ErrorResponse = require('../utils/errorResponse')
+const pool = require('../config/db');
+const ErrorResponse = require('../utils/errorResponse');
 
 
-const workerCreateService = async (fio, batalon_id, account_number) => {
+const getTaskTimeWorkerTaskService = async (task_id) => {
     try {
-        const result = await pool.query(`INSERT INTO worker(fio, batalon_id, account_number) VALUES($1, $2, $3) RETURNING *`, [fio, batalon_id, account_number])
-        return result.rows[0]
+        const task_time = await pool.query(`SELECT SUM(task_time)::FLOAT FROM worker_tasks WHERE task_id = $1 AND isdeleted = false`, [task_id])
+        return task_time.rows[0].sum
     } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        throw new ErrorResponse(error, error.statusCodes)
     }
 }
 
-const workerUpdateService = async (fio, batalon_id, account_number, id) => {
+const workerTaskCreateService = async (task, workers, all_task_time) => {
+    const client = await pool.connect();
     try {
-        const result = await pool.query(`UPDATE worker SET fio = $1, batalon_id = $2, account_number = $3 WHERE id = $4 AND isdeleted = false RETURNING *
-        `, [fio, batalon_id, account_number, id])
-        return result.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        await client.query('BEGIN'); 
 
-const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
+        const promises = [];
+        const one_time_summa = task.summa / task.worker_number / task.task_time;
+
+        for (let worker of workers) {
+            const summa = one_time_summa * worker.task_time;
+            const query = `
+                INSERT INTO worker_task(worker_id, task_id, summa, task_time) 
+                VALUES($1, $2, $3, $4) RETURNING *`;
+            promises.push(client.query(query, [worker.worker_id, task.id, summa, worker.task_time]));
+        }
+
+        const results = await Promise.all(promises);
+        await client.query(`UPDATE task SET remaining_task_time = $1 WHERE id = $2`, [task.remaining_task_time - all_task_time, task.id]);
+
+        await client.query('COMMIT'); 
+        return results.map(result => result.rows[0]);
+    } catch (error) {
+        await client.query('ROLLBACK'); 
+        throw new ErrorResponse(error.message, error.statusCode);
+    } finally {
+        client.release(); 
+    }
+};
+
+// worker_taskni yangilash
+const workerTaskUpdateService = async (worker_id, task_id, summa, id, task_time) => {
     try {
-        let filter = ``;
-        let batalon_filter = ``;
-        const params = [user_id, offset, limit];
-        if (search) {
-            filter = `AND (w.fio ILIKE  '%' || $${params.length + 1} || '%' 
-                OR w.account_number ILIKE  '%' || $${params.length + 1} || '%' 
-                OR b.name ILIKE  '%' || $${params.length + 1} || '%')
-            `
-            params.push(search)
-        }
-        if (batalon_id) {
-            batalon_filter = `AND b.id = $${params.length + 1}`
-            params.push(batalon_id)
-        }
+        const result = await pool.query(
+            `UPDATE worker_task SET worker_id = $1, task_id = $2, summa = $3, task_time = $5 WHERE id = $4 AND isdeleted = false RETURNING *`,
+            [worker_id, task_id, summa, id, task_time]
+        );
+        return result.rows[0];
+    } catch (error) {
+        throw new ErrorResponse(error.message, error.statusCode);
+    }
+};
+
+// worker_taskni olish
+const getWorkerTasksService = async (conrtact_id, offset, limit) => {
+    try {
         const { rows } = await pool.query(`
-           WITH data AS (
-                SELECT w.id, w.fio, w.account_number, b.name AS batalon_name
-                FROM worker w 
-                JOIN batalon AS b ON b.id = w.batalon_id
-                JOIN users AS u ON b.user_id = u.id
-                WHERE w.isdeleted = false AND u.id = $1 ${filter} ${batalon_filter} OFFSET $2 LIMIT $3
+            WITH data AS (
+                SELECT wt.id, wt.summa, w.fio AS worker_name, t.name AS task_name, 
+                FROM worker_task wt
+                JOIN worker w ON w.id = wt.worker_id
+                JOIN task t ON t.id = wt.task_id
+                WHERE wt.isdeleted = false
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
                 COALESCE(
-                    (SELECT COUNT(w.id)
-                    FROM worker w 
-                    JOIN batalon AS b ON b.id = w.batalon_id
-                    JOIN users AS u ON b.user_id = u.id
-                    WHERE w.isdeleted = false AND u.id = $1 ${filter} ${batalon_filter}
+                    (SELECT COUNT(wt.id)
+                    FROM worker_task wt
+                    WHERE wt.isdeleted = false
                     ), 0
                 )::INTEGER AS total_count
             FROM data
-        `, params);
+            WHERE conrtact_id = $1OFFSET $2 LIMIT $3
+        `, [conrtact_id, offset, limit]);
 
-        return {data: rows[0].data, total: rows[0].total_count}
+        return { data: rows[0].data, total: rows[0].total_count };
     } catch (error) {
-        throw new ErrorResponse(error, error.statusCode);
+        throw new ErrorResponse(error.message, error.statusCode);
     }
-}
+};
 
-
-
-const getByIdworkerService = async (user_id, id, isdeleted = false) => {
+// worker_taskni ID bo'yicha olish
+const getWorkerTaskByIdService = async (user_id, id) => {
     try {
-        let filter = ``
-        if (!isdeleted) {
-            filter = `AND w.isdeleted = false`
-        }
         const result = await pool.query(`
-            SELECT w.id, w.fio, w.account_number, b.name AS batalon_name
-            FROM worker w 
-            JOIN batalon AS b ON b.id = w.batalon_id
-            JOIN users AS u ON b.user_id = u.id
-            WHERE u.id = $1 AND w.id = $2 ${filter}
-        `, [user_id, id])
+            SELECT wt.id, wt.summa, w.fio AS worker_name, t.name AS task_name
+            FROM worker_task wt
+            JOIN worker w ON w.id = wt.worker_id
+            JOIN task t ON t.id = wt.task_id
+            WHERE wt.id = $1 AND wt.isdeleted = false
+        `, [id]);
+
         if (!result.rows[0]) {
-            throw new ErrorResponse('worker not found', 404)
+            throw new ErrorResponse('Worker task not found', 404);
         }
-        return result.rows[0]
+        return result.rows[0];
     } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        throw new ErrorResponse(error.message, error.statusCode);
     }
-}
+};
 
-const deleteworkerService = async (id) => {
+// worker_taskni o'chirish
+const deleteWorkerTaskService = async (id) => {
     try {
-        const result = await pool.query(`UPDATE worker SET isdeleted = true WHERE id = $1 AND isdeleted = false RETURNING *`, [id])
-        return result.rows[0]
+        const result = await pool.query(`
+            UPDATE worker_task SET isdeleted = true WHERE id = $1 AND isdeleted = false RETURNING *`,
+            [id]
+        );
+        return result.rows[0];
     } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        throw new ErrorResponse(error.message, error.statusCode);
     }
-}
-
-const getByAcountNumberWorkerService = async (account_number) => {
-    try {
-        const { rows } = await pool.query(`SELECT * FROM worker WHERE account_number = $1 AND isdeleted = false`, [account_number])
-        if (rows[0]) {
-            throw new ErrorResponse('This account number is already entered', 409)
-        }
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+};
 
 module.exports = {
-    workerCreateService,
-    getworkerService,
-    getByIdworkerService,
-    workerUpdateService,
-    deleteworkerService,
-    getByAcountNumberWorkerService
-}
+    workerTaskCreateService,
+    workerTaskUpdateService,
+    getWorkerTasksService,
+    getWorkerTaskByIdService,
+    deleteWorkerTaskService,
+    getTaskTimeWorkerTaskService
+};
+
