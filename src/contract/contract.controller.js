@@ -4,6 +4,8 @@ const {
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
+    paymentContractService,
+    updateContractPaymentService,
 } = require("./contract.service");
 const { contractValidation, allQueryValidation, paymentContractValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
@@ -97,26 +99,31 @@ const contractDelete = async (req, res) => {
 
 const paymentContract = async (req, res) => {
     try {
-        const user_id = req.user.id
-        const id = req.params.id
-        const data = validationResponse(paymentContractValidation, req.body)
-        const contract = await getByIdcontractService(user_id, id)
-        if((contract.remaining_balance === 0) > contract.summa){
-            throw new ErrorResponse('Payment has already been made for this contract', 400)
+        const user_id = req.user.id;
+        const contract_id = req.params.id;
+        const data = validationResponse(paymentContractValidation, req.body);
+        const contract = await getByIdcontractService(user_id, contract_id);
+        if(contract.payment){
+            throw new ErrorResponse('You are overpaying for this contract', 400)
         }
-        if(contract.summa < data.summa){
-            throw new ErrorResponse('The transferred amount exceeds the contract amount', 400)
+        if (contract.remaining_balance < data.summa) {
+            throw new ErrorResponse('You are overpaying for this contract', 400);
         }
-        resFunc(res, 200, 'delete success true')
+        if ((contract.remaining_balance - data.summa) === 0) {
+            await updateContractPaymentService(contract_id);
+        }
+        resFunc(res, 200, 'payment success true');
     } catch (error) {
-        errorCatch(error, res)
+        errorCatch(error, res);
     }
 }
+
 
 module.exports = {
     contractCreate,
     contractGet,
     contractGetById,
     contractUpdate,
-    contractDelete
+    contractDelete,
+    paymentContract
 };

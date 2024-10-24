@@ -11,13 +11,23 @@ CREATE TABLE contract (
     discount FLOAT,
     summa DECIMAL,
     payment BOOLEAN DEFAULT FALSE,
-    payment_date DATE,
     organization_id INT REFERENCES organization(id),
     account_number_id INT REFERENCES account_number(id),
     all_worker_number INTEGER,
     all_task_time INTEGER,
     remaining_balance DECIMAL DEFAULT 0,
     user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE payment (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    contract_id INTEGER REFERENCES contract(id),
+    summa DECIMAL,
+    date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     isdeleted BOOLEAN DEFAULT FALSE

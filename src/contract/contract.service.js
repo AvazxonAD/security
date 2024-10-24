@@ -1,3 +1,4 @@
+const { query } = require('express')
 const pool = require('../config/db')
 const ErrorResponse = require('../utils/errorResponse')
 
@@ -176,7 +177,6 @@ const getcontractService = async (user_id, offset, limit, search) => {
                     c.discount, 
                     c.summa, 
                     c.payment, 
-                    c.payment_date, 
                     c.organization_id, 
                     c.account_number_id,
                     c.start_time,
@@ -213,8 +213,6 @@ const getcontractService = async (user_id, offset, limit, search) => {
     }
 }
 
-
-
 const getByIdcontractService = async (user_id, id, isdeleted = false) => {
     try {
         let filter = ``
@@ -233,7 +231,6 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                 c.discount, 
                 c.summa::FLOAT, 
                 c.payment, 
-                c.payment_date, 
                 c.organization_id, 
                 c.account_number_id,
                 c.start_time,
@@ -276,19 +273,33 @@ const deletecontractService = async (id) => {
     }
 }
 
-const paymentContractService = async (id, summa, date, contract) => {
+const paymentContractService = async (user_id, contract_id, summa, date) => {
     try {
-        let payment = true
-        await pool.query(`UPDATE contract SET summa = $1`)
+        await pool.query(` INSERT INTO payment(user_id, contract_id, summa, date) VALUES($1, $2, $3, $4) RETURNING * `, [user_id, contract_id, summa, date])
+        await pool.query(`UPDATE contract SET remaining_balance = (remaining_balance - $1) WHERE id = $2`, [summa, contract_id])
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
 } 
+
+const updateContractPaymentService = async (contract_id) => {
+    try {
+        const contract = await pool.query(
+            `UPDATE contract SET payment = true WHERE id = $1  RETURNING *`,
+            [contract_id]
+        );
+        return contract.rows[0];
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode);
+    }
+};
 
 module.exports = {
     contractCreateService,
     getcontractService,
     getByIdcontractService,
     contractUpdateService,
-    deletecontractService
+    deletecontractService,
+    paymentContractService,
+    updateContractPaymentService
 }

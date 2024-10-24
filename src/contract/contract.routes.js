@@ -8,10 +8,12 @@ const {
     contractGet,
     contractGetById,
     contractUpdate,
-    contractDelete
+    contractDelete,
+    paymentContract
 } = require('./contract.controller')
 
-router.post('/',  protect, contractCreate)
+router.post('/', protect, contractCreate)
+    .post('/pay/:id', protect, paymentContract)
     .put('/:id', protect, contractUpdate)
     .get('/:id', protect, contractGetById)
     .get('/', protect, contractGet)
