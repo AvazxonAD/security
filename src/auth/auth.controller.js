@@ -29,7 +29,7 @@ const login = async (req, res) => {
 const update = async (req, res) => {
     try {
         const id = req.user.id
-        const { login, oldPassword, newPassword } = validationResponse(authUpdateValidation, req.body)
+        const { login, oldPassword, newPassword, fio } = validationResponse(authUpdateValidation, req.body)
         const user = await getBYIdUserService(id);
         const matchPassword = await bcrypt.compare(oldPassword, user.password);
         if (!matchPassword) {
@@ -46,7 +46,7 @@ const update = async (req, res) => {
                 user.login = login;
             }
         }
-        const result = await updateAuthService(user.login, user.password, id);
+        const result = await updateAuthService(user.login, user.password, id, fio);
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

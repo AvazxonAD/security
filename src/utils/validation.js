@@ -1,42 +1,43 @@
 const Joi = require("joi");
 
 const loginValidation = Joi.object({
-  login: Joi.string().trim().required().trim().required(),
+  login: Joi.string().trim().required(),
   password: Joi.string().trim().required().trim().required()
 })
 const authUpdateValidation = Joi.object({
-  login: Joi.string().trim().required().trim().required(),
-  oldPassword: Joi.string().trim().required().trim().required(),
-  newPassword: Joi.string().trim().required().trim().required()
+  login: Joi.string().trim().required(),
+  oldPassword: Joi.string().trim().required(),
+  newPassword: Joi.string().trim().required(),
+  fio: Joi.string().required().trim()
 })
 const batalionValidation = Joi.object({
-  name: Joi.string().trim().required().trim().required(),
+  name: Joi.string().trim().required(),
   birgada: Joi.boolean()
 })
 const bxmValidation = Joi.object({
   summa: Joi.number().required().min(1)
 })
 const accountNumberValidation = Joi.object({
-  account_number: Joi.string().trim().required().length(20).pattern(/^\d+$/).required()
+  account_number: Joi.string().trim().required().length(20).pattern(/^\d+$/)
 });
 const doerValidation = Joi.object({
-  doer: Joi.string().trim().required().required()
+  doer: Joi.string().trim().required()
 })
 const bossValidation = Joi.object({
-  boss: Joi.string().trim().required().required()
+  boss: Joi.string().trim().required()
 })
 const adressValidation = Joi.object({
-  adress: Joi.string().trim().required().required()
+  adress: Joi.string().trim().required()
 })
 const bankValidation = Joi.object({
-  bank: Joi.string().trim().required().required(),
-  mfo: Joi.string().trim().required().pattern(/^\d+$/).required()
+  bank: Joi.string().trim().required(),
+  mfo: Joi.string().trim().required().pattern(/^\d+$/)
 })
 const strValidation = Joi.object({
-  str: Joi.string().trim().required().length(9).pattern(/^\d+$/).required()
+  str: Joi.string().trim().required().length(9).pattern(/^\d+$/)
 });
 const workerValidation = Joi.object({
-  fio: Joi.string().trim().required().trim(),
+  fio: Joi.string().trim().required(),
   batalon_id: Joi.number().required(),
   account_number: Joi.string().trim().required().pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)
 })
