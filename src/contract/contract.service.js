@@ -149,10 +149,10 @@ const contractUpdateService = async (data) => {
     }
 }
 
-const getcontractService = async (user_id, offset, limit, search) => {
+const getcontractService = async (user_id, offset, limit, search, from, to) => {
     try {
         let serach_filter = ``;
-        const params = [user_id, offset, limit];
+        const params = [user_id, offset, limit, from, to];
         if (search) {
             serach_filter = `AND (
                     c.doc_num ILIKE  '%' || $${params.length + 1} || '%' 
@@ -174,12 +174,12 @@ const getcontractService = async (user_id, offset, limit, search) => {
                     o.name AS organization_name
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
-                WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter}
+                WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} AND c.doc_date BETWEEN $4 AND $5
                 ORDER BY c.doc_date OFFSET $2 LIMIT $3
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                COALESCE((SELECT COUNT(id) FROM contract WHERE isdeleted = false AND user_id = $1), 0)::INTEGER AS total_count
+                COALESCE((SELECT COUNT(id) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $4 AND $5), 0)::INTEGER AS total_count
             FROM data
         `, params);
         return { data: rows[0]?.data || [], total: rows[0].total_count }

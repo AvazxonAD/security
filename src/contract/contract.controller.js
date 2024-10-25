@@ -7,7 +7,7 @@ const {
     paymentContractService,
     updateContractPaymentService,
 } = require("./contract.service");
-const { contractValidation, allQueryValidation, paymentContractValidation } = require("../utils/validation");
+const { contractValidation, conrtactQueryValidation, paymentContractValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
@@ -38,9 +38,9 @@ const contractCreate = async (req, res) => {
 const contractGet = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { page, limit, search } = validationResponse(allQueryValidation, req.query)
+        const { page, limit, search, from, to } = validationResponse(conrtactQueryValidation, req.query)
         const offset = (page - 1) * limit
-        const { data, total } = await getcontractService(user_id, offset, limit, search)
+        const { data, total } = await getcontractService(user_id, offset, limit, search, from, to)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
