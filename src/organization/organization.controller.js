@@ -27,7 +27,8 @@ const organizationGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const { page, limit, search } = validationResponse(allQueryValidation, req.query)
-        const { data, total } = await getorganizationService(user_id, search)
+        const offset = (page - 1) * limit
+        const { data, total } = await getorganizationService(user_id, search, offset, limit)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,

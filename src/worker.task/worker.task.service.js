@@ -40,64 +40,52 @@ const workerTaskCreateService = async (task, workers, all_task_time) => {
     }
 };
 
-// worker_taskni yangilash
-const workerTaskUpdateService = async (worker_id, task_id, summa, id, task_time) => {
+const getByTaskIdWorkerTaskService = async (task_id) => {
     try {
-        const result = await pool.query(
-            `UPDATE worker_task SET worker_id = $1, task_id = $2, summa = $3, task_time = $5 WHERE id = $4 AND isdeleted = false RETURNING *`,
-            [worker_id, task_id, summa, id, task_time]
-        );
-        return result.rows[0];
+        const workers = await pool.query(`
+            SELECT w_t.id, w.fio, w_t.worker_id, w_t.task_time, w_t.summa
+            FROM worker_task AS w_t
+            JOIN worker AS w ON w.id = w_t.worker_id 
+            WHERE w_t.task_id = $1 
+        `, [task_id])
+        return workers.rows
     } catch (error) {
-        throw new ErrorResponse(error.message, error.statusCode);
+        throw new ErrorResponse(error, error.statusCode)
     }
-};
+}
 
-// worker_taskni olish
-const getWorkerTasksService = async (conrtact_id, offset, limit) => {
+const getWorkerTaskByIdService = async (id) => {
     try {
-        const { rows } = await pool.query(`
-            WITH data AS (
-                SELECT wt.id, wt.summa, w.fio AS worker_name, t.name AS task_name, 
-                FROM worker_task wt
-                JOIN worker w ON w.id = wt.worker_id
-                JOIN task t ON t.id = wt.task_id
-                WHERE wt.isdeleted = false
-            )
-            SELECT 
-                ARRAY_AGG(row_to_json(data)) AS data,
-                COALESCE(
-                    (SELECT COUNT(wt.id)
-                    FROM worker_task wt
-                    WHERE wt.isdeleted = false
-                    ), 0
-                )::INTEGER AS total_count
-            FROM data
-            WHERE conrtact_id = $1OFFSET $2 LIMIT $3
-        `, [conrtact_id, offset, limit]);
-
-        return { data: rows[0].data, total: rows[0].total_count };
-    } catch (error) {
-        throw new ErrorResponse(error.message, error.statusCode);
-    }
-};
-
-// worker_taskni ID bo'yicha olish
-const getWorkerTaskByIdService = async (user_id, id) => {
-    try {
-        const result = await pool.query(`
-            SELECT wt.id, wt.summa, w.fio AS worker_name, t.name AS task_name
-            FROM worker_task wt
-            JOIN worker w ON w.id = wt.worker_id
-            JOIN task t ON t.id = wt.task_id
-            WHERE wt.id = $1 AND wt.isdeleted = false
-        `, [id]);
-
-        if (!result.rows[0]) {
-            throw new ErrorResponse('Worker task not found', 404);
+        const workers = await pool.query(`
+            SELECT w_t.id, w.fio, w_t.worker_id, w_t.task_time, w_t.summa, w_t.task_id
+            FROM worker_task AS w_t
+            JOIN worker AS w ON w.id = w_t.worker_id 
+            WHERE w_t.id = $1 
+        `, [id])
+        if(!workers.rows[0]){
+            throw new ErrorResponse('woker not found', 404)
         }
+        return workers.rows[0]
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
+// worker_taskni yangilash
+const workerTaskUpdateService = async (id, worker_id, task_time, task) => {
+    const client = await pool.connect()
+    try {
+        await client.query(`BEGIN`)
+        const one_time_money = task.summa / task_time / task.worker_number
+        const result = await client.query(
+            `UPDATE worker_task SET worker_id = $1, summa = $2, task_time = $3 WHERE id = $4 AND isdeleted = false RETURNING *`,
+            [worker_id, one_time_money * task_time,  task_time, id]
+        );
+        await client.query(`UPDATE task SET remaining_task_time = $1 WHERE id = $2`, [task.remaining_task_time - task_time, task.id]);
+        await client.query(`COMMIT`)
         return result.rows[0];
     } catch (error) {
+        await client.query('ROLLBACK')
         throw new ErrorResponse(error.message, error.statusCode);
     }
 };
@@ -118,9 +106,9 @@ const deleteWorkerTaskService = async (id) => {
 module.exports = {
     workerTaskCreateService,
     workerTaskUpdateService,
-    getWorkerTasksService,
-    getWorkerTaskByIdService,
     deleteWorkerTaskService,
-    getTaskTimeWorkerTaskService
+    getTaskTimeWorkerTaskService,
+    getByTaskIdWorkerTaskService,
+    getWorkerTaskByIdService
 };
 

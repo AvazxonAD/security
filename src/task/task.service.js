@@ -1,9 +1,13 @@
 const pool = require('../config/db');
 const ErrorResponse = require('../utils/errorResponse');
 
-const getByIdTaskService = async (task_id) => {
+const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false) => {
     try {
-        const task = await pool.query(`SELECT * FROM task WHERE isdeleted = false AND id = $1`, [task_id])
+        let ignore = ``
+        if(!ignore_isdeleted){
+            ignore = ` AND isdeleted = false`
+        }
+        const task = await pool.query(`SELECT id, batalon_id, task_time, summa, worker_number FROM task WHERE  id = $1 AND user_id = $2 ${ignore}`, [task_id, user_id])
         if(!task.rows[0]){
             throw new ErrorResponse('task not found', 404)
         }

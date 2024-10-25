@@ -98,6 +98,11 @@ const workerTaskValidation = Joi.object({
   )
 })
 
+const workerTaskUpdateValidation = Joi.object({
+  task_time: Joi.number().min(0.1).required(),
+  worker_id: Joi.number().integer().required()
+})
+
 module.exports = {
   authUpdateValidation,
   loginValidation,
@@ -115,5 +120,6 @@ module.exports = {
   workerQueryValidation,
   contractValidation,
   paymentContractValidation,
-  workerTaskValidation
+  workerTaskValidation,
+  workerTaskUpdateValidation
 };
