@@ -40,14 +40,16 @@ const contractGet = async (req, res) => {
         const user_id = req.user.id
         const { page, limit, search, from, to } = validationResponse(conrtactQueryValidation, req.query)
         const offset = (page - 1) * limit
-        const { data, total } = await getcontractService(user_id, offset, limit, search, from, to)
+        const { data, total, from_balance, to_balance } = await getcontractService(user_id, offset, limit, search, from, to)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
             count: total,
             currentPage: page,
             nextPage: page >= pageCount ? null : page + 1,
-            backPage: page === 1 ? null : page - 1
+            backPage: page === 1 ? null : page - 1,
+            from_balance,
+            to_balance
         }
         resFunc(res, 200, data, meta)
     } catch (error) {

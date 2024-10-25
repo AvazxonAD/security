@@ -179,10 +179,12 @@ const getcontractService = async (user_id, offset, limit, search, from, to) => {
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                COALESCE((SELECT COUNT(id) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $4 AND $5), 0)::INTEGER AS total_count
+                (SELECT COALESCE(COUNT(id), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $4 AND $5)::INTEGER AS total_count,
+                (SELECT COALESCE(SUM(summa), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date <= $4)::FLOAT AS from_balance,
+                (SELECT COALESCE(SUM(summa), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date <= $5)::FLOAT AS to_balance
             FROM data
         `, params);
-        return { data: rows[0]?.data || [], total: rows[0].total_count }
+        return { data: rows[0]?.data || [], total: rows[0].total_count, from_balance: rows[0].from_balance, to_balance: rows[0].to_balance }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode);
     }
