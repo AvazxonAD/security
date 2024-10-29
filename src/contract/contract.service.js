@@ -1,4 +1,3 @@
-const { query } = require('express')
 const pool = require('../config/db')
 const ErrorResponse = require('../utils/errorResponse')
 

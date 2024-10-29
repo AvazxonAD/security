@@ -8,10 +8,12 @@ const {
     organizationGet,
     organizationGetById,
     organizationUpdate,
-    organizationDelete
+    organizationDelete,
+    excelDataOrganization
 } = require('./organization.controller')
 
-router.post('/',  protect, organizationCreate)
+router.post('/', protect, organizationCreate)
+    .get('/excel', protect, excelDataOrganization)
     .put('/:id', protect, organizationUpdate)
     .get('/:id', protect, organizationGetById)
     .get('/', protect, organizationGet)

@@ -65,6 +65,33 @@ const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
     }
 }
 
+const excelDataWorkerService = async (user_id) => {
+    try {
+        const { rows } = await pool.query(`
+            WITH data AS (
+                 SELECT w.fio, w.account_number, b.name AS batalon_name
+                 FROM worker w 
+                 JOIN batalon AS b ON b.id = w.batalon_id
+                 JOIN users AS u ON b.user_id = u.id
+                 WHERE w.isdeleted = false AND u.id = $1 
+             )
+             SELECT 
+                 ARRAY_AGG(row_to_json(data)) AS data,
+                 COALESCE(
+                     (SELECT COUNT(w.id)
+                     FROM worker w 
+                     JOIN batalon AS b ON b.id = w.batalon_id
+                     JOIN users AS u ON b.user_id = u.id
+                     WHERE w.isdeleted = false AND u.id = $1
+                     ), 0
+                 )::INTEGER AS total_count
+             FROM data
+         `, [user_id]);
+         return {data: rows[0]?.data || [], total: rows[0].total_count}
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
 
 
 const getByIdworkerService = async (user_id, id, isdeleted = false) => {
@@ -121,6 +148,30 @@ const getByBatalonIdAndIdWorkerService = async (batalon_id, worker_id) => {
     }
 }
 
+const excelDataCreateWorkerService = async (data, user_id) => {
+    const client = await pool.connect();
+    try {
+      await client.query(`BEGIN`);
+      const createWorkerQueries = [];
+      for (let worker of data) {
+        const workerQuery = client.query(
+          `INSERT INTO worker(fio, batalon_id, account_number) VALUES($1, $2, $3) RETURNING *`,
+          [worker.fio, worker.batalon_id, worker.account_number]
+        );
+        createWorkerQueries.push(workerQuery);
+      }
+      const workers = await Promise.all(createWorkerQueries);
+      const result = workers.map(item => item.rows[0])
+      await client.query(`COMMIT`);
+      return result;
+    } catch (error) {
+      await client.query(`ROLLBACK`);
+      throw new ErrorResponse(error.message, error.statusCode);
+    } finally {
+      client.release();
+    }
+  };
+  
 
 module.exports = {
     workerCreateService,
@@ -129,5 +180,7 @@ module.exports = {
     workerUpdateService,
     deleteworkerService,
     getByAcountNumberWorkerService,
-    getByBatalonIdAndIdWorkerService
+    getByBatalonIdAndIdWorkerService,
+    excelDataWorkerService,
+    excelDataCreateWorkerService
 }

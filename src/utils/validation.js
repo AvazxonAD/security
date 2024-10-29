@@ -81,7 +81,7 @@ const contractValidation = Joi.object({
       worker_number: Joi.number().integer().min(1).required(),
       task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
     })
-  ).required()
+  ).required().min(1)
 });
 const paymentContractValidation = Joi.object({
   summa: Joi.number().required().min(1),
@@ -111,6 +111,12 @@ const conrtactQueryValidation = Joi.object({
   to: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
 })
 
+const workerExcelValidation = Joi.object({
+  FIO: Joi.string().trim().required(),
+  Batalon: Joi.string().required().trim(),
+  Karta_raqam: Joi.string().trim().required().pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)
+})
+
 module.exports = {
   authUpdateValidation,
   loginValidation,
@@ -130,5 +136,6 @@ module.exports = {
   paymentContractValidation,
   workerTaskValidation,
   workerTaskUpdateValidation,
-  conrtactQueryValidation
+  conrtactQueryValidation,
+  workerExcelValidation
 };

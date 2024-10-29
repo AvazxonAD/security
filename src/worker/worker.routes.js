@@ -2,20 +2,25 @@ const { Router } = require("express");
 const router = Router();
 
 const protect = require("../middleware/auth");
+const upload = require('../utils/protect.file')
 
 const {
     workerCreate,
     workerGet,
     workerGetById,
     workerUpdate,
-    workerDelete
+    workerDelete,
+    excelDataWorker,
+    importExcelData,
+    downloadWorkersTemplate
 } = require('./worker.controller')
 
-router.post('/',  protect, workerCreate)
+router.post('/', protect, workerCreate)
+    .get('/template', protect, downloadWorkersTemplate)
+    .get('/excel', protect, excelDataWorker)
     .put('/:id', protect, workerUpdate)
     .get('/:id', protect, workerGetById)
     .get('/', protect, workerGet)
     .delete('/:id', protect, workerDelete)
-
-
+    .post('/excel', protect, upload.single('file'), importExcelData)
 module.exports = router;

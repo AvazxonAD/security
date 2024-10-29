@@ -80,6 +80,26 @@ const getorganizationService = async (user_id, search, offset, limit) => {
 }
 
 
+const excelDataOrganizationService = async (user_id) => {
+    try {
+        const { rows } = await pool.query(`
+            WITH data AS (
+                SELECT name, address, str, bank_name, mfo, account_number, treasury1, treasury2
+                FROM organization  
+                WHERE isdeleted = false AND user_id = $1
+                ORDER BY name
+            )
+            SELECT 
+                ARRAY_AGG(row_to_json(data)) AS data,
+                COALESCE((SELECT COUNT(id) FROM organization WHERE isdeleted = false AND user_id = $1), 0)::INTEGER AS total_count
+            FROM data
+        `, [user_id]);
+        return {data: rows[0]?.data || [], total: rows[0].total_count}
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode);
+    }
+}
+
 
 const getByIdorganizationService = async (user_id, id, isdeleted = false) => {
     try {
@@ -129,5 +149,6 @@ module.exports = {
     getByIdorganizationService,
     organizationUpdateService,
     deleteorganizationService,
-    getByStrOrganizationService
+    getByStrOrganizationService,
+    excelDataOrganizationService
 }

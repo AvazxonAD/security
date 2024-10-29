@@ -7,15 +7,16 @@ const {
     workerTaskCreate,
     getBYTaskIdWorkerTask,
     workerTaskGetById,
-    workerTaskUpdate
+    workerTaskUpdate,
+    getByContractIdWorkerTask,
+    workerTaskDelete
 } = require('./worker.task.controller')
 
 router.post('/',  protect, workerTaskCreate)
     .get('/task/:id', protect, getBYTaskIdWorkerTask)
+    .get('/contract/:id', protect, getByContractIdWorkerTask)
     .put('/:id', protect, workerTaskUpdate)
     .get('/:id', protect, workerTaskGetById)
-    .get('/', protect, )
-    .delete('/:id', protect, )
-
+    .delete('/:id', protect, workerTaskDelete)
 
 module.exports = router;

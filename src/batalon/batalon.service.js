@@ -42,11 +42,17 @@ const getByIdBatalonService = async (user_id, id) => {
     }
 }
 
-const getByNameBatalonService = async (user_id, name) => {
+const getByNameBatalonService = async (user_id, name, check = true) => {
     try {
-        const result = await pool.query(`SELECT name, birgada FROM batalon WHERE isdeleted = false AND user_id = $1 AND name = $2`, [user_id, name])
-        if(result.rows[0]){
-            throw new ErrorResponse('This data has already been provided', 404)
+        const result = await pool.query(`SELECT id, name, birgada FROM batalon WHERE isdeleted = false AND user_id = $1 AND name = $2`, [user_id, name])
+        if(check){
+            if(result.rows[0]){
+                throw new ErrorResponse('This data has already been provided', 409)
+            }
+        }else {
+            if(!result.rows[0]){
+                throw new ErrorResponse('batalon not found', 404)
+            }
         }
         return result.rows[0]
     } catch (error) {

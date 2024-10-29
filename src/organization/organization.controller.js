@@ -4,12 +4,15 @@ const {
     getByIdorganizationService,
     organizationUpdateService,
     deleteorganizationService,
-    getByStrOrganizationService
+    getByStrOrganizationService,
+    excelDataOrganizationService
 } = require("./organization.service");
 const { organizationValidation, allQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
+const ExcelJS = require('exceljs')
+const path = require('path')
 
 const organizationCreate = async (req, res) => {
     try {
@@ -82,10 +85,73 @@ const organizationDelete = async (req, res) => {
     }
 }
 
+const excelDataOrganization = async (req, res) => {
+    try {
+        const user_id = req.user.id;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Tashkilot Ma\'lumotlari');
+
+        worksheet.columns = [
+            { header: 'Tashkilot nomi', key: 'name', width: 30 },
+            { header: 'Manzil', key: 'address', width: 50 },
+            { header: 'STIR', key: 'str', width: 20 },
+            { header: 'Bank nomi', key: 'bank_name', width: 50 },
+            { header: 'MFO', key: 'mfo', width: 20 },
+            { header: 'Hisob raqami', key: 'account_number', width: 30 },
+            { header: 'G`azna1', key: 'treasury1', width: 30 },
+            { header: 'G`azna2', key: 'treasury2', width: 30 }
+        ];
+
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFFF' }
+        };
+        headerRow.alignment = { horizontal: 'center' };
+        headerRow.height = 30;
+        headerRow.eachCell((cell) => {
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+        });
+
+        for (let col = 1; col <= worksheet.columns.length; col++) {
+            worksheet.getColumn(col).alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+
+        const {data, total} = await excelDataOrganizationService(user_id);
+        for (let organizationData of data) {
+            worksheet.addRow(organizationData);
+        }
+
+        const totalRow = worksheet.addRow(['Tashkilotlar soni ', `${total}`]);
+        totalRow.font = { bold: true };
+        totalRow.getCell(1).alignment = { horizontal: 'center' };
+
+        const fileName = `organization_${Date.now()}.xlsx`;
+        const filePath = path.join(__dirname, '../../public/exports', fileName);
+        await workbook.xlsx.writeFile(filePath);
+
+        return res.download(filePath, (err) => {
+            if (err) throw new ErrorResponse(err, err.statusCode);
+        });
+    } catch (error) {
+        errorCatch(error, res);
+    }
+};
+
+
+
 module.exports = {
     organizationCreate,
     organizationGet,
     organizationGetById,
     organizationUpdate,
-    organizationDelete
+    organizationDelete,
+    excelDataOrganization
 };
