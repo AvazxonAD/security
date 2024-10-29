@@ -170,7 +170,8 @@ const getcontractService = async (user_id, offset, limit, search, from, to) => {
                     c.doc_num, 
                     c.doc_date, 
                     c.adress, 
-                    o.name AS organization_name
+                    o.name AS organization_name,
+                    c.payment
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} AND c.doc_date BETWEEN $4 AND $5

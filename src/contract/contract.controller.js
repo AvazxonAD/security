@@ -16,6 +16,7 @@ const { getByIdorganizationService } = require('../organization/organization.ser
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { getbxmService } = require('../spravochnik/bxm/bxm.service');
 const ErrorResponse = require("../utils/errorResponse");
+const { returnStringSumma } = require('../utils/return.summa')
 
 
 const contractCreate = async (req, res) => {
@@ -48,8 +49,8 @@ const contractGet = async (req, res) => {
             currentPage: page,
             nextPage: page >= pageCount ? null : page + 1,
             backPage: page === 1 ? null : page - 1,
-            from_balance,
-            to_balance
+            from_balance: returnStringSumma(from_balance),
+            to_balance: returnStringSumma(to_balance)
         }
         resFunc(res, 200, data, meta)
     } catch (error) {
@@ -105,7 +106,7 @@ const paymentContract = async (req, res) => {
         const contract_id = req.params.id;
         const data = validationResponse(paymentContractValidation, req.body);
         const contract = await getByIdcontractService(user_id, contract_id);
-        if(contract.payment){
+        if (contract.payment) {
             throw new ErrorResponse('You are overpaying for this contract', 400)
         }
         if (contract.remaining_balance < data.summa) {
@@ -114,6 +115,7 @@ const paymentContract = async (req, res) => {
         if ((contract.remaining_balance - data.summa) === 0) {
             await updateContractPaymentService(contract_id);
         }
+        await paymentContractService(user_id, contract_id, data.summa, data.date)
         resFunc(res, 200, 'payment success true');
     } catch (error) {
         errorCatch(error, res);
