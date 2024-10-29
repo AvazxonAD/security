@@ -5,7 +5,7 @@ const contractCreateService = async (data) => {
     try {
         let all_worker_number = 0
         let all_task_time = 0
-        let discount = 0
+        let discount_money = 0
         let summa = 0
         data.tasks.forEach(element => {
             all_task_time += element.task_time 
@@ -13,8 +13,8 @@ const contractCreateService = async (data) => {
             summa += element.task_time * element.worker_number * data.bxm.summa
         });
         if(data.discount){
-            discount = summa * (data.discount / 100)
-            summa = summa - discount
+            discount_money = summa * (data.discount / 100)
+            summa = summa - discount_money
         }
         const { rows } = await pool.query(`
             INSERT INTO contract(
@@ -33,9 +33,10 @@ const contractCreateService = async (data) => {
                 end_time,
                 all_worker_number,
                 all_task_time,
-                remaining_balance
+                remaining_balance,
+                discount_money
             ) 
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -43,7 +44,7 @@ const contractCreateService = async (data) => {
             data.adress,
             data.start_date,
             data.end_date,
-            discount,
+            data.discount,
             summa,
             data.organization_id,
             data.account_number_id,
@@ -52,7 +53,8 @@ const contractCreateService = async (data) => {
             data.end_time,
             all_worker_number, 
             all_task_time,
-            summa
+            summa,
+            discount_money
         ])
         const contract = rows[0]
         const tasks = []
@@ -79,7 +81,7 @@ const contractUpdateService = async (data) => {
     try {
         let all_worker_number = 0
         let all_task_time = 0
-        let discount = 0
+        let discount_money = 0
         let summa = 0
         data.tasks.forEach(element => {
             all_task_time += element.task_time 
@@ -87,8 +89,8 @@ const contractUpdateService = async (data) => {
             summa += element.task_time * element.worker_number * data.bxm.summa
         });
         if(data.discount){
-            discount = summa * (data.discount / 100)
-            summa = summa - discount
+            discount_money = summa * (data.discount / 100)
+            summa = summa - discount_money
         }
         const { rows } = await pool.query(`
             UPDATE contract SET 
@@ -106,7 +108,8 @@ const contractUpdateService = async (data) => {
                 end_time = $12,
                 all_worker_number = $13,
                 all_task_time = $14,
-                remaining_balance = $16
+                remaining_balance = $16,
+                discount_money = $17
                 WHERE id = $15 AND isdeleted = false RETURNING *
         `, [
             data.doc_num,
@@ -115,7 +118,7 @@ const contractUpdateService = async (data) => {
             data.adress,
             data.start_date,
             data.end_date,
-            discount,
+            data.discount,
             summa,
             data.organization_id,
             data.account_number_id,
@@ -124,7 +127,8 @@ const contractUpdateService = async (data) => {
             all_worker_number, 
             all_task_time,
             data.id,
-            summa
+            summa,
+            discount_money
         ])
         await pool.query(`DELETE FROM task WHERE contract_id = $1`, [data.id])
         const contract = rows[0]

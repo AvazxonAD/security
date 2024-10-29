@@ -9,6 +9,7 @@ CREATE TABLE contract (
     start_time VARCHAR,
     end_time VARCHAR,
     discount FLOAT,
+    discount_money DECIMAL,
     summa DECIMAL,
     payment BOOLEAN DEFAULT FALSE,
     organization_id INT REFERENCES organization(id),
