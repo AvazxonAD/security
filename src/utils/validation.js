@@ -18,7 +18,7 @@ const bxmValidation = Joi.object({
   summa: Joi.number().required().min(1)
 })
 const accountNumberValidation = Joi.object({
-  account_number: Joi.string().trim().required().length(20).pattern(/^\d+$/)
+  account_number: Joi.string().trim().required().pattern(/^\d+$/)
 });
 const doerValidation = Joi.object({
   doer: Joi.string().trim().required()
