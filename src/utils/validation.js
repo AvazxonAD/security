@@ -48,8 +48,8 @@ const organizationValidation = Joi.object({
   bank_name: Joi.string().trim().required(),
   mfo: Joi.string().trim().pattern(/^\d+$/).required(),
   account_number: Joi.string().trim().pattern(/^\d+$/).required(),
-  treasury1: Joi.string().trim().pattern(/^\d+$/).required(),
-  treasury2: Joi.string().trim().pattern(/^\d+$/).required(),
+  treasury1: Joi.string().trim().pattern(/^\d+$/).allow(''),
+  treasury2: Joi.string().trim().pattern(/^\d+$/).allow(''),
 });
 const allQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
