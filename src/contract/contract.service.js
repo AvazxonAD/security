@@ -172,7 +172,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to) => {
                 SELECT 
                     c.id,
                     c.doc_num, 
-                    c.doc_date, 
+                    TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
                     c.adress, 
                     o.name AS organization_name,
                     c.payment
@@ -204,11 +204,11 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
             SELECT 
                 c.id,
                 c.doc_num, 
-                c.doc_date, 
-                c.period, 
+                TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                TO_CHAR(c.period, 'YYYY-MM-DD') AS period, 
                 c.adress, 
-                c.start_date, 
-                c.end_date, 
+                TO_CHAR(c.start_date, 'YYYY-MM-DD') AS start_date, 
+                TO_CHAR(c.end_date, 'YYYY-MM-DD') AS end_date, 
                 c.discount, 
                 c.summa::FLOAT, 
                 c.payment, 
@@ -227,7 +227,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                         t.task_time, 
                         t.worker_number,
                         t.summa, 
-                        t.task_date,
+                        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
                         t.remaining_task_time
                     FROM task AS t
                     WHERE  t.user_id = $1 AND t.isdeleted = false AND t.contract_id = c.id 
