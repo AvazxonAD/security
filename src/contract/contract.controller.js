@@ -4,10 +4,8 @@ const {
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
-    paymentContractService,
-    updateContractPaymentService,
 } = require("./contract.service");
-const { contractValidation, conrtactQueryValidation, paymentContractValidation } = require("../utils/validation");
+const { contractValidation, conrtactQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
@@ -15,7 +13,6 @@ const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { getbxmService } = require('../spravochnik/bxm/bxm.service');
-const ErrorResponse = require("../utils/errorResponse");
 const { returnStringSumma } = require('../utils/return.summa')
 
 
@@ -100,34 +97,10 @@ const contractDelete = async (req, res) => {
     }
 }
 
-const paymentContract = async (req, res) => {
-    try {
-        const user_id = req.user.id;
-        const contract_id = req.params.id;
-        const data = validationResponse(paymentContractValidation, req.body);
-        const contract = await getByIdcontractService(user_id, contract_id);
-        if (contract.payment) {
-            throw new ErrorResponse('You are overpaying for this contract', 400)
-        }
-        if (contract.remaining_balance < data.summa) {
-            throw new ErrorResponse('You are overpaying for this contract', 400);
-        }
-        if ((contract.remaining_balance - data.summa) === 0) {
-            await updateContractPaymentService(contract_id);
-        }
-        await paymentContractService(user_id, contract_id, data.summa, data.date)
-        resFunc(res, 200, 'payment success true');
-    } catch (error) {
-        errorCatch(error, res);
-    }
-}
-
-
 module.exports = {
     contractCreate,
     contractGet,
     contractGetById,
     contractUpdate,
-    contractDelete,
-    paymentContract
+    contractDelete
 };

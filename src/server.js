@@ -27,6 +27,7 @@ app.use('/organization', require('./organization/organization.routes'))
 app.use('/contract', require('./contract/contract.routes'))
 app.use('/worker_task', require('./worker.task/worker.task.routes'))
 app.use('/task', require('./task/task.routes'))
+app.use('/pay', require('./payment/pay.routes'))
 
 app.use(require('./middleware/errorHandler'))
 

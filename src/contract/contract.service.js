@@ -255,15 +255,6 @@ const deletecontractService = async (id) => {
     }
 }
 
-const paymentContractService = async (user_id, contract_id, summa, date) => {
-    try {
-        await pool.query(` INSERT INTO payment(user_id, contract_id, summa, date) VALUES($1, $2, $3, $4) RETURNING * `, [user_id, contract_id, summa, date])
-        await pool.query(`UPDATE contract SET remaining_balance = (remaining_balance - $1) WHERE id = $2`, [summa, contract_id])
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-} 
-
 const updateContractPaymentService = async (contract_id) => {
     try {
         const contract = await pool.query(
@@ -282,6 +273,5 @@ module.exports = {
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
-    paymentContractService,
     updateContractPaymentService
 }

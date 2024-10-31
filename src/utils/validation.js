@@ -117,6 +117,14 @@ const workerExcelValidation = Joi.object({
   Karta_raqam: Joi.string().trim().required().pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)
 })
 
+const paymentQueryValidation = Joi.object({
+  page: Joi.number().min(1).default(1),
+  limit: Joi.number().min(1).default(10),
+  search: Joi.string().trim(),
+  from: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  to: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
+})
+
 module.exports = {
   authUpdateValidation,
   loginValidation,
@@ -137,5 +145,6 @@ module.exports = {
   workerTaskValidation,
   workerTaskUpdateValidation,
   conrtactQueryValidation,
-  workerExcelValidation
+  workerExcelValidation,
+  paymentQueryValidation
 };
