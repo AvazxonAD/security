@@ -15,5 +15,4 @@ router.post('/contract/:id', protect, pay)
     .get('/', protect, getPayment)
     .delete('/:id', protect, )
 
-
 module.exports = router;

@@ -4,14 +4,12 @@ const router = Router();
 const protect = require("../middleware/auth");
 
 const {
-    getByConrtactIdTask
+    getByConrtactIdTask,
+    getByIdTask
 } = require('../task/task.controller')
 
-router.post('/',  protect, )
-    .put('/:id', protect, )
-    .get('/contract/:id', protect, getByConrtactIdTask)
-    .get('/', protect, )
-    .delete('/:id', protect, )
-
+router.get('/contract/:id', protect, getByConrtactIdTask)
+    .get('/:id', protect, getByIdTask)
+    
 
 module.exports = router;

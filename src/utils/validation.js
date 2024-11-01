@@ -89,7 +89,6 @@ const paymentContractValidation = Joi.object({
 })
 
 const workerTaskValidation = Joi.object({
-  task_id: Joi.number().integer().required(),
   workers: Joi.array().items(
     Joi.object({
       task_time: Joi.number().min(0.1).required(),

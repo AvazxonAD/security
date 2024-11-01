@@ -3,16 +3,26 @@ const ErrorResponse = require('../utils/errorResponse');
 
 const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false) => {
     try {
-        let ignore = ``
+        let condition = `WHERE t.id = $1 AND t.user_id = $2`;
         if (!ignore_isdeleted) {
-            ignore = ` AND isdeleted = false`
+            condition += ` AND t.isdeleted = false`;
         }
         const task = await pool.query(`
-            SELECT id, batalon_id, task_time, summa, worker_number, remaining_task_time 
-            FROM task WHERE  id = $1 AND user_id = $2 ${ignore}
-        `, [task_id, user_id])
+            SELECT 
+                t.id, 
+                t.batalon_id, 
+                b.name AS batalon_name,
+                t.task_time, 
+                t.summa, 
+                t.worker_number, 
+                (t.task_time - COALESCE((SELECT SUM(task_time) FROM worker_task WHERE task_id = $1), 0)::FLOAT) AS remaining_task_time 
+            FROM task AS t
+            JOIN batalon AS b ON b.id = t.batalon_id 
+            ${condition}
+        `, [task_id, user_id]);
+
         if (!task.rows[0]) {
-            throw new ErrorResponse('task not found', 404)
+            throw new ErrorResponse('task not found', 404);
         }
         return task.rows[0]
     } catch (error) {
@@ -23,8 +33,17 @@ const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false) =>
 const getByContractIdTaskService = async (conrtact_id) => {
     try {
         const tasks = await pool.query(`
-            SELECT id, batalon_id, task_time, summa, worker_number, remaining_task_time 
-            FROM task WHERE  contract_id = $1 AND isdeleted = false
+            SELECT 
+                t.id, 
+                t.batalon_id, 
+                b.name AS batalon_name,
+                t.task_time, 
+                t.summa, 
+                t.worker_number, 
+                t.remaining_task_time 
+            FROM task AS t
+            JOIN batalon AS b ON b.id = t.batalon_id 
+            WHERE  t.contract_id = $1 AND t.isdeleted = false
         `, [conrtact_id])
         return tasks.rows
     } catch (error) {
