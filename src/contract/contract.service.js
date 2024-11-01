@@ -227,7 +227,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                         t.task_time, 
                         t.worker_number,
                         t.summa, 
-                        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
+                        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date
                     FROM task AS t
                     WHERE  t.user_id = $1 AND t.isdeleted = false AND t.contract_id = c.id 
                     ) AS tasks
