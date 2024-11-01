@@ -39,8 +39,7 @@ const getByContractIdTaskService = async (conrtact_id) => {
                 b.name AS batalon_name,
                 t.task_time, 
                 t.summa, 
-                t.worker_number, 
-                t.remaining_task_time 
+                t.worker_number 
             FROM task AS t
             JOIN batalon AS b ON b.id = t.batalon_id 
             WHERE  t.contract_id = $1 AND t.isdeleted = false
