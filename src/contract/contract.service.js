@@ -203,7 +203,6 @@ const contractUpdateService = async (data) => {
     }
 };
 
-
 const getcontractService = async (user_id, offset, limit, search, from, to, account_number_id) => {
     try {
         let serach_filter = ``;
@@ -225,7 +224,9 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     c.id,
                     c.doc_num, 
                     TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                    c.result_summa,
                     c.adress, 
+                    o.id AS organization_id,
                     o.name AS organization_name,
                     o.address AS organization_address,
                     o.str AS organization_str,
@@ -233,8 +234,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     o.mfo AS organization_mfo,
                     o.account_number AS organization_account_number,
                     o.treasury1 AS organization_treasury1,
-                    o.treasury2 AS organization_treasury2,
-                    c.result_summa
+                    o.treasury2 AS organization_treasury2
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6
@@ -253,11 +253,17 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
     }
 }
 
-const getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id) => {
+const getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id, organization_id = null) => {
     try {
+        const params = [user_id, id, account_number_id]
+        let organization = ``
         let filter = ``
         if (!isdeleted) {
             filter = `AND c.isdeleted = false`
+        }
+        if(organization_id){
+            organization = ` AND c.organization_id = $${params.length + 1}`
+            params.push(organization_id)
         }
         const result = await pool.query(`
             SELECT 
@@ -278,7 +284,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                 c.end_time,
                 c.all_worker_number,
                 c.all_task_time,
-                1000000 AS remaining_balance,
+                ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = $2) AS remaining_balance,
                 (SELECT ARRAY_AGG(row_to_json(tasks))
                     FROM (
                     SELECT 
@@ -296,8 +302,8 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                 ) AS tasks 
             FROM contract  AS c 
             JOIN organization AS o ON o.id = c.organization_id
-            WHERE c.user_id = $1 ${filter} AND c.id = $2 AND c.account_number_id = $3
-        `, [user_id, id, account_number_id])
+            WHERE c.user_id = $1 ${filter} AND c.id = $2 AND c.account_number_id = $3 ${organization} 
+        `, params)
         if (!result.rows[0]) {
             throw new ErrorResponse('contract not found', 404)
         }
@@ -316,23 +322,10 @@ const deletecontractService = async (id) => {
     }
 }
 
-const updateContractPaymentService = async (contract_id) => {
-    try {
-        const contract = await pool.query(
-            `UPDATE contract SET payment = true WHERE id = $1  RETURNING *`,
-            [contract_id]
-        );
-        return contract.rows[0];
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode);
-    }
-};
-
 module.exports = {
     contractCreateService,
     getcontractService,
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
-    updateContractPaymentService
 }

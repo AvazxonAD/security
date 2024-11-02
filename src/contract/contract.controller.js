@@ -77,7 +77,7 @@ const contractUpdate = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdcontractService(user_id, id)
+        await getByIdcontractService(user_id, id, false, account_number_id)
         const data = validationResponse(contractValidation, req.body)
         const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
@@ -102,6 +102,8 @@ const contractDelete = async (req, res) => {
         errorCatch(error, res)
     }
 }
+
+
 
 module.exports = {
     contractCreate,
