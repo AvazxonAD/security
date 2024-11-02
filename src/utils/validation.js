@@ -73,7 +73,6 @@ const contractValidation = Joi.object({
   end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow(''),
   discount: Joi.number().min(0).default(0).max(100),
   organization_id: Joi.number().integer().required(),
-  account_number_id: Joi.number().integer().required(),
   tasks: Joi.array().items(
     Joi.object({
       batalon_id: Joi.number().integer().min(1).required(),

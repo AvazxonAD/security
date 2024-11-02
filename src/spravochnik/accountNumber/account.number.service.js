@@ -36,7 +36,7 @@ const getByIdaccount_numberService = async (user_id, id, ignore_deleted = false)
         if(!ignore_deleted){
             ignore = `isdeleted = false AND`
         }
-        const result = await pool.query(`SELECT account_number FROM account_number WHERE ${ignore} user_id = $1 AND id = $2`, [user_id, id])
+        const result = await pool.query(`SELECT id, account_number FROM account_number WHERE ${ignore} user_id = $1 AND id = $2`, [user_id, id])
         if(!result.rows[0]){
             throw new ErrorResponse('account_number not found', 404)
         }

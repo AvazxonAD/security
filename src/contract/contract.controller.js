@@ -19,14 +19,15 @@ const { returnStringSumma } = require('../utils/return.summa')
 const contractCreate = async (req, res) => {
     try {
         const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        await getByIdaccount_numberService(user_id, account_number_id)
         const data = validationResponse(contractValidation, req.body)
         const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
-        await getByIdaccount_numberService(user_id, data.account_number_id)
         for (let task of data.tasks) {
             await getByIdBatalonService(user_id, task.batalon_id)
         }
-        const result = await contractCreateService({ ...data, user_id, bxm })
+        const result = await contractCreateService({ ...data, user_id, bxm, account_number_id })
         resFunc(res, 201, result)
     } catch (error) {
         errorCatch(error, res)
@@ -70,11 +71,12 @@ const contractUpdate = async (req, res) => {
     try {
         const id = req.params.id
         const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        await getByIdaccount_numberService(user_id, account_number_id)
         await getByIdcontractService(user_id, id)
         const data = validationResponse(contractValidation, req.body)
         const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
-        await getByIdaccount_numberService(user_id, data.account_number_id)
         for (let task of data.tasks) {
             await getByIdBatalonService(user_id, task.batalon_id)
         }

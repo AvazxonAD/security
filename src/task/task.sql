@@ -5,6 +5,8 @@ CREATE TABLE task (
     worker_number INTEGER,
     user_id INTEGER REFERENCES users(id),
     summa DECIMAL,
+    discount_money DECIMAL,
+    result_summa DECIMAL,
     task_date DATE,
     contract_id INTEGER REFERENCES contract(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
