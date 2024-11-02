@@ -12,7 +12,7 @@ const {
 } = require('./worker.task.controller')
 
 router.post('/',  protect, workerTaskCreate)
-    .get('/task/:id', protect, getBYTaskIdWorkerTask)
+    .get('/', protect, getBYTaskIdWorkerTask)
     .get('/contract/:id', protect, getByContractIdWorkerTask)
     .put('/', protect, workerTaskUpdate)
     .delete('/', protect, workerTaskDelete)

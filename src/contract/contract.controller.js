@@ -37,9 +37,11 @@ const contractCreate = async (req, res) => {
 const contractGet = async (req, res) => {
     try {
         const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        await getByIdaccount_numberService(user_id, account_number_id)
         const { page, limit, search, from, to } = validationResponse(conrtactQueryValidation, req.query)
         const offset = (page - 1) * limit
-        const { data, total, from_balance, to_balance } = await getcontractService(user_id, offset, limit, search, from, to)
+        const { data, total, from_balance, to_balance } = await getcontractService(user_id, offset, limit, search, from, to, account_number_id)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
@@ -59,8 +61,10 @@ const contractGet = async (req, res) => {
 const contractGetById = async (req, res) => {
     try {
         const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        await getByIdaccount_numberService(user_id, account_number_id)
         const id = req.params.id
-        const result = await getByIdcontractService(user_id, id, true)
+        const result = await getByIdcontractService(user_id, id, true, account_number_id)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

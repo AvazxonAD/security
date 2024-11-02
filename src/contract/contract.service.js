@@ -204,10 +204,10 @@ const contractUpdateService = async (data) => {
 };
 
 
-const getcontractService = async (user_id, offset, limit, search, from, to) => {
+const getcontractService = async (user_id, offset, limit, search, from, to, account_number_id) => {
     try {
         let serach_filter = ``;
-        const params = [user_id, offset, limit, from, to];
+        const params = [user_id, offset, limit, from, to, account_number_id];
         if (search) {
             serach_filter = `AND (
                     c.doc_num ILIKE  '%' || $${params.length + 1} || '%' 
@@ -237,14 +237,14 @@ const getcontractService = async (user_id, offset, limit, search, from, to) => {
                     c.result_summa
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
-                WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} AND c.doc_date BETWEEN $4 AND $5
+                WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6
                 ORDER BY c.doc_date OFFSET $2 LIMIT $3
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                (SELECT COALESCE(COUNT(id), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $4 AND $5)::INTEGER AS total_count,
-                (SELECT COALESCE(SUM(result_summa), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date <= $4)::FLOAT AS from_balance,
-                (SELECT COALESCE(SUM(result_summa), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date <= $5)::FLOAT AS to_balance
+                (SELECT COALESCE(COUNT(id), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $4 AND $5 AND account_number_id = $6)::INTEGER AS total_count,
+                (SELECT COALESCE(SUM(result_summa), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date <= $4 AND account_number_id = $6)::FLOAT AS from_balance,
+                (SELECT COALESCE(SUM(result_summa), 0) FROM contract WHERE isdeleted = false AND user_id = $1 AND doc_date <= $5 AND account_number_id = $6)::FLOAT AS to_balance
             FROM data
         `, params);
         return { data: rows[0]?.data || [], total: rows[0].total_count, from_balance: rows[0].from_balance, to_balance: rows[0].to_balance }
@@ -253,7 +253,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to) => {
     }
 }
 
-const getByIdcontractService = async (user_id, id, isdeleted = false) => {
+const getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id) => {
     try {
         let filter = ``
         if (!isdeleted) {
@@ -296,8 +296,8 @@ const getByIdcontractService = async (user_id, id, isdeleted = false) => {
                 ) AS tasks 
             FROM contract  AS c 
             JOIN organization AS o ON o.id = c.organization_id
-            WHERE c.user_id = $1 ${filter} AND c.id = $2 
-        `, [user_id, id])
+            WHERE c.user_id = $1 ${filter} AND c.id = $2 AND c.account_number_id = $3
+        `, [user_id, id, account_number_id])
         if (!result.rows[0]) {
             throw new ErrorResponse('contract not found', 404)
         }

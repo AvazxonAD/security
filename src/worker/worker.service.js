@@ -29,8 +29,7 @@ const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
         const params = [user_id, offset, limit];
         if (search) {
             filter = `AND (w.fio ILIKE  '%' || $${params.length + 1} || '%' 
-                OR w.account_number ILIKE  '%' || $${params.length + 1} || '%' 
-                OR b.name ILIKE  '%' || $${params.length + 1} || '%')
+                OR w.account_number ILIKE  '%' || $${params.length + 1} || '%') 
             `
             params.push(search)
         }
