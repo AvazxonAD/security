@@ -313,6 +313,48 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
     }
 }
 
+const dataForExcelService = async (user_id, account_number_id, from, to) => {
+    try {
+        const data = await pool.query(`
+            WITH data AS (
+                SELECT 
+                    c.id,
+                    c.doc_num, 
+                    o.name AS organization_name,
+                    TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                    TO_CHAR(c.period, 'YYYY-MM-DD') AS period, 
+                    c.adress, 
+                    TO_CHAR(c.start_date, 'YYYY-MM-DD') AS start_date, 
+                    TO_CHAR(c.end_date, 'YYYY-MM-DD') AS end_date, 
+                    c.discount, 
+                    c.discount_money::FLOAT, 
+                    c.summa::FLOAT, 
+                    c.result_summa::FLOAT, 
+                    c.organization_id, 
+                    c.account_number_id,
+                    a_n.account_number,
+                    c.start_time,
+                    c.end_time,
+                    c.all_worker_number,
+                    c.all_task_time,
+                    ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS kridit,
+                    ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS debit
+                FROM contract c   
+                JOIN organization AS o ON o.id = c.organization_id
+                JOIN account_number AS a_n ON a_n.id = c.account_number_id
+                WHERE c.user_id = $1 AND c.isdeleted = false AND c.account_number_id = $2  AND c.doc_date BETWEEN $3 AND $4
+            )
+            SELECT 
+                ARRAY_AGG(row_to_json(data)) AS data,
+                (SELECT COALESCE(COUNT(id), 0) FROM contract WHERE user_id = $1 AND isdeleted = false AND account_number_id = $2  AND doc_date BETWEEN $3 AND $4 )::FLOAT AS total_count 
+            FROM data  
+        `, [user_id, account_number_id, from, to])
+        return {data: data.rows[0]?.data || [], total: data.rows[0].total_count}
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
 const deletecontractService = async (id) => {
     try {
         await pool.query(`UPDATE task SET isdeleted = true WHERE contract_id = $1 AND isdeleted = false`, [id])
@@ -328,4 +370,5 @@ module.exports = {
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
+    dataForExcelService
 }
