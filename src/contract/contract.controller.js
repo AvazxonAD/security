@@ -114,7 +114,6 @@ const exportExcelData = async (req, res) => {
         
         const contractBook = new ExcelJs.Workbook();
         const contractSheet = contractBook.addWorksheet('Shartnomalar');
-        
         contractSheet.columns = [
             { header: 'N_', key: 'doc_num', width: 10 },
             { header: 'client', key: 'organization_name', width: 40 },
@@ -133,7 +132,6 @@ const exportExcelData = async (req, res) => {
             { header: 'xodimlar soni', key: 'all_worker_number', width: 20 },
             { header: 'topshiriq vaqti', key: 'all_task_time', width: 20 }
         ];
-
         const headerRow = contractSheet.getRow(1);
         headerRow.font = { bold: true };
         headerRow.fill = {
@@ -143,13 +141,9 @@ const exportExcelData = async (req, res) => {
         };
         headerRow.alignment = { horizontal: 'center' };
         headerRow.height = 30;
-
-        // Barcha ustunlar uchun hizalash va wrapText
         contractSheet.columns.forEach((column) => {
             column.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
         });
-
-        // Header cell uchun border
         headerRow.eachCell((cell) => {
             cell.border = {
                 top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -158,8 +152,6 @@ const exportExcelData = async (req, res) => {
                 right: { style: 'thin', color: { argb: 'FF000000' } }
             };
         });
-
-        // Ma'lumotlar qatori qo'shish
         for (let contract of data) {
             contractSheet.addRow({
                 doc_num: contract.doc_num,
@@ -180,7 +172,6 @@ const exportExcelData = async (req, res) => {
                 all_task_time: contract.all_task_time
             });
         }
-
         const totalRow = contractSheet.addRow(['Barcha', 'shartnomalar', 'Soni', `${total}`]);
         totalRow.font = { bold: true };
         totalRow.fill = {
@@ -189,7 +180,6 @@ const exportExcelData = async (req, res) => {
             fgColor: { argb: 'FFFFFFFF' }
         };
         totalRow.alignment = { horizontal: 'center' };
-
         totalRow.eachCell((cell) => {
             cell.border = {
                 top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -199,12 +189,10 @@ const exportExcelData = async (req, res) => {
             };
             cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
         });
-
         const fileName = `contracts.${Date.now()}.xlsx`;
         const filePath = path.join(__dirname, '../../public/exports', fileName);
         
         await contractBook.xlsx.writeFile(filePath);
-        
         return res.download(filePath, (err) => {
             if (err) throw new ErrorResponse(err, err.statusCode);
         });
