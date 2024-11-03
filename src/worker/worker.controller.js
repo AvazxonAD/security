@@ -187,7 +187,8 @@ const importExcelData = async (req, res) => {
 
 const downloadWorkersTemplate = async (req, res) => {
     try {
-        const filePath = path.join(__dirname, '../../src/template/workers.template.xlsx')
+        const filePath = path.join(__dirname, '../../public/template/workers.template.xlsx')
+        console.log(filePath)
         return res.download(filePath);
     } catch (error) {
         console.log('///////')
