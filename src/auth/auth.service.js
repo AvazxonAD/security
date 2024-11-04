@@ -4,7 +4,28 @@ const ErrorResponse = require('../utils/errorResponse')
 // get By Login User Service
 const getByLoginUserService = async (login) => {
     try {
-        const { rows } = await pool.query(`SELECT id, password, login, fio FROM users WHERE login = $1 AND isdeleted = false`, [login])
+        const { rows } = await pool.query(`
+            SELECT 
+                u.id, 
+                u.password, 
+                u.login, 
+                u.fio,
+                a_n.account_number,
+                d.doer AS doer_name,
+                boss.boss AS boss_name,
+                a.adress,
+                b.bank AS bank_name,
+                b.mfo,
+                s.str
+            FROM users AS u 
+            JOIN account_number AS a_n ON a_n.user_id = u.id
+            JOIN doer AS d ON d.user_id = u.id
+            JOIN boss ON boss.user_id = u.id
+            JOIN adress AS a ON a.user_id = u.id
+            JOIN bank AS b ON b.user_id = u.id
+            JOIN str AS s ON s.user_id = u.id
+            WHERE u.login = $1 AND u.isdeleted = false
+        `, [login])
         const user = rows[0]
         if (!user) {
             throw new ErrorResponse('Incorrect username or password', 403)
