@@ -69,6 +69,15 @@ const deleteBatalonService = async (id) => {
     }
 }
 
+const getOnlyBatalon = async (user_id) => {
+    try {
+        const result = await pool.query(`SELECT id, name FROM batalon WHERE isdeleted = false AND user_id = $1 AND birgada = false`, [user_id])
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
+
 module.exports = {
     batalonCreateService,
     getBatalonService,
