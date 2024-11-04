@@ -131,6 +131,18 @@ const prixodQueryValidation = Joi.object({
   account_number_id: Joi.number().min(1).required()
 })
 
+const contractTemplateValidation = Joi.object({
+  shablon_name: Joi.string().max(200).required(),
+  main_section: Joi.string().required(),
+  section_1: Joi.string().required(),
+  section_2: Joi.string().required(),
+  section_3: Joi.string().required(),
+  section_4: Joi.string().required(),
+  section_5: Joi.string().required(),
+  section_6: Joi.string().required(),
+  section_7: Joi.string().required(),
+});
+
 module.exports = {
   authUpdateValidation,
   loginValidation,
@@ -152,5 +164,6 @@ module.exports = {
   workerTaskUpdateValidation,
   conrtactQueryValidation,
   workerExcelValidation,
-  prixodQueryValidation
+  prixodQueryValidation,
+  contractTemplateValidation
 };
