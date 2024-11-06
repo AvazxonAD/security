@@ -14,7 +14,7 @@ const { errorCatch } = require('../utils/errorCatch')
 const batalonCreate = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { name, birgada } = validationResponse(batalionValidation, req.body)
+        const data = validationResponse(batalionValidation, req.body)
         await getByNameBatalonService(user_id, name)
         const result = await batalonCreateService(name, birgada, user_id)
         resFunc(res, 200,result)

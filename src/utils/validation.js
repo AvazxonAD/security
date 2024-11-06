@@ -12,7 +12,14 @@ const authUpdateValidation = Joi.object({
 })
 const batalionValidation = Joi.object({
   name: Joi.string().trim().required(),
-  birgada: Joi.boolean()
+  birgada: Joi.boolean(),
+  adress: Joi.string().trim().required(), 
+  str: Joi.string().trim().required(), 
+  bank_name: Joi.string().trim().required(), 
+  mfo: Joi.string().trim().required(), 
+  account_number: Joi.string().trim().required(),
+  treasury1: Joi.string().trim(), 
+  treasury2: Joi.string().trim()
 })
 const bxmValidation = Joi.object({
   summa: Joi.number().required().min(1)
