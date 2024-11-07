@@ -6,7 +6,8 @@ const {
     deleteworkerService,
     getByAcountNumberWorkerService,
     excelDataWorkerService,
-    excelDataCreateWorkerService
+    excelDataCreateWorkerService,
+    getByXisobRaqamWorkerService
 } = require("./worker.service");
 const { workerValidation, workerQueryValidation, workerExcelValidation } = require("../utils/validation");
 const { getByIdBatalonService } = require('../batalon/batalon.service')
@@ -22,10 +23,11 @@ const { getByNameBatalonService } = require('../batalon/batalon.service')
 const workerCreate = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { fio, batalon_id, account_number } = validationResponse(workerValidation, req.body)
+        const { fio, batalon_id, account_number, xisob_raqam } = validationResponse(workerValidation, req.body)
         await getByIdBatalonService(user_id, batalon_id)
-        await getByAcountNumberWorkerService(account_number)
-        const result = await workerCreateService(fio, batalon_id, account_number)
+        await getByAcountNumberWorkerService(account_number, batalon_id)
+        await getByXisobRaqamWorkerService(xisob_raqam, batalon_id)
+        const result = await workerCreateService(fio, batalon_id, account_number, xisob_raqam)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -67,12 +69,15 @@ const workerUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        const { fio, account_number, batalon_id } = validationResponse(workerValidation, req.body)
-        const oldDate = await getByIdworkerService(user_id, id)
-        if (oldDate.account_number !== account_number) {
-            await getByAcountNumberWorkerService(account_number)
+        const { fio, account_number, batalon_id, xisob_raqam } = validationResponse(workerValidation, req.body)
+        const oldData = await getByIdworkerService(user_id, id)
+        if (oldData.account_number !== account_number) {
+            await getByAcountNumberWorkerService(account_number, batalon_id)
         }
-        const result = await workerUpdateService(fio, batalon_id, account_number, id)
+        if (oldData.xisob_raqam !== xisob_raqam) {
+            await getByXisobRaqamWorkerService(xisob_raqam, batalon_id)
+        }
+        const result = await workerUpdateService(fio, batalon_id, account_number, id, xisob_raqam)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -101,7 +106,8 @@ const excelDataWorker = async (req, res) => {
         worksheet.columns = [
             { header: 'Batalon', key: 'batalon_name', width: 20 },
             { header: 'FIO', key: 'fio', width: 50 },
-            { header: 'Karta_raqam', key: 'account_number', width: 30 }
+            { header: 'Karta_raqam', key: 'account_number', width: 30 },
+            { header: 'Xisob_raqam', key: 'xisob_raqam', width: 30 },
         ];
 
         const headerRow = worksheet.getRow(1);
@@ -131,7 +137,8 @@ const excelDataWorker = async (req, res) => {
             worksheet.addRow({
                 batalon_name: worker.batalon_name,
                 fio: worker.fio,
-                account_number: worker.account_number
+                account_number: worker.account_number,
+                xisob_raqam: worker.xisob_raqam
             });
         }
 
@@ -166,17 +173,17 @@ const importExcelData = async (req, res) => {
         const data = xlsx.utils.sheet_to_json(sheet).map(row => {
             const newRow = {};
             for (const key in row) {
-                newRow[key.trim()] = row[key];
+                newRow[key.trim()] = String(row[key]);
             }
             return newRow;
         });
         const newWorkers = []
         for (let worker of data) {
-            const { Batalon, Karta_raqam, FIO } = validationResponse(workerExcelValidation, worker)
+            const { Batalon, Karta_raqam, FIO, Xisob_raqam } = validationResponse(workerExcelValidation, worker)
             const batalon = await getByNameBatalonService(user_id, Batalon, false)
-            console.log(batalon)
-            await getByAcountNumberWorkerService(Karta_raqam)
-            newWorkers.push({batalon_id: batalon.id, account_number: Karta_raqam, fio: FIO})
+            await getByAcountNumberWorkerService(Karta_raqam, batalon.id)
+            await getByXisobRaqamWorkerService(Xisob_raqam, batalon.id)
+            newWorkers.push({ batalon_id: batalon.id, account_number: Karta_raqam, fio: FIO, xisob_raqam: Xisob_raqam })
         }
         const result = await excelDataCreateWorkerService(newWorkers, user_id)
         resFunc(res, 200, result)
@@ -191,7 +198,6 @@ const downloadWorkersTemplate = async (req, res) => {
         console.log(filePath)
         return res.download(filePath);
     } catch (error) {
-        console.log('///////')
         errorCatch(error, res)
     }
 }

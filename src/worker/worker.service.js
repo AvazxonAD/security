@@ -3,19 +3,19 @@ const pool = require('../config/db')
 const ErrorResponse = require('../utils/errorResponse')
 
 
-const workerCreateService = async (fio, batalon_id, account_number) => {
+const workerCreateService = async (fio, batalon_id, account_number, xisob_raqam) => {
     try {
-        const result = await pool.query(`INSERT INTO worker(fio, batalon_id, account_number) VALUES($1, $2, $3) RETURNING *`, [fio, batalon_id, account_number])
+        const result = await pool.query(`INSERT INTO worker(fio, batalon_id, account_number, xisob_raqam) VALUES($1, $2, $3, $4) RETURNING *`, [fio, batalon_id, account_number, xisob_raqam])
         return result.rows[0]
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
 }
 
-const workerUpdateService = async (fio, batalon_id, account_number, id) => {
+const workerUpdateService = async (fio, batalon_id, account_number, id, xisob_raqam) => {
     try {
-        const result = await pool.query(`UPDATE worker SET fio = $1, batalon_id = $2, account_number = $3 WHERE id = $4 AND isdeleted = false RETURNING *
-        `, [fio, batalon_id, account_number, id])
+        const result = await pool.query(`UPDATE worker SET fio = $1, batalon_id = $2, account_number = $3, xisob_raqam = $5 WHERE id = $4 AND isdeleted = false RETURNING *
+        `, [fio, batalon_id, account_number, id, xisob_raqam])
         return result.rows[0]
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
@@ -29,7 +29,8 @@ const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
         const params = [user_id, offset, limit];
         if (search) {
             filter = `AND (w.fio ILIKE  '%' || $${params.length + 1} || '%' 
-                OR w.account_number ILIKE  '%' || $${params.length + 1} || '%') 
+                OR w.account_number ILIKE  '%' || $${params.length + 1} || '%'
+                OR w.xisob_raqam ILIKE  '%' || $${params.length + 1} || '%') 
             `
             params.push(search)
         }
@@ -39,7 +40,7 @@ const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
         }
         const { rows } = await pool.query(`
            WITH data AS (
-                SELECT w.id, w.fio, w.account_number, b.name AS batalon_name
+                SELECT w.id, w.fio, w.account_number, b.name AS batalon_name, w.xisob_raqam
                 FROM worker w 
                 JOIN batalon AS b ON b.id = w.batalon_id
                 JOIN users AS u ON b.user_id = u.id
@@ -68,7 +69,7 @@ const excelDataWorkerService = async (user_id) => {
     try {
         const { rows } = await pool.query(`
             WITH data AS (
-                 SELECT w.fio, w.account_number, b.name AS batalon_name
+                 SELECT w.fio, w.account_number, b.name AS batalon_name, w.xisob_raqam
                  FROM worker w 
                  JOIN batalon AS b ON b.id = w.batalon_id
                  JOIN users AS u ON b.user_id = u.id
@@ -100,7 +101,7 @@ const getByIdworkerService = async (user_id, id, isdeleted = false) => {
             filter = `AND w.isdeleted = false`
         }
         const result = await pool.query(`
-            SELECT w.id, w.fio, w.account_number, b.name AS batalon_name
+            SELECT w.id, w.fio, w.account_number, b.name AS batalon_name, w.xisob_raqam
             FROM worker w 
             JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON b.user_id = u.id
@@ -124,9 +125,20 @@ const deleteworkerService = async (id) => {
     }
 }
 
-const getByAcountNumberWorkerService = async (account_number) => {
+const getByAcountNumberWorkerService = async (account_number, batalon_id) => {
     try {
-        const { rows } = await pool.query(`SELECT * FROM worker WHERE account_number = $1 AND isdeleted = false`, [account_number])
+        const { rows } = await pool.query(`SELECT * FROM worker WHERE account_number = $1 AND isdeleted = false AND batalon_id = $2`, [account_number, batalon_id])
+        if (rows[0]) {
+            throw new ErrorResponse('This account number is already entered', 409)
+        }
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
+const getByXisobRaqamWorkerService = async (xisob_raqam, batalon_id) => {
+    try {
+        const { rows } = await pool.query(`SELECT * FROM worker WHERE xisob_raqam = $1 AND isdeleted = false AND batalon_id = $2`, [xisob_raqam, batalon_id])
         if (rows[0]) {
             throw new ErrorResponse('This account number is already entered', 409)
         }
@@ -147,15 +159,15 @@ const getByBatalonIdAndIdWorkerService = async (batalon_id, worker_id) => {
     }
 }
 
-const excelDataCreateWorkerService = async (data, user_id) => {
+const excelDataCreateWorkerService = async (data) => {
     const client = await pool.connect();
     try {
       await client.query(`BEGIN`);
       const createWorkerQueries = [];
       for (let worker of data) {
         const workerQuery = client.query(
-          `INSERT INTO worker(fio, batalon_id, account_number) VALUES($1, $2, $3) RETURNING *`,
-          [worker.fio, worker.batalon_id, worker.account_number]
+          `INSERT INTO worker(fio, batalon_id, account_number, xisob_raqam) VALUES($1, $2, $3, $4) RETURNING *`,
+          [worker.fio, worker.batalon_id, worker.account_number, worker.xisob_raqam]
         );
         createWorkerQueries.push(workerQuery);
       }
@@ -181,5 +193,6 @@ module.exports = {
     getByAcountNumberWorkerService,
     getByBatalonIdAndIdWorkerService,
     excelDataWorkerService,
-    excelDataCreateWorkerService
+    excelDataCreateWorkerService,
+    getByXisobRaqamWorkerService
 }

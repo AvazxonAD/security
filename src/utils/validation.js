@@ -46,7 +46,8 @@ const strValidation = Joi.object({
 const workerValidation = Joi.object({
   fio: Joi.string().trim().required(),
   batalon_id: Joi.number().required(),
-  account_number: Joi.string().trim().required().pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)
+  account_number: Joi.string().trim().required().pattern(/^\d{16}$/),
+  xisob_raqam: Joi.string().trim().required().pattern(/^\d{20}$/)
 })
 const organizationValidation = Joi.object({
   name: Joi.string().trim().required(),
@@ -126,7 +127,8 @@ const conrtactQueryValidation = Joi.object({
 const workerExcelValidation = Joi.object({
   FIO: Joi.string().trim().required(),
   Batalon: Joi.string().required().trim(),
-  Karta_raqam: Joi.string().trim().required().pattern(/^\d{4}\s\d{4}\s\d{4}\s\d{4}$/)
+  Karta_raqam: Joi.string().trim().required().pattern(/^\d{16}$/),
+  Xisob_raqam: Joi.string().trim().required().pattern(/^\d{20}$/)
 })
 
 const prixodQueryValidation = Joi.object({
