@@ -15,7 +15,7 @@ const templateCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(contractTemplateValidation, req.body)
-        checkTemplateString(data.main_section, [ '${contract_number}', '${doc_date}', '${ijrochi}', '${client.name}', '${ijrochi}' ])
+        checkTemplateString(data.main_section, [ '${contract_number}', '${doc_date}', '${ijrochi}', '${client.name}', '${raxbar}' ])
         checkTemplateString(data.section_1, [ '${start_date}', '${end_date}', '${start_time}', '${end_time}', '${address}' ])
         checkTemplateString(data.section_2, ['${summa}'])
         const result = await createContractTemplateService({ ...data, user_id })
@@ -52,7 +52,7 @@ const templateUpdate = async (req, res) => {
         const id = req.params.id
         const data = validationResponse(contractTemplateValidation, req.body)
         await getContractTemplateByIdService(user_id, id)
-        checkTemplateString(data.main_section, [ '${contract_number}', '${doc_date}', '${ijrochi}', '${client.name}', '${ijrochi}' ])
+        checkTemplateString(data.main_section, [ '${contract_number}', '${doc_date}', '${ijrochi}', '${client.name}', '${ijrochi}', '${raxbar}' ])
         checkTemplateString(data.section_1, [ '${start_date}', '${end_date}', '${start_time}', '${end_time}', '${address}' ])
         checkTemplateString(data.section_2, ['${summa}'])
         const result = await updateContractTemplateService({ ...data, id })
