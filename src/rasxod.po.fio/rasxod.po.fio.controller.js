@@ -40,7 +40,6 @@ const getByIdPrixod = async (req, res) => {
         const account_number_id = req.query.account_number_id;
         await getByIdaccount_numberService(user_id, account_number_id);
         const data = await getByIdPrixodService(user_id, id, account_number_id, true)
-        console.log(data)
         resFunc(res, 200, data)
     } catch (error) {
         errorCatch(error, res)

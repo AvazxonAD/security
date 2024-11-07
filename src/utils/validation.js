@@ -139,16 +139,24 @@ const prixodQueryValidation = Joi.object({
 })
 
 const contractTemplateValidation = Joi.object({
-  shablon_name: Joi.string().max(200).required(),
-  main_section: Joi.string().required(),
-  section_1: Joi.string().required(),
-  section_2: Joi.string().required(),
-  section_3: Joi.string().required(),
-  section_4: Joi.string().required(),
-  section_5: Joi.string().required(),
-  section_6: Joi.string().required(),
-  section_7: Joi.string().required(),
-});
+  shablon_name: Joi.string().trim().max(200).required(),
+  main_section: Joi.string().trim().required(),
+  title: Joi.string().max(255).trim().required(),
+  section_1: Joi.string().trim().required(),
+  section_1_title: Joi.string().max(255).trim().required(),
+  section_2: Joi.string().trim().required(),
+  section_2_title: Joi.string().max(255).trim().required(),
+  section_3: Joi.string().trim().required(),
+  section_3_title: Joi.string().max(255).trim().required(),
+  section_4: Joi.string().trim().required(),
+  section_4_title: Joi.string().max(255).trim().required(),
+  section_5: Joi.string().trim().required(),
+  section_5_title: Joi.string().max(255).trim().required(),
+  section_6: Joi.string().trim().required(),
+  section_6_title: Joi.string().max(255).trim().required(),
+  section_7: Joi.string().trim().required(),
+  section_7_title: Joi.string().max(255).trim().required(),
+})
 
 module.exports = {
   authUpdateValidation,

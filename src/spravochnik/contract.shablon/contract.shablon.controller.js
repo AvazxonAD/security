@@ -50,7 +50,6 @@ const templateUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        console.log(id)
         const data = validationResponse(contractTemplateValidation, req.body)
         await getContractTemplateByIdService(user_id, id)
         checkTemplateString(data.main_section, [ '${contract_number}', '${doc_date}', '${ijrochi}', '${client.name}', '${ijrochi}' ])
