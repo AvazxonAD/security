@@ -234,7 +234,8 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     o.mfo AS organization_mfo,
                     o.account_number AS organization_account_number,
                     o.treasury1 AS organization_treasury1,
-                    o.treasury2 AS organization_treasury2
+                    o.treasury2 AS organization_treasury2,
+                    ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS remaining_balance
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6
@@ -295,8 +296,10 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                         t.summa, 
                         t.discount_money,
                         t.result_summa,
-                        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date
+                        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
+                        b.name AS batalon_name
                     FROM task AS t
+                    JOIN batalon AS b ON b.id = t.batalon_id
                     WHERE  t.user_id = $1 AND t.isdeleted = false AND t.contract_id = c.id 
                     ) AS tasks
                 ) AS tasks 

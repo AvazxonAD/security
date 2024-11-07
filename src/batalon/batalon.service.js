@@ -5,7 +5,6 @@ const ErrorResponse = require('../utils/errorResponse')
 
 const batalonCreateService = async (data) => {
     try {
-        console.log(data)
         const result = await pool.query(`INSERT INTO batalon
             (
                 name, 
