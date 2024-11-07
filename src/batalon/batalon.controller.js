@@ -15,8 +15,8 @@ const batalonCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(batalionValidation, req.body)
-        await getByNameBatalonService(user_id, name)
-        const result = await batalonCreateService(name, birgada, user_id)
+        await getByNameBatalonService(user_id, data.name)
+        const result = await batalonCreateService({user_id, ...data})
         resFunc(res, 200,result)
     } catch (error) {
         errorCatch(error, res)
@@ -48,12 +48,12 @@ const batalonUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id 
-        const { name, birgada } = validationResponse(batalionValidation, req.body)
+        const data = validationResponse(batalionValidation, req.body)
         const oldvalue = await getByIdBatalonService(user_id, id)
-        if(oldvalue.name !== name){
-            await getByNameBatalonService(user_id, name)
+        if(oldvalue.name !== data.name){
+            await getByNameBatalonService(user_id, data.name)
         }
-        const result = await batalonUpdateService(name, birgada, id)
+        const result = await batalonUpdateService({...data, id})
         resFunc(res, 200,result)
     } catch (error) {
         errorCatch(error, res)
