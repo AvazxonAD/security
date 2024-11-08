@@ -1,8 +1,12 @@
 const pool = require('../config/db');
 const ErrorResponse = require('../utils/errorResponse');
 
-const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false) => {
+const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false, batalon = false) => {
     try {
+        let batalon_filter = ``
+        if(batalon){
+            batalon_filter = `AND b.birgada = false`
+        }
         let condition = `WHERE t.id = $1 AND t.user_id = $2`;
         if (!ignore_isdeleted) {
             condition += ` AND t.isdeleted = false`;
@@ -21,7 +25,7 @@ const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false) =>
                 ((t.task_time * t.worker_number) - COALESCE((SELECT SUM(task_time) FROM worker_task WHERE task_id = $1 AND isdeleted = false), 0)::FLOAT) AS remaining_task_time 
             FROM task AS t
             JOIN batalon AS b ON b.id = t.batalon_id 
-            ${condition} 
+            ${condition} ${batalon_filter}
         `, [task_id, user_id]);
 
         if (!task.rows[0]) {

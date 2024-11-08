@@ -24,7 +24,7 @@ const workerCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const { fio, batalon_id, account_number, xisob_raqam } = validationResponse(workerValidation, req.body)
-        await getByIdBatalonService(user_id, batalon_id)
+        await getByIdBatalonService(user_id, batalon_id, false, true)
         await getByAcountNumberWorkerService(account_number, batalon_id)
         await getByXisobRaqamWorkerService(xisob_raqam, batalon_id)
         const result = await workerCreateService(fio, batalon_id, account_number, xisob_raqam)
@@ -70,6 +70,7 @@ const workerUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const { fio, account_number, batalon_id, xisob_raqam } = validationResponse(workerValidation, req.body)
+        await getByIdBatalonService(user_id, batalon_id, false, true)
         const oldData = await getByIdworkerService(user_id, id)
         if (oldData.account_number !== account_number) {
             await getByAcountNumberWorkerService(account_number, batalon_id)

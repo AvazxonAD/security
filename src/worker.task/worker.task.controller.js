@@ -20,7 +20,7 @@ const workerTaskCreate = async (req, res) => {
         const user_id = req.user.id
         const task_id = req.query.task_id
         const { workers } = validationResponse(workerTaskValidation, req.body);
-        const task = await getByIdTaskService(user_id, task_id)
+        const task = await getByIdTaskService(user_id, task_id, false, true)
         let all_task_time = 0
         for (let worker of workers) {
             await getByBatalonIdAndIdWorkerService(task.batalon_id, worker.worker_id)

@@ -80,14 +80,18 @@ const getBatalonService = async (user_id, birgada = false) => {
     }
 }
 
-const getByIdBatalonService = async (user_id, id, birgada = false) => {
+const getByIdBatalonService = async (user_id, id, birgada = false, batalon = false) => {
     try {
         birgada_filter = ``
+        batalon_filter = ``
         if(birgada){
             birgada_filter = `AND birgada = true`
         }
+        if(batalon){
+            batalon_filter = `AND birgada = false`
+        }
         const result = await pool.query(`SELECT id, name, address, str, bank_name, mfo, account_number,treasury1, treasury2, birgada
-            FROM batalon WHERE isdeleted = false AND user_id = $1 AND id = $2 ${birgada_filter}
+            FROM batalon WHERE isdeleted = false AND user_id = $1 AND id = $2 ${birgada_filter} ${batalon_filter}
         `, [user_id, id])
         if(!result.rows[0]){
             throw new ErrorResponse('batalon not found', 404)
