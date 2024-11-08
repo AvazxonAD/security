@@ -1,11 +1,11 @@
-const { paymentRequestValidation, rasxodValidation, rasxodQueryValidation } = require("../utils/validation");
+const { paymentRequestValidation, rasxodFioValidation, rasxodQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const { paymentRequestService, createRasxodDocService, getRasxodService, getByIdRasxodService, deeleteRasxodService, updateRasxodService } = require('./rasxod.fio.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { getByIdBatalonService } = require('../batalon/batalon.service')
-const { getByIdTaskService } = require('./rasxod.fio.service')
+const { getByIdWorkerTaskService } = require('./rasxod.fio.service')
 const { returnStringSumma } = require('../utils/return.summa')
 
 const getPaymentRequest = async (req, res) => {
@@ -25,11 +25,11 @@ const createRasxod = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        const data = validationResponse(rasxodValidation, req.body)
+        const data = validationResponse(rasxodFioValidation, req.body)
         await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdBatalonService(user_id, data.batalon_id, true)
-        for (let task of data.tasks) {
-            await getByIdTaskService(data.batalon_id, task.task_id, user_id)
+        await getByIdBatalonService(user_id, data.batalon_id, false, true)
+        for (let task of data.worker_tasks) {
+            await getByIdWorkerTaskService(data.batalon_id, task.worker_task_id, user_id)
         }
         const result = await createRasxodDocService({ ...data, user_id, account_number_id })
         resFunc(res, 200, result)
@@ -92,13 +92,13 @@ const updateRasxod = async (req, res) => {
         const account_number_id = req.query.account_number_id
         const id = req.params.id
         const oldData = await  getByIdRasxodService(user_id, account_number_id, id)
-        const data = validationResponse(rasxodValidation, req.body)
+        const data = validationResponse(rasxodFioValidation, req.body)
         await getByIdaccount_numberService(user_id, account_number_id)
         await getByIdBatalonService(user_id, data.batalon_id, true)
         for (let task of data.tasks) {
             const test = oldData.tasks.find(item => item.task_id === task.task_id)
             if(!test || oldData.batalon_id !== data.batalon_id){
-                await getByIdTaskService(data.batalon_id, task.task_id, user_id)
+                await getByIdWorkerTaskService(data.batalon_id, task.task_id, user_id)
             }
         }
         const result = await updateRasxodService({ ...data, id })

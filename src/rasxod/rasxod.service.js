@@ -143,14 +143,14 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false
                 ) AS total_count,
                 (
-                    SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
+                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $2  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
                 ) AS summa_from,
                  (
-                    SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
+                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
@@ -184,7 +184,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                 b.mfo AS batalon_mfo,
                 b.account_number AS batalon_account_number,
                 (
-                    SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
+                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     WHERE r.rasxod_doc_id = r_d.id AND r.isdeleted = false

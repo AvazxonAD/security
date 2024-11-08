@@ -14,7 +14,7 @@ CREATE TABLE rasxod_fio_doc (
 CREATE TABLE rasxod_fio (
   id SERIAL PRIMARY KEY,
   worker_task_id INTEGER REFERENCES worker_task(id),
-  rasxod_fio_doc_id INTEGER REFERENCES rasxod_doc(id),
+  rasxod_fio_doc_id INTEGER REFERENCES rasxod_fio_doc(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   isdeleted BOOLEAN DEFAULT FALSE

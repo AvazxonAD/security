@@ -1,18 +1,19 @@
 const ErrorResponse = require('../utils/errorResponse')
 const pool = require('../config/db')
 
-const getByIdWorkerTaskService = async (batalon_id, task_id, user_id) => {
+const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => {
     try {
         const result = await pool.query(`
             SELECT w_t.id 
             FROM worker_task AS w_t
-            JOIN contract AS c ON c.id = w_t.contract_id 
-            WHERE w_t.batalon_id = $1 AND w_t.id = $2 AND w_t.user_id = $3
+            JOIN task AS t ON t.id = w_t.task_id
+            JOIN contract AS c ON c.id = t.contract_id 
+            WHERE t.batalon_id = $1 AND w_t.id = $2 AND t.user_id = $3
                 AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
-                AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = w_t.id)
-        `, [batalon_id, task_id, user_id])
+                AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
+        `, [batalon_id, worker_task_id, user_id])
         if (!result.rows[0]) {
-            throw new ErrorResponse('task not found', 404)
+            throw new ErrorResponse('worker task not found', 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -44,7 +45,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.account_number_id = $1  AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4
                     AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
-                    AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = w_t.id)
+                    AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
             )
             SELECT 
                 ARRAY_AGG(ROW_TO_JSON(data)) AS data,
@@ -56,7 +57,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                     JOIN organization AS o ON o.id = c.organization_id
                     WHERE c.account_number_id = $1 AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4 
                         AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = FALSE AND contract_id = c.id) 
-                        AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = t.id)
+                        AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND task_id = t.id)
                 ) AS itogo
             FROM data 
 
@@ -71,18 +72,18 @@ const createRasxodDocService = async (data) => {
     const client = await pool.connect()
     try {
         await client.query(`BEGIN`)
-        const rasxod_doc = await client.query(`INSERT INTO rasxod_doc(doc_num, doc_date, batalon_id, user_id, opisanie, account_number_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING * 
+        const rasxod_fio_doc = await client.query(`INSERT INTO rasxod_fio_doc(doc_num, doc_date, batalon_id, user_id, opisanie, account_number_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING * 
         `, [data.doc_num, data.doc_date, data.batalon_id, data.user_id, data.opisanie, data.account_number_id])
-        const rasxod = rasxod_doc.rows[0]
+        const rasxod_fio = rasxod_fio_doc.rows[0]
         const queryArray = []
-        for (let task of data.tasks) {
-            queryArray.push(client.query(`INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
-            `, [task.task_id, rasxod.id]))
+        for (let task of data.worker_tasks) {
+            queryArray.push(client.query(`INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING * 
+            `, [task.worker_task_id, rasxod_fio.id]))
         }
         const rasxods = await Promise.all(queryArray)
-        rasxod.tasks = rasxods.map(item => item.rows[0])
+        rasxod_fio.tasks = rasxods.map(item => item.rows[0])
         await client.query(`COMMIT`)
-        return rasxod;
+        return rasxod_fio;
     } catch (error) {
         await client.query(`ROLLBACK`)
         throw new ErrorResponse(error, error.statusCode)
@@ -115,12 +116,12 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     b.account_number AS batalon_account_number,
                     (
                         SELECT COALESCE(SUM(t.summa), 0) AS summa
-                        FROM rasxod AS r
-                        JOIN task AS t ON t.id = r.task_id
-                        WHERE r.rasxod_doc_id = r_d.id AND r.isdeleted = false
+                        FROM rasxod_fio AS r
+                        JOIN task AS t ON t.id = r.worker_task_id
+                        WHERE r.rasxod_fio_doc_id = r_d.id AND r.isdeleted = false
                     ) AS summa,
                     b.name AS batalon_name
-                FROM rasxod_doc AS r_d
+                FROM rasxod_fio_doc AS r_d
                 JOIN batalon AS b ON b.id = r_d.batalon_id 
                 WHERE r_d.account_number_id = $1
                 AND r_d.doc_date BETWEEN $2 AND $3
@@ -131,23 +132,23 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                 ARRAY_AGG(ROW_TO_JSON(data)) AS data,
                 (
                     SELECT COALESCE(COUNT(id), 0)::INTEGER  
-                    FROM rasxod_doc AS r_d 
+                    FROM rasxod_fio_doc AS r_d 
                     WHERE r_d.account_number_id = $1 
                     AND r_d.doc_date BETWEEN $2 AND $3 
                     AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false
                 ) AS total_count,
                 (
-                    SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
-                    FROM rasxod AS r
-                    JOIN task AS t ON t.id = r.task_id
-                    JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
+                    SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa
+                    FROM rasxod_fio AS r
+                    JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
+                    JOIN rasxod_fio_doc AS r_d ON r_d.id = r.rasxod_fio_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $2  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
                 ) AS summa_from,
                  (
-                    SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
-                    FROM rasxod AS r
-                    JOIN task AS t ON t.id = r.task_id
-                    JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
+                    SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa
+                    FROM rasxod_fio AS r
+                    JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
+                    JOIN rasxod_fio_doc AS r_d ON r_d.id = r.rasxod_fio_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $3  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
                 ) AS summa_to
             FROM data
@@ -179,9 +180,9 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                 b.account_number AS batalon_account_number,
                 (
                     SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
-                    FROM rasxod AS r
+                    FROM rasxod_fio AS r
                     JOIN task AS t ON t.id = r.task_id
-                    WHERE r.rasxod_doc_id = r_d.id AND r.isdeleted = false
+                    WHERE r.rasxod_fio_doc_id = r_d.id AND r.isdeleted = false
                 ) AS summa,
                 (
                     SELECT 
@@ -203,19 +204,19 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                             t.result_summa,
                             t.discount_money,
                             t.summa    
-                        FROM rasxod AS r 
-                        JOIN task AS t ON r.task_id = t.id
+                        FROM rasxod_fio AS r 
+                        JOIN task AS t ON r.worker_task_id = t.id
                         JOIN contract AS c ON c.id = t.contract_id
                         JOIN organization AS o ON o.id = c.organization_id
-                        WHERE r.rasxod_doc_id = $3
+                        WHERE r.rasxod_fio_doc_id = $3
                     ) AS task
                 ) AS tasks 
-            FROM rasxod_doc AS r_d
+            FROM rasxod_fio_doc AS r_d
             JOIN batalon AS b ON b.id = r_d.batalon_id
             WHERE r_d.account_number_id = $1 AND r_d.user_id = $2 AND r_d.id = $3  ${ignore_filter}
         `, [account_number_id, user_id, id])
         if (!data.rows[0]) {
-            throw new ErrorResponse('rasxod doc not found', 404)
+            throw new ErrorResponse('rasxod_fio doc not found', 404)
         }
         return data.rows[0]
     } catch (error) {
@@ -225,8 +226,8 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
 
 const deeleteRasxodService = async (id) => {
     try {
-        await pool.query(`UPDATE rasxod SET isdeleted = true WHERE rasxod_doc_id = $1 AND isdeleted = false`, [id])
-        await pool.query(`UPDATE rasxod_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
+        await pool.query(`UPDATE rasxod_fio SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`, [id])
+        await pool.query(`UPDATE rasxod_fio_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
@@ -236,7 +237,7 @@ const updateRasxodService = async (data) => {
     const client = await pool.connect()
     try {
         await client.query(`BEGIN`)
-        const rasxod_doc = await client.query(`UPDATE rasxod_doc SET 
+        const rasxod_fio_doc = await client.query(`UPDATE rasxod_fio_doc SET 
             doc_num = $1, 
             doc_date = $2, 
             batalon_id = $3, 
@@ -244,17 +245,17 @@ const updateRasxodService = async (data) => {
             WHERE id = $5
             RETURNING * 
         `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.id])
-        const rasxod = rasxod_doc.rows[0]
-        await client.query(`DELETE FROM rasxod WHERE rasxod_doc_id = $1`, [data.id])
+        const rasxod_fio = rasxod_fio_doc.rows[0]
+        await client.query(`DELETE FROM rasxod_fio WHERE rasxod_fio_doc_id = $1`, [data.id])
         const queryArray = []
         for (let task of data.tasks) {
-            queryArray.push(client.query(`INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
-            `, [task.task_id, rasxod.id]))
+            queryArray.push(client.query(`INSERT INTO rasxod_fio(task_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING * 
+            `, [task.task_id, rasxod_fio.id]))
         }
-        const rasxods = await Promise.all(queryArray)
-        rasxod.tasks = rasxods.map(item => item.rows[0])
+        const rasxod_fios = await Promise.all(queryArray)
+        rasxod_fio.tasks = rasxod_fios.map(item => item.rows[0])
         await client.query(`COMMIT`)
-        return rasxod;
+        return rasxod_fio;
     } catch (error) {
         await client.query(`ROLLBACK`)
         throw new ErrorResponse(error, error.statusCode)
