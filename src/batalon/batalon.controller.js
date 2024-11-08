@@ -26,7 +26,8 @@ const batalonCreate = async (req, res) => {
 const batalonGet = async (req, res) => {
     try {
         const user_id = req.user.id
-        const result = await getBatalonService(user_id)
+        const birgada = req.query.birgada
+        const result = await getBatalonService(user_id, birgada)
         resFunc(res, 200,result)
     } catch (error) {
         errorCatch(error, res)

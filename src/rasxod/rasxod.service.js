@@ -108,6 +108,10 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
         const result = await pool.query(`
             WITH data AS (
                 SELECT 
+                    r_d.id,
+                    r_d.doc_num,
+                    TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+                    r_d.opisanie,
                     b.id AS batalon_id,
                     b.name AS batalon_name,
                     b.address AS batalon_address,
@@ -115,10 +119,6 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     b.bank_name AS batalon_bank_name,
                     b.mfo AS batalon_mfo,
                     b.account_number AS batalon_account_number,
-                    r_d.id,
-                    r_d.doc_num,
-                    TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
-                    r_d.opisanie,
                     (
                         SELECT COALESCE(SUM(t.summa), 0) AS summa
                         FROM rasxod AS r
@@ -172,6 +172,10 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
         }
         const data = await pool.query(`
             SELECT 
+                r_d.id,
+                r_d.doc_num,
+                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+                r_d.opisanie,
                 b.id AS batalon_id,
                 b.name AS batalon_name,
                 b.address AS batalon_address,
@@ -179,9 +183,6 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                 b.bank_name AS batalon_bank_name,
                 b.mfo AS batalon_mfo,
                 b.account_number AS batalon_account_number,
-                r_d.doc_num,
-                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
-                r_d.opisanie,
                 (
                     SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
                     FROM rasxod AS r

@@ -1,4 +1,3 @@
-const { query } = require('express')
 const pool = require('../config/db')
 const ErrorResponse = require('../utils/errorResponse')
 
@@ -66,10 +65,14 @@ const batalonUpdateService = async (data) => {
     }
 }
 
-const getBatalonService = async (user_id) => {
+const getBatalonService = async (user_id, birgada = false) => {
     try {
+        let birgada_filter = ``
+        if(birgada === 'true' || birgada === 'false'){
+            birgada_filter = `AND birgada = ${birgada}`
+        }
         const result = await pool.query(`SELECT id, name, address, str, bank_name, mfo, account_number,treasury1, treasury2, birgada 
-            FROM batalon WHERE isdeleted = false AND user_id = $1
+            FROM batalon WHERE isdeleted = false AND user_id = $1 ${birgada_filter}
         `, [user_id])
         return result.rows
     } catch (error) {
