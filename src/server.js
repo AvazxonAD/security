@@ -29,6 +29,7 @@ app.use('/worker_task', require('./worker.task/worker.task.routes'))
 app.use('/task', require('./task/task.routes'))
 app.use('/prixod', require('./prixod/prixod.routes'))
 app.use('/template', require('./spravochnik/contract.shablon/contract.shablon.routes'))
+app.use('/rasxod/fio', require('./rasxod.fio/rasxod.fio.routes'))
 app.use('/rasxod', require('./rasxod/rasxod.routes'))
 
 app.use(require('./middleware/errorHandler'))
