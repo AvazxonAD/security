@@ -4,17 +4,19 @@ const router = Router();
 const protect = require("../middleware/auth");
 
 const {
-    prixodCreate, 
-    getPrixod, 
-    getByIdPrixod,
-    updatePrixod,
-    deletePrixod
+    getPaymentRequest,
+    createRasxod,
+    getRasxod,
+    getByIdRasxod,
+    deeleteRasxod,
+    updateRasxod
 } = require('./rasxod.controller')
 
-router.post('/', protect, prixodCreate)
-    .put('/:id', protect, updatePrixod)
-    .get('/:id', protect, getByIdPrixod)
-    .get('/', protect, getPrixod)
-    .delete('/:id', protect, deletePrixod)
+router.get('/request', protect, getPaymentRequest)
+    .get('/:id', protect, getByIdRasxod)
+    .get('/', protect, getRasxod)
+    .post('/', protect, createRasxod)
+    .put('/:id', protect, updateRasxod)
+    .delete('/:id', protect, deeleteRasxod)
 
 module.exports = router;

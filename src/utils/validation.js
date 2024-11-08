@@ -1,6 +1,23 @@
 const Joi = require("joi");
 
+const rasxodValidation = Joi.object({
+  doc_num: Joi.string().required().trim(),
+  doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  batalon_id: Joi.number().required().min(1),
+  opisanie: Joi.string().trim(),
+  tasks: Joi.array().items(
+    Joi.object({
+      task_id: Joi.number().integer().min(1).required()
+    })
+  ).required().min(1)
+})
 
+const paymentRequestValidation = Joi.object({
+  account_number_id: Joi.number().required().min(1),
+  batalon_id: Joi.number().required().min(1),
+  to: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  from: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
+})
 
 const loginValidation = Joi.object({
   login: Joi.string().trim().required(),
@@ -15,12 +32,12 @@ const authUpdateValidation = Joi.object({
 const batalionValidation = Joi.object({
   name: Joi.string().trim().required(),
   birgada: Joi.boolean(),
-  address: Joi.string().trim().required(), 
-  str: Joi.string().trim().required(), 
-  bank_name: Joi.string().trim().required(), 
-  mfo: Joi.string().trim().required(), 
+  address: Joi.string().trim().required(),
+  str: Joi.string().trim().required(),
+  bank_name: Joi.string().trim().required(),
+  mfo: Joi.string().trim().required(),
   account_number: Joi.string().trim().required(),
-  treasury1: Joi.string().trim(), 
+  treasury1: Joi.string().trim(),
   treasury2: Joi.string().trim()
 })
 const bxmValidation = Joi.object({
@@ -123,7 +140,17 @@ const conrtactQueryValidation = Joi.object({
   search: Joi.string().trim(),
   from: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   to: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
-  account_number_id: Joi.number().min(1).required()
+  account_number_id: Joi.number().min(1).required(),
+  organization_id: Joi.number().min(1)
+})
+
+const rasxodQueryValidation = Joi.object({
+  page: Joi.number().min(1).default(1),
+  limit: Joi.number().min(1).default(10),
+  from: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  to: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  account_number_id: Joi.number().min(1).required(),
+  batalon_id: Joi.number().min(1)
 })
 
 const workerExcelValidation = Joi.object({
@@ -184,5 +211,8 @@ module.exports = {
   conrtactQueryValidation,
   workerExcelValidation,
   prixodQueryValidation,
-  contractTemplateValidation
+  contractTemplateValidation,
+  paymentRequestValidation,
+  rasxodValidation,
+  rasxodQueryValidation
 };
