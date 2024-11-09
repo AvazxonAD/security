@@ -52,7 +52,12 @@ const getByContractIdTaskService = async (conrtact_id) => {
                 t.discount_money::FLOAT,
                 t.worker_number,
                 TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
-                ((t.task_time * t.worker_number) - COALESCE((SELECT SUM(task_time) FROM worker_task WHERE contract_id = $1 AND isdeleted = false), 0)::FLOAT) AS remaining_task_time 
+                (   
+                    SELECT (t.task_time * t.worker_number) - SUM(w_t.task_time) 
+                    FROM worker_task AS w_t
+                    JOIN task AS t.id = w_t.task_id
+                    WHERE t.contract_id = $1 AND w_t.isdeleted = false
+                ) AS remaining_task_time 
             FROM task AS t
             JOIN batalon AS b ON b.id = t.batalon_id 
             WHERE  t.contract_id = $1 AND t.isdeleted = false

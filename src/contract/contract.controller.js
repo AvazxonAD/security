@@ -98,7 +98,8 @@ const contractDelete = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        await getByIdcontractService(user_id, id)
+        const account_number_id = req.query.account_number_id
+        await getByIdcontractService(user_id, id, false, account_number_id)
         await deletecontractService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
