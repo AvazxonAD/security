@@ -53,10 +53,11 @@ const getByContractIdTaskService = async (conrtact_id) => {
                 t.worker_number,
                 TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
                 (   
-                    SELECT (t.task_time * t.worker_number) - SUM(w_t.task_time) 
-                    FROM worker_task AS w_t
-                    JOIN task AS t.id = w_t.task_id
-                    WHERE t.contract_id = $1 AND w_t.isdeleted = false
+                    (t.task_time * t.worker_number) - (
+                        SELECT COALESCE(SUM(task_time), 0)
+                        FROM worker_task 
+                        WHERE task_id = t.id AND isdeleted = false
+                        ) 
                 ) AS remaining_task_time 
             FROM task AS t
             JOIN batalon AS b ON b.id = t.batalon_id 

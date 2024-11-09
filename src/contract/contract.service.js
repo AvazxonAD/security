@@ -263,8 +263,10 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
         const params = [user_id, id, account_number_id]
         let organization = ``
         let filter = ``
+        let filter_task = ``
         if (!isdeleted) {
             filter = `AND c.isdeleted = false`
+            filter_task = ` AND t.isdeleted = false`
         }
         if(organization_id){
             organization = ` AND c.organization_id = $${params.length + 1}`
@@ -301,10 +303,17 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                         t.discount_money,
                         t.result_summa,
                         TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
-                        b.name AS batalon_name
+                        b.name AS batalon_name,
+                        (   
+                            (t.task_time * t.worker_number) - (
+                                SELECT COALESCE(SUM(task_time), 0)
+                                FROM worker_task 
+                                WHERE task_id = t.id AND isdeleted = false
+                            ) 
+                        ) AS remaining_task_time
                     FROM task AS t
                     JOIN batalon AS b ON b.id = t.batalon_id
-                    WHERE  t.user_id = $1 AND t.isdeleted = false AND t.contract_id = c.id 
+                    WHERE  t.user_id = $1 ${filter_task} AND t.contract_id = c.id 
                     ) AS tasks
                 ) AS tasks 
             FROM contract  AS c 
