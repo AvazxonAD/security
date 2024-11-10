@@ -1,0 +1,9 @@
+CREATE TABLE deduction (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(400),
+    percent INTEGER NOT NULL,
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+);

@@ -1,5 +1,10 @@
 const Joi = require("joi");
 
+const deductionValidation = Joi.object({
+  name: Joi.string().trim().required(),
+  percent: Joi.number().required().min(1).max(100)
+})
+
 const rasxodValidation = Joi.object({
   doc_num: Joi.string().required().trim(),
   doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
@@ -227,5 +232,6 @@ module.exports = {
   paymentRequestValidation,
   rasxodValidation,
   rasxodQueryValidation,
-  rasxodFioValidation
+  rasxodFioValidation,
+  deductionValidation
 };
