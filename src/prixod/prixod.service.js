@@ -58,6 +58,7 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
                     o.treasury2 AS organization_treasury2,
                     p.summa::FLOAT AS prixod_summa, 
                     p.doc_num AS prixod_doc_num,
+                    p.opisanie,
                     TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date
                 FROM prixod AS p 
                 JOIN contract AS c ON c.id = p.contract_id 
@@ -107,6 +108,7 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
                 o.treasury1 AS organization_treasury1,
                 o.treasury2 AS organization_treasury2,
                 p.summa::FLOAT AS prixod_summa, 
+                p.opisanie,
                 TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date
             FROM prixod AS p 
             JOIN contract AS c ON c.id = p.contract_id 
