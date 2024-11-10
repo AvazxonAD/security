@@ -99,11 +99,16 @@ const createRasxodDocService = async (data) => {
 
 const getRasxodService = async (user_id, account_number_id, from, to, offset, limit, batalon_id) => {
     try {
-        const params = [account_number_id, from, to, user_id, offset, limit]
+        const params = [account_number_id, from, to, user_id]
         let batalon_filter = ``
+        let offset_limit = ``
         if (batalon_id) {
             batalon_filter = ` AND r_d.batalon_id = $${params.length + 1}`
             params.push(batalon_id)
+        }
+        if(offset !== null && limit !== null){
+            offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
+            params.push(offset, limit)
         }
         const result = await pool.query(`
             WITH data AS (
@@ -129,9 +134,9 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                 FROM rasxod_doc AS r_d
                 JOIN batalon AS b ON b.id = r_d.batalon_id 
                 WHERE r_d.account_number_id = $1
-                AND r_d.doc_date BETWEEN $2 AND $3
-                AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false
-                OFFSET $5 LIMIT $6
+                    AND r_d.doc_date BETWEEN $2 AND $3
+                    AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false 
+                ${offset_limit}
             )
             SELECT 
                 ARRAY_AGG(ROW_TO_JSON(data)) AS data,
