@@ -51,11 +51,11 @@ const getByIdPrixod = async (req, res) => {
 
 const getPrixod = async (req, res) => {
     try {
-        const { page, limit, search, from, to, account_number_id } = validationResponse(prixodQueryValidation, req.query)
+        const { page, limit, search, from, to, account_number_id, organization_id } = validationResponse(prixodQueryValidation, req.query)
         const user_id = req.user.id;
         await getByIdaccount_numberService(user_id, account_number_id);
         const offset = (page - 1) * limit
-        const { data, total, from_balance, to_balance } = await getPrixodService(user_id, from, to, offset, limit, account_number_id, search)
+        const { data, total, from_balance, to_balance } = await getPrixodService(user_id, from, to, offset, limit, account_number_id, search, organization_id)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
@@ -109,31 +109,48 @@ const deletePrixod = async (req, res) => {
 
 const exportExcelData = async (req, res) => {
     try {
-        const data = validationResponse(prixodExcelValidation, req.body);
+        const { search, from, to, account_number_id, organization_id } = validationResponse(prixodQueryValidation, req.query)
+        const user_id = req.user.id;
+        await getByIdaccount_numberService(user_id, account_number_id);
+        const { data, total, from_balance, to_balance } = await getPrixodService(user_id, from, to, null, null, account_number_id, search, organization_id)
         const workbook = new ExcelJS.Workbook()
         const file_name = `prixod_${new Date().getTime()}.xlsx`;
         const worksheet = workbook.addWorksheet('prixod_docs')
-        worksheet.columns = [
-            { header: 'doc_num', key: 'doc_num', width: 18 },
-            { header: 'doc_date', key: 'doc_date', width: 18 },
-            { header: 'summa', key: 'summa', width: 18 },
-            { header: 'client', key: 'client', width: 18 },
-            { header: 'inn', key: 'inn', width: 18 },
-            { header: 'prixod_summa', key: 'prixod_summa', width: 18 },
-            { header: 'prixod_date', key: 'prixod_date', width: 18 },
-        ]
-        const headerRow = worksheet.getRow(1)
-        headerRow.height = 25
-        headerRow.eachCell((cell) => {
-            cell.font = { bold: true, color: { argb: 'FFFFFF' }, name: 'Times New Roman' };
+        worksheet.mergeCells(`A1`, 'G1')
+        const titleCell = worksheet.getCell('A1')
+        titleCell.value = `Оммавий тадбирлардан тушган тушумлар`
+        worksheet.mergeCells(`A2`, 'G2')
+        const period = worksheet.getCell('A2')
+        period.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))} гача бўлган давр`
+        const css_array = [ titleCell, period ]
+        css_array.forEach((element, index) => {
+            let horizontal = 'center'
+            let bold = true
+            let size = 14
+            if(index === 1) horizontal = 'left'
+            Object.assign(element, {
+                font: { size, name: 'Times New Roman', bold },
+                alignment: { vertical: 'middle', horizontal, wrapText: true },
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } },
+                border: {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                }
+            });
+        });
+        /*((cell) => {
+            cell.font = { bold: true, color: { argb: '#FFFFFF' }, name: 'Times New Roman' };
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: '4472C4' },
+                fgColor: { argb: 'FFFFFF' },
             };
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
-
+        
         data.data.forEach((prixod, index) => {
             const row = worksheet.addRow({
                 doc_num: prixod.contract_doc_num,
@@ -151,7 +168,15 @@ const exportExcelData = async (req, res) => {
                 cell.alignment = { horizontal, vertical: 'middle', wrapText: true };
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
             });
-        })
+        })*/
+        worksheet.getRow(1).height = 30
+        worksheet.getColumn(1).width = 16
+        worksheet.getColumn(2).width = 16
+        worksheet.getColumn(3).width = 20
+        worksheet.getColumn(4).width = 30
+        worksheet.getColumn(5).width = 20
+        worksheet.getColumn(6).width = 20
+        worksheet.getColumn(7).width = 16
         const filePath = path.join(__dirname, '../../public/exports/' + file_name)
         await workbook.xlsx.writeFile(filePath)
         return res.download(filePath, (err) => {

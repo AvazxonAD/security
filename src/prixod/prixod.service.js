@@ -9,7 +9,7 @@ const prixodCreateService = async (data) => {
             organization_id,
             contract_id,
             opisanie,
-            doc_dum,
+            doc_num,
             doc_date,
             summa,
             account_number_id
@@ -19,7 +19,7 @@ const prixodCreateService = async (data) => {
             data.organization_id,
             data.contract_id,
             data.opisanie,
-            data.doc_dum,
+            data.doc_num,
             data.doc_date,
             data.summa,
             data.account_number_id
@@ -31,9 +31,14 @@ const prixodCreateService = async (data) => {
 }
 
 
-const getPrixodService = async (user_id, from, to, offset, limit, account_number_id, search) => {
+const getPrixodService = async (user_id, from, to, offset, limit, account_number_id, search, organization_id) => {
     try {
-        const params = [user_id, from, to, offset, limit, account_number_id]
+        const params = [user_id, from, to, account_number_id]
+        let offset_limit = ``
+        if(offset !== undefined && limit !== undefined){
+            offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
+            params.push(offset, limit)
+        }
         const prixods = await pool.query(`
             WITH data AS (
                 SELECT 
@@ -52,24 +57,24 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
                     o.treasury1 AS organization_treasury1,
                     o.treasury2 AS organization_treasury2,
                     p.summa::FLOAT AS prixod_summa, 
+                    p.doc_num AS prixod_doc_num,
                     TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date
                 FROM prixod AS p 
                 JOIN contract AS c ON c.id = p.contract_id 
                 JOIN organization AS o ON c.organization_id = o.id 
-                WHERE p.isdeleted = false AND p.user_id = $1 AND p.doc_date BETWEEN $2 AND $3 AND p.account_number_id = $6
-                OFFSET $4 LIMIT $5
+                WHERE p.isdeleted = false AND p.user_id = $1 AND p.doc_date BETWEEN $2 AND $3 AND p.account_number_id = $4 ${offset_limit}
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
                 (SELECT COALESCE(COUNT(id), 0)
                     FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $6)::INTEGER AS total_count,
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $4)::INTEGER AS total_count,
                 (SELECT COALESCE(SUM(summa), 0)
                     FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $2 AND account_number_id = $6)::FLOAT AS from_balance ,
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $2 AND account_number_id = $4)::FLOAT AS from_balance ,
                 (SELECT COALESCE(SUM(summa), 0)
                     FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $3 AND account_number_id = $6)::FLOAT AS to_balance 
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $3 AND account_number_id = $4)::FLOAT AS to_balance 
             FROM data
         `, params)
         const result = prixods.rows[0]
@@ -124,7 +129,7 @@ const updatePrixodService = async (data) => {
                 organization_id = $1,
                 contract_id = $2,
                 opisanie = $3,
-                doc_dum = $4,
+                doc_num = $4,
                 doc_date = $5,
                 summa = $6
             WHERE id = $7 RETURNING * 
@@ -132,7 +137,7 @@ const updatePrixodService = async (data) => {
             data.organization_id,
             data.contract_id,
             data.opisanie,
-            data.doc_dum,
+            data.doc_num,
             data.doc_date,
             data.summa,
             data.id
