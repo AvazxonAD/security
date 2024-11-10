@@ -47,7 +47,11 @@ const getRasxod = async (req, res) => {
     try {
         const user_id = req.user.id
         const { from, to, account_number_id, page, limit, batalon_id } = validationResponse(rasxodQueryValidation, req.query)
-        const offset = (page - 1) * limit
+        await getByIdaccount_numberService(user_id, account_number_id)
+        if(batalon_id){
+            await getByIdBatalonService(user_id, batalon_id, false)
+        }
+        const offset = (page - 1) * limit;
         const { total, data, summa_from, summa_to } = await getRasxodService(user_id, account_number_id, from, to, offset, limit, batalon_id)
         const pageCount = Math.ceil(total / limit);
         const meta = {

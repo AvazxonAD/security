@@ -69,7 +69,44 @@ const getByContractIdTaskService = async (conrtact_id) => {
     }
 }
 
+const getTaskService = async (user_id, batalon_id, birgada) => {
+    try {
+        const params = [user_id]
+        let batalon_filter = ``
+        let birgada_filter = ``
+        if(batalon_id){
+            batalon_filter = `AND b.id = $${params.length + 1}`
+            params.push(batalon_id)
+        }
+        if(birgada === 'false' || birgada === 'true'){
+            birgada_filter = `AND b.birgada = ${birgada}`
+        }
+        const data = await pool.query(`
+            SELECT 
+                t.id, 
+                t.batalon_id, 
+                b.name AS batalon_name,
+                b.birgada,
+                t.task_time, 
+                t.summa::FLOAT, 
+                t.result_summa::FLOAT,
+                t.discount_money::FLOAT,
+                t.worker_number, 
+                TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
+                ((t.task_time * t.worker_number) - COALESCE((SELECT SUM(task_time) FROM worker_task WHERE task_id = t.id AND isdeleted = false), 0)::FLOAT) AS remaining_task_time 
+            FROM task AS t
+            JOIN batalon AS b ON b.id = t.batalon_id 
+            WHERE t.user_id = $1 ${batalon_filter} ${birgada_filter}  AND t.isdeleted = false
+            ORDER BY id DESC
+        `, params);
+        return data.rows
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
 module.exports = {
     getByIdTaskService,
-    getByContractIdTaskService
+    getByContractIdTaskService,
+    getTaskService
 }

@@ -1,7 +1,19 @@
 const { resFunc } = require("../utils/resFunc");
 const { errorCatch } = require('../utils/errorCatch');
-const { getByIdTaskService, getByContractIdTaskService } = require('../task/task.service');
+const { getByIdTaskService, getByContractIdTaskService, getTaskService } = require('../task/task.service');
 const { getByIdcontractService } = require('../contract/contract.service')
+
+const getTask = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const batalon_id = req.query.batalon_id
+        const birgada = req.query.birgada
+        const data = await getTaskService(user_id, batalon_id, birgada)
+        resFunc(res, 200, data)
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
 
 const getByIdTask = async (req, res) => {
     try {
@@ -29,5 +41,6 @@ const getByConrtactIdTask = async (req, res) => {
 
 module.exports = {
     getByIdTask,
-    getByConrtactIdTask
+    getByConrtactIdTask,
+    getTask
 }
