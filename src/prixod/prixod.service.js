@@ -35,7 +35,7 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
     try {
         const params = [user_id, from, to, account_number_id]
         let offset_limit = ``
-        if(offset !== undefined && limit !== undefined){
+        if(offset !== null && limit !== null){
             offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
             params.push(offset, limit)
         }
@@ -60,26 +60,29 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
                     p.doc_num AS prixod_doc_num,
                     p.opisanie,
                     TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date
-                FROM prixod AS p 
+                FROM prixod AS p
                 JOIN contract AS c ON c.id = p.contract_id 
                 JOIN organization AS o ON c.organization_id = o.id 
                 WHERE p.isdeleted = false AND p.user_id = $1 AND p.doc_date BETWEEN $2 AND $3 AND p.account_number_id = $4 ${offset_limit}
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                (SELECT COALESCE(COUNT(id), 0)
+                (SELECT COALESCE(COUNT(id)::INTEGER, 0)
                     FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $4)::INTEGER AS total_count,
-                (SELECT COALESCE(SUM(summa), 0)
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $4) AS total_count,
+                (SELECT COALESCE(SUM(summa)::FLOAT, 0)
                     FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $2 AND account_number_id = $4)::FLOAT AS from_balance ,
-                (SELECT COALESCE(SUM(summa), 0)
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $4) AS summa,
+                (SELECT COALESCE(SUM(summa)::FLOAT, 0)
                     FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $3 AND account_number_id = $4)::FLOAT AS to_balance 
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $2 AND account_number_id = $4) AS from_balance ,
+                (SELECT COALESCE(SUM(summa)::FLOAT, 0)
+                    FROM prixod 
+                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $3 AND account_number_id = $4) AS to_balance 
             FROM data
         `, params)
         const result = prixods.rows[0]
-        return { data: result?.data || [], total: result.total_count, from_balance: result.from_balance, to_balance: result.to_balance }
+        return { data: result?.data || [], total: result.total_count, from_balance: result.from_balance, to_balance: result.to_balance, summa: result.summa }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }

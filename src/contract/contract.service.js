@@ -211,9 +211,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
         if (search) {
             serach_filter = `AND (
                     c.doc_num ILIKE  '%' || $${params.length + 1} || '%' 
-                    OR o.str ILIKE  '%' || $${params.length + 1} || '%'
                     OR o.name ILIKE  '%' || $${params.length + 1} || '%'
-                    OR o.account_number ILIKE  '%' || $${params.length + 1} || '%'
                 )
             `
             params.push(search)
