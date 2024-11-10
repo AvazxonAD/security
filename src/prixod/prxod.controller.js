@@ -117,9 +117,10 @@ const exportExcelData = async (req, res) => {
         const workbook = new ExcelJS.Workbook()
         const file_name = `prixod_${new Date().getTime()}.xlsx`;
         const worksheet = workbook.addWorksheet(`prixod_docs_${total}`);
-        worksheet.pageSetup.margins.left = 0
-        worksheet.pageSetup.margins.header = 0
-        worksheet.pageSetup.margins.footer = 0
+        worksheet.pageSetup.margins.left = 0.5
+        worksheet.pageSetup.margins.header = 0.5
+        worksheet.pageSetup.margins.footer = 0.5
+        worksheet.pageSetup.margins.right = 0.5
         worksheet.mergeCells(`A1`, 'F1')
         worksheet.mergeCells(`A2`, 'F2')
         worksheet.mergeCells(`A3`, 'F3')
