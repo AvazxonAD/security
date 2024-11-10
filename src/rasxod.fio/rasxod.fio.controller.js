@@ -7,6 +7,7 @@ const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/a
 const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdWorkerTaskService } = require('./rasxod.fio.service')
 const { returnStringSumma } = require('../utils/return.summa')
+const { getByIddeductionService } = require('../spravochnik/deduction/deduction.service')
 
 const getPaymentRequest = async (req, res) => {
     try {
@@ -28,6 +29,10 @@ const createRasxod = async (req, res) => {
         const data = validationResponse(rasxodFioValidation, req.body)
         await getByIdaccount_numberService(user_id, account_number_id)
         await getByIdBatalonService(user_id, data.batalon_id, false, true)
+        data.deductions = await Promise.all(data.deductions.map(async item => {
+            const deduction = await getByIddeductionService(user_id, item.deduction_id)
+            return deduction;
+        }))
         for (let task of data.worker_tasks) {
             await getByIdWorkerTaskService(data.batalon_id, task.worker_task_id, user_id)
         }
@@ -62,7 +67,7 @@ const getRasxod = async (req, res) => {
 
 const getByIdRasxod = async (req, res) => {
     try {
-        const user_id = req.user.id 
+        const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         await getByIdaccount_numberService(user_id, account_number_id)
         const id = req.params.id
@@ -75,9 +80,9 @@ const getByIdRasxod = async (req, res) => {
 
 const deeleteRasxod = async (req, res) => {
     try {
-        const user_id = req.user.id 
-        const account_number_id = req.query.account_number_id 
-        const id = req.params.id 
+        const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        const id = req.params.id
         await getByIdRasxodService(user_id, account_number_id, id)
         await deeleteRasxodService(id)
         resFunc(res, 200, 'delete success true')
@@ -91,16 +96,20 @@ const updateRasxod = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         const id = req.params.id
-        const oldData = await  getByIdRasxodService(user_id, account_number_id, id)
+        const oldData = await getByIdRasxodService(user_id, account_number_id, id)
         const data = validationResponse(rasxodFioValidation, req.body)
         await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdBatalonService(user_id, data.batalon_id, true)
-        for (let task of data.tasks) {
-            const test = oldData.tasks.find(item => item.task_id === task.task_id)
-            if(!test || oldData.batalon_id !== data.batalon_id){
+        await getByIdBatalonService(user_id, data.batalon_id, false, true)
+        for (let task of data.worker_tasks) {
+            const test = oldData.worker_tasks.find(item => item.task_id === task.task_id)
+            if (!test || oldData.batalon_id !== data.batalon_id) {
                 await getByIdWorkerTaskService(data.batalon_id, task.task_id, user_id)
             }
         }
+        data.deductions = await Promise.all(data.deductions.map(async item => {
+            const deduction = await getByIddeductionService(user_id, item.deduction_id)
+            return deduction;
+        }))
         const result = await updateRasxodService({ ...data, id })
         resFunc(res, 200, result)
     } catch (error) {

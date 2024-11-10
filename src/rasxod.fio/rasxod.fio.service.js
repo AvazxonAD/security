@@ -8,7 +8,7 @@ const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => 
             FROM worker_task AS w_t
             JOIN task AS t ON t.id = w_t.task_id
             JOIN contract AS c ON c.id = t.contract_id 
-            WHERE t.batalon_id = $1 AND w_t.id = $2 AND t.user_id = $3
+            WHERE t.batalon_id = $1 AND w_t.id = $2 AND t.user_id = $3 AND w_t.isdeleted = false AND t.isdeleted = false
                 AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                 AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
         `, [batalon_id, worker_task_id, user_id])
@@ -27,8 +27,8 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
             WITH data AS (
                 SELECT 
                     w_t.id AS worker_task_id,
-                    c.doc_num,
-                    c.doc_date,
+                    c.doc_num AS contract_doc_num,
+                    c.doc_date AS contract_doc_date,
                     o.name AS organization_name,
                     o.address AS organization_address,
                     o.str AS organization_str,
@@ -76,12 +76,29 @@ const createRasxodDocService = async (data) => {
         `, [data.doc_num, data.doc_date, data.batalon_id, data.user_id, data.opisanie, data.account_number_id])
         const rasxod_fio = rasxod_fio_doc.rows[0]
         const queryArray = []
-        for (let task of data.worker_tasks) {
-            queryArray.push(client.query(`INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING * 
-            `, [task.worker_task_id, rasxod_fio.id]))
+        const deductionQueryArray = []
+        for (let worker_task of data.worker_tasks) {
+            let worker_task_summa = await client.query(`SELECT summa FROM worker_task WHERE id = $1`, [worker_task.worker_task_id]);
+            worker_task_summa = worker_task_summa.rows[0].summa;
+            let summa = worker_task_summa;
+            for (let element of data.deductions) {
+                let percent = element.percent / 100; 
+                summa = summa - (summa * percent);  
+            }
+            summa = Math.round(summa * 100) / 100;
+            queryArray.push(client.query(`
+                INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id, summa)
+                VALUES($1, $2, $3) RETURNING *`, 
+                [worker_task.worker_task_id, rasxod_fio.id, summa]
+            ));
+        }
+        for(let deduction of data.deductions){
+            deductionQueryArray.push(client.query(`INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`, [deduction.id, rasxod_fio.id]))
         }
         const rasxods = await Promise.all(queryArray)
+        const deductions = await Promise.all(deductionQueryArray)
         rasxod_fio.tasks = rasxods.map(item => item.rows[0])
+        rasxod_fio.deductions = deductions.map(item => item.rows[0])
         await client.query(`COMMIT`)
         return rasxod_fio;
     } catch (error) {
@@ -115,9 +132,8 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     b.mfo AS batalon_mfo,
                     b.account_number AS batalon_account_number,
                     (
-                        SELECT COALESCE(SUM(t.summa), 0) AS summa
+                        SELECT COALESCE(SUM(r.summa), 0) AS summa
                         FROM rasxod_fio AS r
-                        JOIN task AS t ON t.id = r.worker_task_id
                         WHERE r.rasxod_fio_doc_id = r_d.id AND r.isdeleted = false
                     ) AS summa,
                     b.name AS batalon_name
@@ -138,16 +154,14 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false
                 ) AS total_count,
                 (
-                    SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa
+                    SELECT COALESCE(SUM(r.summa), 0)::FLOAT AS summa
                     FROM rasxod_fio AS r
-                    JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
                     JOIN rasxod_fio_doc AS r_d ON r_d.id = r.rasxod_fio_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $2  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
                 ) AS summa_from,
                  (
-                    SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa
+                    SELECT COALESCE(SUM(r.summa), 0)::FLOAT AS summa
                     FROM rasxod_fio AS r
-                    JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
                     JOIN rasxod_fio_doc AS r_d ON r_d.id = r.rasxod_fio_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $3  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
                 ) AS summa_to
@@ -169,7 +183,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
             SELECT 
                 r_d.id,
                 r_d.doc_num,
-                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
                 r_d.opisanie,
                 b.id AS batalon_id,
                 b.name AS batalon_name,
@@ -179,38 +193,41 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                 b.mfo AS batalon_mfo,
                 b.account_number AS batalon_account_number,
                 (
-                    SELECT COALESCE(SUM(t.summa), 0)::FLOAT AS summa
+                    SELECT COALESCE(SUM(r.summa), 0)::FLOAT AS summa
                     FROM rasxod_fio AS r
-                    JOIN task AS t ON t.id = r.task_id
-                    WHERE r.rasxod_fio_doc_id = r_d.id AND r.isdeleted = false
+                    WHERE r.rasxod_fio_doc_id = r_d.id 
                 ) AS summa,
+                (   SELECT 
+                        ARRAY_AGG(JSON_BUILD_OBJECT('deduction_id', d.id, 'percent', d.percent) ORDER BY r_d_d.id)
+                    FROM deduction AS d
+                    JOIN rasxod_fio_deduction AS r_d_d ON r_d_d.deduction_id = d.id
+                    WHERE r_d_d.rasxod_fio_doc_id = r_d.id
+                ) AS deductions,
                 (
                     SELECT 
                         ARRAY_AGG(ROW_TO_JSON(task))
                     FROM (
                         SELECT 
-                            t.id AS task_id,
-                            c.doc_num,
-                            c.doc_date,
+                            w_t.id AS worker_task_id,
+                            c.doc_num AS contract_doc_num,
+                            c.doc_date AS contract_doc_date,
                             o.name AS organization_name,
                             o.address AS organization_address,
                             o.str AS organization_str,
                             o.bank_name AS organization_bank_name,
                             o.mfo AS organization_mfo,
                             o.account_number AS organization_account_number,
-                            t.task_time,
-                            t.worker_number,
-                            t.result_summa::FLOAT,
-                            t.result_summa,
-                            t.discount_money,
-                            t.summa    
+                            w_t.task_time,
+                            w_t.summa,
+                            r.summa::FLOAT  AS result_summa  
                         FROM rasxod_fio AS r 
-                        JOIN task AS t ON r.worker_task_id = t.id
+                        JOIN worker_task AS w_t ON r.worker_task_id = w_t.id
+                        JOIN task AS t ON t.id = w_t.task_id 
                         JOIN contract AS c ON c.id = t.contract_id
                         JOIN organization AS o ON o.id = c.organization_id
                         WHERE r.rasxod_fio_doc_id = $3
                     ) AS task
-                ) AS tasks 
+                ) AS worker_tasks 
             FROM rasxod_fio_doc AS r_d
             JOIN batalon AS b ON b.id = r_d.batalon_id
             WHERE r_d.account_number_id = $1 AND r_d.user_id = $2 AND r_d.id = $3  ${ignore_filter}
@@ -227,6 +244,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
 const deeleteRasxodService = async (id) => {
     try {
         await pool.query(`UPDATE rasxod_fio SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`, [id])
+        await pool.query(`UPDATE rasxod_fio_deduction SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`, [id])
         await pool.query(`UPDATE rasxod_fio_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
@@ -247,13 +265,31 @@ const updateRasxodService = async (data) => {
         `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.id])
         const rasxod_fio = rasxod_fio_doc.rows[0]
         await client.query(`DELETE FROM rasxod_fio WHERE rasxod_fio_doc_id = $1`, [data.id])
+        await client.query(`DELETE FROM rasxod_fio_deduction WHERE rasxod_fio_doc_id = $1`, [data.id])
         const queryArray = []
-        for (let task of data.tasks) {
-            queryArray.push(client.query(`INSERT INTO rasxod_fio(task_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING * 
-            `, [task.task_id, rasxod_fio.id]))
+        const deductionQueryArray = []
+        for (let worker_task of data.worker_tasks) {
+            let worker_task_summa = await client.query(`SELECT summa FROM worker_task WHERE id = $1`, [worker_task.worker_task_id]);
+            worker_task_summa = worker_task_summa.rows[0].summa;
+            let summa = worker_task_summa;
+            for (let element of data.deductions) {
+                let percent = element.percent / 100; 
+                summa = summa - (summa * percent);  
+            }
+            summa = Math.round(summa * 100) / 100;
+            queryArray.push(client.query(`
+                INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id, summa)
+                VALUES($1, $2, $3) RETURNING *`, 
+                [worker_task.worker_task_id, rasxod_fio.id, summa]
+            ));
         }
-        const rasxod_fios = await Promise.all(queryArray)
-        rasxod_fio.tasks = rasxod_fios.map(item => item.rows[0])
+        for(let deduction of data.deductions){
+            deductionQueryArray.push(client.query(`INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`, [deduction.id, rasxod_fio.id]))
+        }
+        const rasxods = await Promise.all(queryArray)
+        const deductions = await Promise.all(deductionQueryArray)
+        rasxod_fio.tasks = rasxods.map(item => item.rows[0])
+        rasxod_fio.deductions = deductions.map(item => item.rows[0])
         await client.query(`COMMIT`)
         return rasxod_fio;
     } catch (error) {

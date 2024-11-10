@@ -26,7 +26,12 @@ const rasxodFioValidation = Joi.object({
     Joi.object({
       worker_task_id: Joi.number().integer().min(1).required()
     })
-  ).required().min(1)
+  ).required().min(1),
+  deductions: Joi.array().items(
+    Joi.object({
+      deduction_id: Joi.number().integer().min(1).required()
+    })
+  )
 })
 
 const paymentRequestValidation = Joi.object({
