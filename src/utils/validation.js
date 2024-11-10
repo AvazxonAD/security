@@ -132,6 +132,19 @@ const contractValidation = Joi.object({
   ).required().min(1)
 });
 
+const prixodExcelValidation = Joi.object({
+  data: Joi.array().items(
+    Joi.object({
+      contract_doc_num: Joi.string().required().trim(),
+      contract_doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+      contract_summa: Joi.number().required(),
+      organization_name: Joi.string().required().trim(),
+      organization_str: Joi.string().required().trim(),
+      prixod_summa: Joi.number().required(),
+      prixod_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
+    })
+  ).min(1).required() 
+}).options({ stripUnknown: true });
 
 const prixodValidation = Joi.object({
   organization_id: Joi.number().integer().required().min(1),
@@ -238,5 +251,6 @@ module.exports = {
   rasxodValidation,
   rasxodQueryValidation,
   rasxodFioValidation,
-  deductionValidation
+  deductionValidation,
+  prixodExcelValidation
 };

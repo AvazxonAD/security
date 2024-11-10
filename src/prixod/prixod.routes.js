@@ -8,7 +8,8 @@ const {
     getPrixod, 
     getByIdPrixod,
     updatePrixod,
-    deletePrixod
+    deletePrixod,
+    exportExcelData
 } = require('./prxod.controller')
 
 router.post('/', protect, prixodCreate)
@@ -16,5 +17,6 @@ router.post('/', protect, prixodCreate)
     .get('/:id', protect, getByIdPrixod)
     .get('/', protect, getPrixod)
     .delete('/:id', protect, deletePrixod)
+    .post('/export', protect, exportExcelData)
 
 module.exports = router;

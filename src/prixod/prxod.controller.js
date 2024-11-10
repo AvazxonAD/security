@@ -1,19 +1,22 @@
-const { prixodValidation, prixodQueryValidation } = require("../utils/validation");
+const { prixodValidation, prixodQueryValidation, prixodExcelValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const ErrorResponse = require("../utils/errorResponse");
-const { getByIdcontractService  } = require('../contract/contract.service')
-const { 
+const { getByIdcontractService } = require('../contract/contract.service')
+const { getByIdorganizationService } = require('../organization/organization.service')
+const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
+const ExcelJS = require('exceljs')
+const path = require('path')
+const { returnStringSumma } = require('../utils/return.summa')
+const { returnStringDate } = require('../utils/date.functions')
+const {
     prixodCreateService,
     getPrixodService,
     getByIdPrixodService,
     updatePrixodService,
     deletePrixodService
- } = require('./prixod.service')
-const { returnStringSumma } = require('../utils/return.summa')
-const { getByIdorganizationService } = require('../organization/organization.service')
-const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
+} = require('./prixod.service')
 
 const prixodCreate = async (req, res) => {
     try {
@@ -26,7 +29,7 @@ const prixodCreate = async (req, res) => {
         if (contract.remaining_balance < data.summa) {
             throw new ErrorResponse('You are overpaying for this contract', 400);
         }
-        const prixod = await prixodCreateService({...data, account_number_id, user_id})
+        const prixod = await prixodCreateService({ ...data, account_number_id, user_id })
         resFunc(res, 201, prixod);
     } catch (error) {
         errorCatch(error, res);
@@ -83,7 +86,7 @@ const updatePrixod = async (req, res) => {
         if (contract.remaining_balance + oldData.prixod_summa < data.summa) {
             throw new ErrorResponse('You are overpaying for this contract', 400);
         }
-        const result =  await updatePrixodService({...data, id})
+        const result = await updatePrixodService({ ...data, id })
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -104,10 +107,68 @@ const deletePrixod = async (req, res) => {
     }
 }
 
+const exportExcelData = async (req, res) => {
+    try {
+        const data = validationResponse(prixodExcelValidation, req.body);
+        const workbook = new ExcelJS.Workbook()
+        const file_name = `prixod_${new Date().getTime()}.xlsx`;
+        const worksheet = workbook.addWorksheet('prixod_docs')
+        worksheet.columns = [
+            { header: 'doc_num', key: 'doc_num', width: 18 },
+            { header: 'doc_date', key: 'doc_date', width: 18 },
+            { header: 'summa', key: 'summa', width: 18 },
+            { header: 'client', key: 'client', width: 18 },
+            { header: 'inn', key: 'inn', width: 18 },
+            { header: 'prixod_summa', key: 'prixod_summa', width: 18 },
+            { header: 'prixod_date', key: 'prixod_date', width: 18 },
+        ]
+        const headerRow = worksheet.getRow(1)
+        headerRow.height = 25
+        headerRow.eachCell((cell) => {
+            cell.font = { bold: true, color: { argb: 'FFFFFF' }, name: 'Times New Roman' };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: '4472C4' },
+            };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        });
+
+        data.data.forEach((prixod, index) => {
+            const row = worksheet.addRow({
+                doc_num: prixod.contract_doc_num,
+                doc_date: returnStringDate( new Date(prixod.contract_doc_date)),
+                summa: returnStringSumma(prixod.contract_summa),
+                client: prixod.organization_name,
+                inn: prixod.organization_str,
+                prixod_summa: returnStringSumma(prixod.prixod_summa),
+                prixod_date: returnStringDate( new Date(prixod.prixod_date))
+            })
+            row.eachCell((cell, collNumber) => {
+                let horizontal = 'left'
+                if (collNumber === 3 || collNumber === 6) horizontal = 'right'
+                cell.font = { name: 'Times New Roman', size: 11, color: { argb: '000000' } };
+                cell.alignment = { horizontal, vertical: 'middle', wrapText: true };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+        })
+        const filePath = path.join(__dirname, '../../public/exports/' + file_name)
+        await workbook.xlsx.writeFile(filePath)
+        return res.download(filePath, (err) => {
+            if (err) {
+                throw new ErrorResponse(err, err.statusCode)
+            }
+        })
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
 module.exports = {
     prixodCreate,
     getPrixod,
     getByIdPrixod,
     updatePrixod,
-    deletePrixod
+    deletePrixod,
+    exportExcelData
 }
