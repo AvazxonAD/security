@@ -125,8 +125,8 @@ const exportExcelData = async (req, res) => {
         worksheet.mergeCells(`A2`, 'F2')
         worksheet.mergeCells(`A3`, 'F3')
         const titleCell = worksheet.getCell('A1')
-        const periodCell = worksheet.getCell('A2')
-        const summa_fromCell = worksheet.getCell('A3')
+        const summa_fromCell = worksheet.getCell('A2')
+        const prixodCell = worksheet.getCell('A3')
         const doc_numCell = worksheet.getCell('A4')
         const doc_dateCell = worksheet.getCell('B4')
         const clientCell = worksheet.getCell('C4')
@@ -134,7 +134,7 @@ const exportExcelData = async (req, res) => {
         const prixod_sumCell = worksheet.getCell('E4')
         const prixod_dateCell = worksheet.getCell('F4')
         titleCell.value = `Оммавий тадбирлардан тушган тушумлар`
-        periodCell.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))} гача бўлган тушумлар`
+        prixodCell.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))} гача бўлган тушумлар`
         summa_fromCell.value = `${returnStringDate(new Date(from))} гача бўлган тушумлар жами : ${returnStringSumma(from_balance)}`
         doc_numCell.value = 'Шартнома рақами'
         doc_dateCell.value = `Шартнома санаси`
@@ -186,7 +186,7 @@ const exportExcelData = async (req, res) => {
         itogo_stringCell.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))}-гача бўлган  итого :`
         itogoCell.value = summa
         summa_toCell.value = `${returnStringDate(new Date(to))} гача бўлган тушумлар жами : ${returnStringSumma(to_balance)}`
-        const css_array = [titleCell, periodCell, summa_fromCell, doc_dateCell, doc_numCell, clientCell, innCell, prixod_dateCell, prixod_sumCell, itogo_stringCell, itogoCell, summa_toCell]
+        const css_array = [titleCell, summa_fromCell, prixodCell, doc_dateCell, doc_numCell, clientCell, innCell, prixod_dateCell, prixod_sumCell, itogo_stringCell, itogoCell, summa_toCell]
         css_array.forEach((element, index) => {
             let horizontal = 'center'
             let bold = true

@@ -135,8 +135,8 @@ const exportExcelData = async (req, res) => {
         worksheet.mergeCells(`A2`, 'F2')
         worksheet.mergeCells(`A3`, 'F3')
         const titleCell = worksheet.getCell('A1')
-        const periodCell = worksheet.getCell('A2')
-        const summa_fromCell = worksheet.getCell('A3')
+        const summa_fromCell = worksheet.getCell('A2')
+        const periodCell = worksheet.getCell('A3')
         const doc_numCell = worksheet.getCell('A4')
         const doc_dateCell = worksheet.getCell('B4')
         const clientCell = worksheet.getCell('C4')
@@ -196,7 +196,7 @@ const exportExcelData = async (req, res) => {
         itogo_stringCell.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))}-гача бўлган  итого :`
         itogoCell.value = summa_to
         summa_toCell.value = `${returnStringDate(new Date(to))} гача бўлган чиқимлар жами : ${returnStringSumma(summa_to)}`
-        const css_array = [titleCell, periodCell, summa_fromCell, doc_dateCell, doc_numCell, clientCell, innCell, commentCell, rasxod_sumCell, itogo_stringCell, itogoCell, summa_toCell]
+        const css_array = [titleCell, summa_fromCell, periodCell, doc_dateCell, doc_numCell, clientCell, innCell, commentCell, rasxod_sumCell, itogo_stringCell, itogoCell, summa_toCell]
         css_array.forEach((element, index) => {
             let horizontal = 'center'
             let bold = true

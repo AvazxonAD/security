@@ -10,7 +10,7 @@ const tashkentTime = () => {
     let month = (date.getMonth() + 1).toString().padStart(2, "0"); // "01"
     const year = date.getFullYear().toString(); // "2024"
     month = getMonth(month);
-    return (topshiriqSana = `${year} ${day}-${month}`);
+    return (topshiriqSana = `${year}-йил ${day}-${month}`);
   };
   
   const returnSleshDate = (date) => {

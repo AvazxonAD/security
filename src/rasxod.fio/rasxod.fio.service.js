@@ -72,8 +72,10 @@ const createRasxodDocService = async (data) => {
     const client = await pool.connect()
     try {
         await client.query(`BEGIN`)
-        const rasxod_fio_doc = await client.query(`INSERT INTO rasxod_fio_doc(doc_num, doc_date, batalon_id, user_id, opisanie, account_number_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING * 
-        `, [data.doc_num, data.doc_date, data.batalon_id, data.user_id, data.opisanie, data.account_number_id])
+        console.log(data)
+        const rasxod_fio_doc = await client.query(`INSERT INTO rasxod_fio_doc(doc_num, doc_date, batalon_id, user_id, opisanie, account_number_id, "from", "to") 
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING * 
+        `, [data.doc_num, data.doc_date, data.batalon_id, data.user_id, data.opisanie, data.account_number_id, data.from, data.to])
         const rasxod_fio = rasxod_fio_doc.rows[0]
         const queryArray = []
         const deductionQueryArray = []
@@ -82,17 +84,17 @@ const createRasxodDocService = async (data) => {
             worker_task_summa = worker_task_summa.rows[0].summa;
             let summa = worker_task_summa;
             for (let element of data.deductions) {
-                let percent = element.percent / 100; 
-                summa = summa - (summa * percent);  
+                let percent = element.percent / 100;
+                summa = summa - (summa * percent);
             }
             summa = Math.round(summa * 100) / 100;
             queryArray.push(client.query(`
                 INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id, summa)
-                VALUES($1, $2, $3) RETURNING *`, 
+                VALUES($1, $2, $3) RETURNING *`,
                 [worker_task.worker_task_id, rasxod_fio.id, summa]
             ));
         }
-        for(let deduction of data.deductions){
+        for (let deduction of data.deductions) {
             deductionQueryArray.push(client.query(`INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`, [deduction.id, rasxod_fio.id]))
         }
         const rasxods = await Promise.all(queryArray)
@@ -192,13 +194,15 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                 b.bank_name AS batalon_bank_name,
                 b.mfo AS batalon_mfo,
                 b.account_number AS batalon_account_number,
+                TO_CHAR(r_d.from, 'YYYY-MM-DD') AS from,
+                TO_CHAR(r_d.to, 'YYYY-MM-DD') AS to,
                 (
                     SELECT COALESCE(SUM(r.summa), 0)::FLOAT AS summa
                     FROM rasxod_fio AS r
                     WHERE r.rasxod_fio_doc_id = r_d.id 
                 ) AS summa,
                 (   SELECT 
-                        ARRAY_AGG(JSON_BUILD_OBJECT('deduction_id', d.id, 'percent', d.percent) ORDER BY r_d_d.id)
+                        ARRAY_AGG(JSON_BUILD_OBJECT('deduction_id', d.id, 'deduction_name', d.name, 'percent', d.percent) ORDER BY r_d_d.id)
                     FROM deduction AS d
                     JOIN rasxod_fio_deduction AS r_d_d ON r_d_d.deduction_id = d.id
                     WHERE r_d_d.rasxod_fio_doc_id = r_d.id
@@ -259,10 +263,12 @@ const updateRasxodService = async (data) => {
             doc_num = $1, 
             doc_date = $2, 
             batalon_id = $3, 
-            opisanie = $4
-            WHERE id = $5
+            opisanie = $4,
+            "from" = $5,
+            "to" = $6
+            WHERE id = $7
             RETURNING * 
-        `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.id])
+        `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.from, data.to, data.id])
         const rasxod_fio = rasxod_fio_doc.rows[0]
         await client.query(`DELETE FROM rasxod_fio WHERE rasxod_fio_doc_id = $1`, [data.id])
         await client.query(`DELETE FROM rasxod_fio_deduction WHERE rasxod_fio_doc_id = $1`, [data.id])
@@ -273,17 +279,17 @@ const updateRasxodService = async (data) => {
             worker_task_summa = worker_task_summa.rows[0].summa;
             let summa = worker_task_summa;
             for (let element of data.deductions) {
-                let percent = element.percent / 100; 
-                summa = summa - (summa * percent);  
+                let percent = element.percent / 100;
+                summa = summa - (summa * percent);
             }
             summa = Math.round(summa * 100) / 100;
             queryArray.push(client.query(`
                 INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id, summa)
-                VALUES($1, $2, $3) RETURNING *`, 
+                VALUES($1, $2, $3) RETURNING *`,
                 [worker_task.worker_task_id, rasxod_fio.id, summa]
             ));
         }
-        for(let deduction of data.deductions){
+        for (let deduction of data.deductions) {
             deductionQueryArray.push(client.query(`INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`, [deduction.id, rasxod_fio.id]))
         }
         const rasxods = await Promise.all(queryArray)

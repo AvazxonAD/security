@@ -7,6 +7,8 @@ CREATE TABLE rasxod_fio_doc (
   opisanie VARCHAR(1000),
   account_number_id INTEGER REFERENCES account_number(id),
   deductions INTEGER[],
+  from DATE,
+  to DATE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   isdeleted BOOLEAN DEFAULT FALSE
