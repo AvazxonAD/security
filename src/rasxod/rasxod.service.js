@@ -171,7 +171,6 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
             FROM data
         `, params)
         const data = result.rows[0];
-
         return { data: data?.data || [], total: data.total_count, summa_from: data.summa_from, summa_to: data.summa_to, summa: data.summa}
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
