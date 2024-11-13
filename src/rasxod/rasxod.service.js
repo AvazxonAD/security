@@ -28,6 +28,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
             WITH data AS (
                 SELECT 
                     t.id AS task_id,
+                    c.id AS contract_id,
                     c.doc_num,
                     c.doc_date,
                     o.name AS organization_name,

@@ -237,7 +237,30 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     o.account_number AS organization_account_number,
                     o.treasury1 AS organization_treasury1,
                     o.treasury2 AS organization_treasury2,
-                    ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS remaining_balance
+                    ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS remaining_balance,
+                    (
+                        (
+                            COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = c.id),0)
+                        ) - 
+                        (
+                            (
+                                SELECT COALESCE(SUM(t.result_summa), 0) 
+                                FROM rasxod AS r
+                                JOIN task AS t ON t.id = r.task_id
+                                JOIN contract AS c_inner ON t.contract_id = c_inner.id 
+                                WHERE c_inner.id = c.id AND r.isdeleted = false
+                            ) + 
+                            (
+                                SELECT COALESCE(SUM(r_fio.summa), 0) 
+                                FROM rasxod_fio AS r_fio 
+                                JOIN worker_task AS w_t ON w_t.id = r_fio.worker_task_id
+                                JOIN task AS t ON t.id = w_t.task_id 
+                                JOIN contract AS c_inner ON c_inner.id = t.contract_id
+                                WHERE c_inner.id = c.id AND r_fio.isdeleted = false
+                            )   
+                        )
+                    )::FLOAT AS remaining_summa
+
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} ${organization_filter} AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6
