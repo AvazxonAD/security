@@ -3,7 +3,8 @@ const {
     deleteWorkerTaskService,
     getByTaskIdWorkerTaskService,
     getByContractIdWorkerTaskService,
-    getByTaskIdANDWorkerIdWorkerTaskService
+    getByTaskIdANDWorkerIdWorkerTaskService,
+    deleteByTaskIDWorkerTaskService
 } = require("./worker.task.service");
 const { workerTaskValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
@@ -28,7 +29,8 @@ const workerTaskCreate = async (req, res) => {
         if (all_task_time > task.remaining_task_time) {
             throw new ErrorResponse('You have entered more than the allowed time', 400)
         }
-        const result = await workerTaskCreateService(task, workers, task_id);
+        await deleteWorkerTaskService(task_id)
+        const result = await workerTaskCreateService(task, workers);
         resFunc(res, 200, result);
     } catch (error) {
         errorCatch(error, res);
@@ -59,9 +61,10 @@ const workerTaskUpdate = async (req, res) => {
             await getByBatalonIdAndIdWorkerService(task.batalon_id, worker.worker_id)
             all_task_time += worker.task_time
         }
-        if (all_task_time > task.remaining_task_time) {
+        if (all_task_time > task.real_task_time) {
             throw new ErrorResponse('You have entered more than the allowed time', 400)
         }
+        await deleteByTaskIDWorkerTaskService(task_id)
         const result = await workerTaskCreateService(task, workers, all_task_time);
         resFunc(res, 200, result);
     } catch (error) {
