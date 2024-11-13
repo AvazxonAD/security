@@ -50,7 +50,7 @@ const getRasxod = async (req, res) => {
             await getByIdBatalonService(user_id, batalon_id, true)
         }
         const offset = (page - 1) * limit
-        const { total, data, summa_from, summa_to } = await getRasxodService(user_id, account_number_id, from, to, offset, limit, batalon_id)
+        const { total, data, summa_from, summa_to, summa } = await getRasxodService(user_id, account_number_id, from, to, offset, limit, batalon_id)
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
@@ -59,7 +59,8 @@ const getRasxod = async (req, res) => {
             nextPage: page >= pageCount ? null : page + 1,
             backPage: page === 1 ? null : page - 1,
             summa_from: returnStringSumma(summa_from),
-            summa_to: returnStringSumma(summa_to)
+            summa_to: returnStringSumma(summa_to),
+            summa: returnStringSumma(summa)
         }
         resFunc(res, 200, data, meta)
     } catch (error) {

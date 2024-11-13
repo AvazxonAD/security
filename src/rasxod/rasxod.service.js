@@ -154,16 +154,24 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $2  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
                 ) AS summa_from,
-                 (
+                (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
                     WHERE r.isdeleted = false AND r_d.doc_date < $3  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
-                ) AS summa_to
+                ) AS summa_to,
+                 (
+                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
+                    FROM rasxod AS r
+                    JOIN task AS t ON t.id = r.task_id
+                    JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
+                    WHERE r.isdeleted = false AND r_d.doc_date BETWEEN $2 AND $3  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
+                ) AS summa
             FROM data
         `, params)
-        return { data: result.rows[0]?.data || [], total: result.rows[0].total_count, summa_from: result.rows[0].summa_from, summa_to: result.rows[0].summa_to }
+        const data = result.rows[0];
+        return { data: data?.data || [], total: data.total_count, summa_from: data.summa_from, summa_to: data.summa_to, summa: data.summa}
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }

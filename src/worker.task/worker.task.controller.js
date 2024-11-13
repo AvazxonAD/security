@@ -14,8 +14,6 @@ const ErrorResponse = require("../utils/errorResponse");
 const { getByBatalonIdAndIdWorkerService } = require('../worker/worker.service')
 const { getByIdcontractService } = require('../contract/contract.service')
 
-
-
 const workerTaskCreate = async (req, res) => {
     try {
         const user_id = req.user.id
