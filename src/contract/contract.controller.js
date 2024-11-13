@@ -129,6 +129,7 @@ const exportExcelData = async (req, res) => {
             { header: 'umumiy summa', key: 'result_summa', width: 20 },
             { header: 'kridit', key: 'kridit', width: 20 },
             { header: 'debit', key: 'debit', width: 20 },
+            { header: 'Qolgan summa', key: 'remaining_summa', width: 20 },
             { header: 'xisob raqam', key: 'account_number', width: 25 },
             { header: 'xodimlar soni', key: 'all_worker_number', width: 20 },
             { header: 'topshiriq vaqti', key: 'all_task_time', width: 20 }
@@ -168,6 +169,7 @@ const exportExcelData = async (req, res) => {
                 result_summa: contract.result_summa,
                 kridit: contract.kridit,
                 debit: contract.debit,
+                remaining_summa: contract.remaining_summa,
                 account_number: contract.account_number,
                 all_worker_number: contract.all_worker_number,
                 all_task_time: contract.all_task_time
@@ -202,7 +204,16 @@ const exportExcelData = async (req, res) => {
     }
 };
 
-
+const forDataPdf = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const { from, to, account_number_id } = validationResponse(conrtactQueryValidation, req.query);
+        const { data, total } = await dataForExcelService(user_id, account_number_id, from, to);
+        resFunc(res, 200, {total, data})
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
 
 const importExcelData = async (req, res) => {
     try {
@@ -234,5 +245,6 @@ module.exports = {
     contractUpdate,
     contractDelete,
     importExcelData,
-    exportExcelData
+    exportExcelData,
+    forDataPdf
 };

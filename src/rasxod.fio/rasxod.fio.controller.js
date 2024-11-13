@@ -379,7 +379,6 @@ const exportRasxodByIdExcelData = async (req, res) => {
             if (index == 0) fill = {}, border = {}, size = 10;
             if(index > 18) horizontal = 'right';
             if(index === 17) horizontal = 'left';
-            console.log(css_array.length)
             Object.assign(item, {
                 numFmt: '#,##,0.00',
                 fill, border,

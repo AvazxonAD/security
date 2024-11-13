@@ -65,15 +65,21 @@ const getworkerService = async (user_id, search, batalon_id, offset, limit) => {
     }
 }
 
-const excelDataWorkerService = async (user_id) => {
+const excelDataWorkerService = async (user_id, batalon_id) => {
     try {
+        const params = [user_id] 
+        let batalon_filter = ``;
+        if(batalon_id){
+            batalon_filter = ` AND b.id = $${params.length + 1}`
+            params.push(batalon_id)
+        }
         const { rows } = await pool.query(`
             WITH data AS (
                  SELECT w.fio, w.account_number, b.name AS batalon_name, w.xisob_raqam
                  FROM worker w 
                  JOIN batalon AS b ON b.id = w.batalon_id
                  JOIN users AS u ON b.user_id = u.id
-                 WHERE w.isdeleted = false AND u.id = $1 
+                 WHERE w.isdeleted = false AND u.id = $1 ${batalon_filter} 
              )
              SELECT 
                  ARRAY_AGG(row_to_json(data)) AS data,
@@ -82,11 +88,11 @@ const excelDataWorkerService = async (user_id) => {
                      FROM worker w 
                      JOIN batalon AS b ON b.id = w.batalon_id
                      JOIN users AS u ON b.user_id = u.id
-                     WHERE w.isdeleted = false AND u.id = $1
+                     WHERE w.isdeleted = false AND u.id = $1 ${batalon_filter}
                      ), 0
                  )::INTEGER AS total_count
              FROM data
-         `, [user_id]);
+         `, params);
          return {data: rows[0]?.data || [], total: rows[0].total_count}
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

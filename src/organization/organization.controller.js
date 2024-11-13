@@ -145,6 +145,16 @@ const excelDataOrganization = async (req, res) => {
     }
 };
 
+const forPdfData = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const {data, total} = await excelDataOrganizationService(user_id);
+        resFunc(res, 200, {total, data})
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
 
 
 module.exports = {
@@ -153,5 +163,6 @@ module.exports = {
     organizationGetById,
     organizationUpdate,
     organizationDelete,
-    excelDataOrganization
+    excelDataOrganization,
+    forPdfData
 };

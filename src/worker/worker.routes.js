@@ -12,12 +12,14 @@ const {
     workerDelete,
     excelDataWorker,
     importExcelData,
-    downloadWorkersTemplate
+    downloadWorkersTemplate,
+    forPdfData
 } = require('./worker.controller')
 
 router.post('/', protect, workerCreate)
     .get('/template', protect, downloadWorkersTemplate)
     .get('/excel', protect, excelDataWorker)
+    .get('/pdf', protect, forPdfData)
     .put('/:id', protect, workerUpdate)
     .get('/:id', protect, workerGetById)
     .get('/', protect, workerGet)

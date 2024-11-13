@@ -9,11 +9,13 @@ const {
     organizationGetById,
     organizationUpdate,
     organizationDelete,
-    excelDataOrganization
+    excelDataOrganization,
+    forPdfData
 } = require('./organization.controller')
 
 router.post('/', protect, organizationCreate)
     .get('/excel', protect, excelDataOrganization)
+    .get('/pdf', protect, forPdfData)
     .put('/:id', protect, organizationUpdate)
     .get('/:id', protect, organizationGetById)
     .get('/', protect, organizationGet)

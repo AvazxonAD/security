@@ -11,11 +11,13 @@ const {
     contractUpdate,
     contractDelete,
     importExcelData,
-    exportExcelData
+    exportExcelData,
+    forDataPdf
 } = require('./contract.controller')
 
 router.post('/', protect, contractCreate)
     .get('/export', protect, exportExcelData)
+    .get('/pdf', protect, forDataPdf)
     .put('/:id', protect, contractUpdate)
     .get('/:id', protect, contractGetById)
     .get('/', protect, contractGet)

@@ -101,6 +101,7 @@ const workerDelete = async (req, res) => {
 const excelDataWorker = async (req, res) => {
     try {
         const user_id = req.user.id;
+        const batalon_id = req.query.batalon_id;;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Askarlar');
 
@@ -133,7 +134,7 @@ const excelDataWorker = async (req, res) => {
             worksheet.getColumn(col).alignment = { vertical: 'middle', horizontal: 'center' };
         }
 
-        const { data, total } = await excelDataWorkerService(user_id);
+        const { data, total } = await excelDataWorkerService(user_id, batalon_id);
         for (let worker of data) {
             worksheet.addRow({
                 batalon_name: worker.batalon_name,
@@ -193,6 +194,17 @@ const importExcelData = async (req, res) => {
     }
 }
 
+const forPdfData = async (req, res) => {
+    try {
+        const user_id = req.user.id 
+        const batalon_id = req.query.batalon_id
+        const { data, total } = await excelDataWorkerService(user_id, batalon_id);
+        resFunc(res, 200, {total, data})
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
 const downloadWorkersTemplate = async (req, res) => {
     try {
         const filePath = path.join(__dirname, '../../public/template/workers.template.xlsx')
@@ -211,5 +223,6 @@ module.exports = {
     workerDelete,
     excelDataWorker,
     importExcelData,
-    downloadWorkersTemplate
+    downloadWorkersTemplate,
+    forPdfData
 };
