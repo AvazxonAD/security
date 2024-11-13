@@ -3,6 +3,7 @@ const pool = require('../config/db')
 
 const prixodCreateService = async (data) => {
     try {
+        console.log(data.doc_dum)
         const prixod = await pool.query(`
             INSERT INTO prixod (
             user_id,
@@ -19,7 +20,7 @@ const prixodCreateService = async (data) => {
             data.organization_id,
             data.contract_id,
             data.opisanie,
-            data.doc_num,
+            data.doc_dum,
             data.doc_date,
             data.summa,
             data.account_number_id
