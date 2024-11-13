@@ -75,6 +75,7 @@ const workerTaskDelete = async (req, res) => {
         const worker_id = req.query.worker_id;
         const task_id = req.query.task_id
         const task = await getByIdTaskService(user_id, task_id)
+        
         await getByBatalonIdAndIdWorkerService(task.batalon_id, worker_id)
         await getByTaskIdANDWorkerIdWorkerTaskService(task_id, worker_id)
         await deleteWorkerTaskService(worker_id, task_id);
