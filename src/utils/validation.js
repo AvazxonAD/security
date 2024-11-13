@@ -33,7 +33,7 @@ const rasxodFioValidation = Joi.object({
     Joi.object({
       deduction_id: Joi.number().integer().min(1).required()
     })
-  )
+  ).required()
 })
 
 const paymentRequestValidation = Joi.object({

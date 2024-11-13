@@ -1,10 +1,11 @@
 const pool = require('../config/db');
 const ErrorResponse = require('../utils/errorResponse');
 
-const workerTaskCreateService = async (task, workers) => {
+const workerTaskCreateService = async (task, workers, task_id) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN'); 
+        await pool.query(`DELETE FROM worker_task WHERE task_id = $1 AND isdeleted = false`,[task_id]);
         const promises = [];
         const one_time_summa = task.result_summa / task.worker_number / task.task_time;
         for (let worker of workers) {
@@ -90,14 +91,6 @@ const getByContractIdWorkerTaskService = async (contract_id) => {
     }
 }
 
-const deleteBYTaskIdWorkerTask = async (task_id) => {
-    try {
-        await pool.query(`DELETE FROM worker_task WHERE task_id = $1 AND isdeleted = false RETURNING *`,[task_id]);
-    } catch (error) {
-        throw new ErrorResponse(error.message, error.statusCode);
-    }
-}
-
 const getByTaskIdANDWorkerIdWorkerTaskService = async (task_id, worker_id) => {
     try {
         const worker = await pool.query(`
@@ -124,7 +117,6 @@ module.exports = {
     deleteWorkerTaskService,
     getByTaskIdWorkerTaskService,
     getByContractIdWorkerTaskService,
-    deleteBYTaskIdWorkerTask,
     getByTaskIdANDWorkerIdWorkerTaskService
 };
 

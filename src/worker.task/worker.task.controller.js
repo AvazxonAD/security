@@ -3,7 +3,6 @@ const {
     deleteWorkerTaskService,
     getByTaskIdWorkerTaskService,
     getByContractIdWorkerTaskService,
-    deleteBYTaskIdWorkerTask,
     getByTaskIdANDWorkerIdWorkerTaskService
 } = require("./worker.task.service");
 const { workerTaskValidation } = require("../utils/validation");
@@ -29,7 +28,7 @@ const workerTaskCreate = async (req, res) => {
         if (all_task_time > task.remaining_task_time) {
             throw new ErrorResponse('You have entered more than the allowed time', 400)
         }
-        const result = await workerTaskCreateService(task, workers);
+        const result = await workerTaskCreateService(task, workers, task_id);
         resFunc(res, 200, result);
     } catch (error) {
         errorCatch(error, res);
@@ -53,7 +52,6 @@ const workerTaskUpdate = async (req, res) => {
         const user_id = req.user.id
         const task_id = req.query.task_id;
         await getByIdTaskService(user_id, task_id)
-        await deleteBYTaskIdWorkerTask(task_id)
         const task = await getByIdTaskService(user_id, task_id)
         const { workers } = validationResponse(workerTaskValidation, req.body);
         let all_task_time = 0

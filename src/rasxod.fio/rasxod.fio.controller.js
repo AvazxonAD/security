@@ -266,75 +266,135 @@ const exportRasxodByIdExcelData = async (req, res) => {
         const workbook = new ExcelJS.Workbook()
         const file_name = `rasxod_fio_${new Date().getTime()}.xlsx`;
         const worksheet = workbook.addWorksheet(`rasxod_docs`);
-        worksheet.pageSetup.margins.left = 0.5
-        worksheet.pageSetup.margins.header = 0.5
-        worksheet.pageSetup.margins.footer = 0.5
-        worksheet.pageSetup.margins.right = 0.5
+        worksheet.pageSetup.margins.left = 0
+        worksheet.pageSetup.margins.header = 0
+        worksheet.pageSetup.margins.footer = 0
+        worksheet.pageSetup.margins.right = 0
         const css_array = []
-        worksheet.mergeCells(`A1`, `J1`)
+        worksheet.mergeCells(`A1`, `G1`)
         const titleCell = worksheet.getCell(`A1`)
         titleCell.value = `${returnStringDate(new Date(data.from))}дан ${returnStringDate(new Date(data.to))}-гача оммавий тадбирларда қатнашган ${data.batalon_name} батальон  ходимларга пул ўтказиш`
         css_array.push(titleCell)
         let row_number = 2;
-        worksheet.mergeCells(`A${row_number}`, `E${row_number}`)
-        const deductionTitleCell = worksheet.getCell(`A${row_number}`)
-        deductionTitleCell.value = `Ушланмалар`
-        css_array.push(deductionTitleCell)
-        row_number++
-        worksheet.mergeCells(`A${row_number}`, `C${row_number}`)
-        const deductionNameCell = worksheet.getCell(`A${row_number}`)
-        deductionNameCell.value = `Ушланма номи`
-        css_array.push(deductionNameCell)
-        worksheet.mergeCells(`D${row_number}`, `E${row_number}`)
-        const deductionPercentCell = worksheet.getCell(`D${row_number}`)
-        deductionPercentCell.value = `Ушланма фоизи %`
-        css_array.push(deductionPercentCell)
-        row_number++
-        data.deductions.forEach(item => {
-            worksheet.mergeCells(`A${row_number}`, `C${row_number}`)
-            const deductionNameCell = worksheet.getCell(`A${row_number}`)
-            deductionNameCell.value = item.deduction_name
-            css_array.push(deductionNameCell)
-            worksheet.mergeCells(`D${row_number}`, `E${row_number}`)
-            const deductionPercentCell = worksheet.getCell(`D${row_number}`)
-            deductionPercentCell.value = `${item.percent}%`
-            css_array.push(deductionNameCell, deductionPercentCell)
+        if (data.deductions.length > 0) {
+            worksheet.mergeCells(`A${row_number}`, `B${row_number}`)
+            const deductionTitleCell = worksheet.getCell(`A${row_number}`)
+            deductionTitleCell.value = `Ушланмалар`
+            css_array.push(deductionTitleCell)
             row_number++
-        })
-        worksheet.mergeCells(`A${row_number}`, `B${row_number}`)
-        const doc_numCell = worksheet.getCell(`A${row_number}`)
-        doc_numCell.value = `Шартнома рақами`
-        worksheet.mergeCells(`C${row_number}`, `E${row_number}`)
-        const clientCell = worksheet.getCell(`C${row_number}`)
-        clientCell.value = `Ҳамкор ташкилот`
-        const task_timeCell = worksheet.getCell(`F${row_number}`)
-        task_timeCell.value =  'Вақт' 
-        worksheet.mergeCells(`G${row_number}`, `H${row_number}`)
-        const summaCell = worksheet.getCell(`G${row_number}`)
-        summaCell.value = `Сумма`
-        worksheet.mergeCells(`I${row_number}`, `J${row_number}`)
-        const result_summaCell = worksheet.getCell(`I${row_number}`)
-        result_summaCell.value = `Умумий сумма`
-        css_array.push(doc_numCell, clientCell, task_timeCell, summaCell, result_summaCell)
+            const deductionNameCell = worksheet.getCell(`A${row_number}`)
+            deductionNameCell.value = `Ушланма номи`
+            css_array.push(deductionNameCell)
+            const deductionPercentCell = worksheet.getCell(`B${row_number}`)
+            deductionPercentCell.value = `Ушланма фоизи %`
+            css_array.push(deductionPercentCell)
+            row_number++
+            data.deductions.forEach(item => {
+                const deductionNameCell = worksheet.getCell(`A${row_number}`)
+                deductionNameCell.value = item.deduction_name
+                css_array.push(deductionNameCell)
+                const deductionPercentCell = worksheet.getCell(`B${row_number}`)
+                deductionPercentCell.value = `${item.percent}%`
+                css_array.push(deductionNameCell, deductionPercentCell)
+                row_number++
+            })
+        }
+        const fioCell = worksheet.getCell(`A${row_number}`)
+        fioCell.value = 'ФИО';
+        const xisobRaqamCell = worksheet.getCell(`B${row_number}`)
+        xisobRaqamCell.value = `Хисоб рақами`;
+        const accountNumberCell = worksheet.getCell(`C${row_number}`)
+        accountNumberCell.value = `Карта рақами`;
+        const task_timeCell = worksheet.getCell(`D${row_number}`)
+        task_timeCell.value = 'Вақт';
+        const summaCell = worksheet.getCell(`E${row_number}`)
+        summaCell.value = `Сумма`;
+        const deductionCell = worksheet.getCell(`F${row_number}`)
+        deductionCell.value = 'Ушлаб қолинган'
+        const result_summaCell = worksheet.getCell(`G${row_number}`)
+        result_summaCell.value = `Қўлга тегадиган`;
+        css_array.push(fioCell, xisobRaqamCell, accountNumberCell, task_timeCell, summaCell, deductionCell, result_summaCell)
+        let itogo_summa = 0
+        let itogo_deduction = 0
+        let itogo_result = 0
+        row_number++
+        for (let worker of data.worker_tasks) {
+            const fioCell = worksheet.getCell(`A${row_number}`)
+            fioCell.value = worker.fio
+            const xisobRaqamCell = worksheet.getCell(`B${row_number}`)
+            xisobRaqamCell.value = worker.xisob_raqam
+            const accountNumberCell = worksheet.getCell(`C${row_number}`)
+            accountNumberCell.value = worker.account_number
+            const task_timeCell = worksheet.getCell(`D${row_number}`)
+            task_timeCell.value = worker.task_time
+            const summaCell = worksheet.getCell(`E${row_number}`)
+            summaCell.value = worker.summa
+            const deductionCell = worksheet.getCell(`F${row_number}`)
+            deductionCell.value = worker.deduction_money
+            const result_summaCell = worksheet.getCell(`G${row_number}`)
+            result_summaCell.value = worker.result_summa
+            const css_array = [fioCell, xisobRaqamCell, accountNumberCell, task_timeCell, summaCell, deductionCell, result_summaCell]
+            itogo_summa += worker.summa
+            itogo_deduction += worker.deduction_money
+            itogo_result += worker.result_summa
+            css_array.forEach((item, index) => {
+                let horizontal = 'center'
+                if (index === 0) horizontal = 'left';
+                if (index > 3) horizontal = 'right', item.numFmt = '#,##0.00';
+                Object.assign(item, {
+                    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } },
+                    border: {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        right: { style: 'thin' }
+                    },
+                    font: { size: 7, name: 'Times New Roman' },
+                    alignment: { vertical: 'middle', horizontal, wrapText: true }
+                });
+            })
+            row_number++
+        }
+        worksheet.mergeCells(`A${row_number}`, `D${row_number}`)
+        const itogoStr = worksheet.getCell(`A${row_number}`)
+        itogoStr.value = 'Итого'
+        const itogo_summaCell = worksheet.getCell(`E${row_number}`)
+        itogo_summaCell.value = itogo_summa
+        const itogo_deductionCell = worksheet.getCell(`F${row_number}`)
+        itogo_deductionCell.value = itogo_deduction
+        const itogo_resultCell = worksheet.getCell(`G${row_number}`)
+        itogo_resultCell.value = itogo_result
+        css_array.push(itogoStr, itogo_deductionCell, itogo_resultCell, itogo_summaCell)
 
         css_array.forEach((item, index) => {
             let fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } }
-            let border =  {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                }
-            if( index == 0 ) fill = {}, border = {}
+            let border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            }
+            let size = 8
+            let horizontal = 'center'
+            if (index == 0) fill = {}, border = {}, size = 10;
+            if(index > 18) horizontal = 'right';
+            if(index === 17) horizontal = 'left';
+            console.log(css_array.length)
             Object.assign(item, {
+                numFmt: '#,##,0.00',
                 fill, border,
-                font: { size: 12, name: 'Times New Roman', bold: true },
-                alignment: { vertical: 'middle', horizontal: 'center', wrapText: true }
+                font: { size, name: 'Times New Roman', bold: true },
+                alignment: { vertical: 'middle', horizontal, wrapText: true }
             });
         })
-        worksheet.getRow(1).height = 35
-        worksheet.getRow(deductionTitleCell.row).height = 30
-        worksheet.getRow(result_summaCell.row).height = 30
+        worksheet.getRow(1).height = 35;
+        worksheet.getColumn(1).width = 20;
+        worksheet.getColumn(2).width = 20;
+        worksheet.getColumn(3).width = 20;
+        worksheet.getColumn(4).width = 6;
+        worksheet.getColumn(5).width = 12;
+        worksheet.getColumn(6).width = 11;
+        worksheet.getColumn(7).width = 11;
         const filePath = path.join(__dirname, '../../public/exports/' + file_name)
         await workbook.xlsx.writeFile(filePath)
         return res.download(filePath, (err) => {
