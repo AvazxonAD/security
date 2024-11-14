@@ -422,11 +422,121 @@ const deletecontractService = async (id) => {
     }
 }
 
+const contractViewService = async (user_id, account_number_id, id) => {
+    try {
+        const data = await pool.query(`
+            SELECT 
+                c.id,
+                c.doc_num, 
+                TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date,  
+                c.discount, 
+                c.discount_money::FLOAT, 
+                c.summa::FLOAT, 
+                c.result_summa::FLOAT, 
+                c.all_worker_number,
+                c.all_task_time,
+                c.organization_id, 
+                o.name AS organization_name,
+                o.str AS organization_str,
+                o.account_number AS organization_account_number,  
+                o.bank_name AS organization_bank_name,
+                o.mfo AS organization_mfo,
+                d.doer,
+                str.str,
+                a_c.account_number,
+                b_k.bank,
+                b_k.mfo,
+                ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS kridit,
+                ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS debit,
+                (
+                    (
+                        COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = $3),0)
+                    ) - 
+                    (
+                        (
+                            SELECT COALESCE(SUM(t.result_summa), 0) 
+                            FROM rasxod AS r
+                            JOIN task AS t ON t.id = r.task_id
+                            JOIN contract AS c_inner ON t.contract_id = c_inner.id 
+                            WHERE c_inner.id = $3 AND r.isdeleted = false
+                        ) + 
+                        (
+                            SELECT COALESCE(SUM(r_fio.summa), 0) 
+                            FROM rasxod_fio AS r_fio 
+                            JOIN worker_task AS w_t ON w_t.id = r_fio.worker_task_id
+                            JOIN task AS t ON t.id = w_t.task_id 
+                            JOIN contract AS c_inner ON c_inner.id = t.contract_id
+                            WHERE c_inner.id = $3 AND r_fio.isdeleted = false
+                        )
+                    )
+                )::FLOAT AS remaining_summa
+            FROM contract c   
+            JOIN organization AS o ON o.id = c.organization_id
+            JOIN account_number AS a_c ON a_c.user_id = $1
+            JOIN str ON str.user_id = $1 
+            JOIN doer AS d ON d.user_id = $1
+            JOIN bank AS b_k ON b_k.user_id = $1
+            WHERE c.user_id = $1 AND c.isdeleted = false AND c.account_number_id = $2  AND c.id = $3
+        `, [user_id, account_number_id, id])
+        const prixods = await pool.query(`
+            SELECT 
+                p.id, 
+                p.doc_num AS prixod_doc_num,
+                TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date,
+                p.summa::FLOAT AS prixod_summa, 
+                o.name AS organization_name,
+                o.str AS organization_str,
+                o.account_number AS organization_account_number
+            FROM prixod AS p 
+            JOIN organization AS o ON o.id = p.organization_id 
+            WHERE p.isdeleted = false AND p.contract_id = $1
+        `, [id])
+        const rasxods = await pool.query(`
+            SELECT 
+                r_d.id, 
+                r_d.doc_num, 
+                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS rasxod_date, 
+                t.result_summa, 
+                b.name AS batalon_name,
+                b.str AS batalon_str,
+                b.account_number AS batalon_account_number
+            FROM  rasxod AS r 
+            JOIN  task AS t ON t.id = r.task_id  
+            JOIN contract AS c ON c.id = t.contract_id
+            JOIN  batalon AS b ON b.id = t.batalon_id
+            JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id 
+            WHERE t.contract_id = $1 AND r.isdeleted = false
+        `, [id])
+        const rasxod_fio = await pool.query(`
+            SELECT 
+                r_d.id,
+                r_d.doc_num,
+                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS rasxod_date,
+                r_f.summa,
+                b.name AS batalon_name,
+                b.str AS batalon_str,
+                b.account_number AS batalon_account_number
+            FROM rasxod_fio AS r_f
+            JOIN worker_task AS w_t ON w_t.id = r_f.worker_task_id
+            JOIN task AS t ON t.id = w_t.task_id 
+            JOIN rasxod_fio_doc AS r_d ON r_d.id = r_f.rasxod_fio_doc_id
+            JOIN batalon AS b ON b.id = t.batalon_id
+            WHERE  t.contract_id = $1
+        `, [id])
+        return { contract: data.rows[0], prixods: prixods.rows, rasxods: rasxods.rows, rasxod_fios: rasxod_fio.rows}
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
+
+
 module.exports = {
     contractCreateService,
     getcontractService,
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
-    dataForExcelService
+    dataForExcelService,
+    contractViewService
 }

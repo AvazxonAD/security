@@ -116,7 +116,7 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                 SELECT 
                     r_d.id,
                     r_d.doc_num,
-                    TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+                    TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
                     r_d.opisanie,
                     b.id AS batalon_id,
                     b.name AS batalon_name,
@@ -126,12 +126,11 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     b.mfo AS batalon_mfo,
                     b.account_number AS batalon_account_number,
                     (
-                        SELECT COALESCE(SUM(t.summa), 0) AS summa
+                        SELECT COALESCE(SUM(t.result_summa), 0) AS summa
                         FROM rasxod AS r
                         JOIN task AS t ON t.id = r.task_id
                         WHERE r.rasxod_doc_id = r_d.id AND r.isdeleted = false
-                    ) AS summa,
-                    b.name AS batalon_name
+                    ) AS summa
                 FROM rasxod_doc AS r_d
                 JOIN batalon AS b ON b.id = r_d.batalon_id 
                 WHERE r_d.account_number_id = $1

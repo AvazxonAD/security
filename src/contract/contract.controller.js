@@ -4,7 +4,8 @@ const {
     getByIdcontractService,
     contractUpdateService,
     deletecontractService,
-    dataForExcelService
+    dataForExcelService,
+    contractViewService
 } = require("./contract.service");
 const { contractValidation, conrtactQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
@@ -112,7 +113,7 @@ const exportExcelData = async (req, res) => {
         const user_id = req.user.id;
         const { from, to, account_number_id } = validationResponse(conrtactQueryValidation, req.query);
         const { data, total } = await dataForExcelService(user_id, account_number_id, from, to);
-        
+
         const contractBook = new ExcelJs.Workbook();
         const contractSheet = contractBook.addWorksheet('Shartnomalar');
         contractSheet.columns = [
@@ -194,7 +195,7 @@ const exportExcelData = async (req, res) => {
         });
         const fileName = `contracts.${Date.now()}.xlsx`;
         const filePath = path.join(__dirname, '../../public/exports', fileName);
-        
+
         await contractBook.xlsx.writeFile(filePath);
         return res.download(filePath, (err) => {
             if (err) throw new ErrorResponse(err, err.statusCode);
@@ -209,7 +210,7 @@ const forDataPdf = async (req, res) => {
         const user_id = req.user.id
         const { from, to, account_number_id } = validationResponse(conrtactQueryValidation, req.query);
         const { data, total } = await dataForExcelService(user_id, account_number_id, from, to);
-        resFunc(res, 200, {total, data})
+        resFunc(res, 200, { total, data })
     } catch (error) {
         errorCatch(error, res)
     }
@@ -238,6 +239,26 @@ const importExcelData = async (req, res) => {
     }
 }
 
+const conntractViewExcel = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        const id = req.params.id
+        const { contract, prixods, rasxod_fios, rasxods } = await contractViewService(user_id, account_number_id, id)
+        const workbook = new ExcelJs.Workbook()
+        const fileName = `contract_${new Date().getTime()}.xlsx`
+        const worksheet = workbook.addWorksheet('contract')
+
+        const filePath = path.join(__dirname, '../../public/uploads/' + fileName);
+        await workbook.xlsx.writeFile(filePath);
+        return res.download(filePath, (err) => {
+            if (err) throw new ErrorResponse(err, err.statusCode);
+        });
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
 module.exports = {
     contractCreate,
     contractGet,
@@ -246,5 +267,6 @@ module.exports = {
     contractDelete,
     importExcelData,
     exportExcelData,
-    forDataPdf
+    forDataPdf,
+    conntractViewExcel
 };
