@@ -245,6 +245,7 @@ const contractView = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         const id = req.params.id 
+        await getByIdcontractService(user_id, id, false, account_number_id)
         const { contract, prixods, rasxod_fios, rasxods } = await contractViewService(user_id, account_number_id, id)
         resFunc(res, 200, { contract, prixods, rasxod_fios, rasxods })
     } catch (error) {

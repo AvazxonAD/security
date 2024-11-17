@@ -51,6 +51,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                     AND t.batalon_id = $4
                     AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                     AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = t.id)
+                    AND c.isdeleted = false
             )
             SELECT 
                 ARRAY_AGG(ROW_TO_JSON(data)) AS data,
@@ -58,12 +59,12 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT 
                     FROM task AS t
                     JOIN contract AS c ON c.id = t.contract_id
-                    JOIN organization AS o ON o.id = c.organization_id
                     WHERE c.account_number_id = $1  
                         AND c.doc_date BETWEEN $2 AND $3 
                         AND t.batalon_id = $4 
                         AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = FALSE AND contract_id = c.id) 
                         AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = t.id)
+                        AND c.isdeleted = false
                 ) AS itogo
             FROM data 
 
