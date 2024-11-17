@@ -24,45 +24,30 @@ const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => 
 const paymentRequestService = async (account_number, batalon_id, from, to) => {
     try {
         const result = await pool.query(`
-            WITH data AS (
-                SELECT 
-                    w_t.id AS worker_task_id,
-                    c.doc_num AS contract_doc_num,
-                    c.doc_date AS contract_doc_date,
-                    o.name AS organization_name,
-                    o.address AS organization_address,
-                    o.str AS organization_str,
-                    o.bank_name AS organization_bank_name,
-                    o.mfo AS organization_mfo,
-                    o.account_number AS organization_account_number,
-                    w.fio,
-                    w_t.task_time,
-                    w_t.summa::FLOAT
-                FROM worker_task AS w_t
-                JOIN task AS t ON t.id = w_t.task_id
-                JOIN worker AS w ON w_t.worker_id = w.id
-                JOIN contract AS c ON c.id = t.contract_id
-                JOIN organization AS o ON o.id = c.organization_id
-                WHERE c.account_number_id = $1  AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4 AND c.isdeleted = false
-                    AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
-                    AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
-            )
             SELECT 
-                ARRAY_AGG(ROW_TO_JSON(data)) AS data,
-                (
-                    SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT 
-                    FROM worker_task AS w_t
-                    JOIN task AS t ON t.id = w_t.task_id
-                    JOIN contract AS c ON c.id = t.contract_id
-                    JOIN organization AS o ON o.id = c.organization_id
-                    WHERE c.account_number_id = $1 AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4 AND c.isdeleted = false
-                        AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = FALSE AND contract_id = c.id) 
-                        AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND task_id = t.id)
-                ) AS itogo
-            FROM data 
+                w_t.id AS worker_task_id,
+                c.doc_num AS contract_doc_num,
+                c.doc_date AS contract_doc_date,
+                o.name AS organization_name,
+                o.address AS organization_address,
+                o.str AS organization_str,
+                o.bank_name AS organization_bank_name,
+                o.mfo AS organization_mfo,
+                o.account_number AS organization_account_number,
+                w.fio,
+                w_t.task_time,
+                w_t.summa::FLOAT
+            FROM worker_task AS w_t
+            JOIN task AS t ON t.id = w_t.task_id
+            JOIN worker AS w ON w_t.worker_id = w.id
+            JOIN contract AS c ON c.id = t.contract_id
+            JOIN organization AS o ON o.id = c.organization_id
+            WHERE c.account_number_id = $1  AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4 AND c.isdeleted = false
+                AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
+                AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id
 
         `, [account_number, from, to, batalon_id])
-        return { data: result.rows[0]?.data || [], itogo: result.rows[0].itogo }
+        return result.rows
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }

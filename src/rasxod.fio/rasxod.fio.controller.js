@@ -18,8 +18,8 @@ const getPaymentRequest = async (req, res) => {
         const { account_number_id, batalon_id, to, from } = validationResponse(paymentRequestValidation, req.query)
         await getByIdaccount_numberService(user_id, account_number_id)
         await getByIdBatalonService(user_id, batalon_id, false, true)
-        const { data, itogo } = await paymentRequestService(account_number_id, batalon_id, from, to)
-        return resFunc(res, 200, data, { itogo })
+        const data = await paymentRequestService(account_number_id, batalon_id, from, to)
+        return resFunc(res, 200, data)
     } catch (error) {
         errorCatch(error, res)
     }
