@@ -15,7 +15,8 @@ const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { getbxmService } = require('../spravochnik/bxm/bxm.service');
-const { returnStringSumma } = require('../utils/return.summa')
+const { returnStringSumma } = require('../utils/return.summa');
+const { returnStringDate } = require('../utils/date.functions')
 const xlsx = require('xlsx')
 const ExcelJs = require('exceljs')
 const path = require('path')
@@ -239,6 +240,18 @@ const importExcelData = async (req, res) => {
     }
 }
 
+const contractView = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const account_number_id = req.query.account_number_id
+        const id = req.params.id 
+        const { contract, prixods, rasxod_fios, rasxods } = await contractViewService(user_id, account_number_id, id)
+        resFunc(res, 200, { contract, prixods, rasxod_fios, rasxods })
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
 const conntractViewExcel = async (req, res) => {
     try {
         const user_id = req.user.id
@@ -248,7 +261,71 @@ const conntractViewExcel = async (req, res) => {
         const workbook = new ExcelJs.Workbook()
         const fileName = `contract_${new Date().getTime()}.xlsx`
         const worksheet = workbook.addWorksheet('contract')
+        worksheet.pageSetup.margins.left = 0
+        worksheet.pageSetup.margins.header = 0
+        worksheet.pageSetup.margins.footer = 0
+        worksheet.pageSetup.margins.right = 0
+        worksheet.mergeCells(`A1`, 'K1');
+        const title = worksheet.getCell(`A1`);
+        title.value = `${contract.doc_num}  шартнома таҳлили`;
+        worksheet.mergeCells(`A2`, 'C2')
+        const contract_date = worksheet.getCell(`A2`)
+        contract_date.value = returnStringDate(new Date(contract.doc_date))
+        worksheet.mergeCells(`D2`, 'G2')
+        const organization = worksheet.getCell(`D2`)
+        organization.value = `Буюртмачи`
+        worksheet.mergeCells(`H2`, 'K2')
+        const doer = worksheet.getCell(`H2`)
+        doer.value = 'Бажарувчи'
+        worksheet.mergeCells(`A3`, 'C3')
+        const address = worksheet.getCell(`A3`)
+        address.value = 'Манзил';
+        worksheet.mergeCells(`D3`, 'G3');
+        const organization_name = worksheet.getCell(`D3`)
+        organization_name.value = `${contract.organization_name}`
+        worksheet.mergeCells(`H3`, 'K3')
+        const doer_name = worksheet.getCell(`H3`)
+        doer_name.value = `${contract.doer}`
+        worksheet.mergeCells(`A4`, 'C4')
+        const inn = worksheet.getCell(`A4`)
+        inn.value = 'ИНН'
+        worksheet.mergeCells(`D4`, 'G4')
+        const organization_str = worksheet.getCell(`D4`)
+        organization_str.value = returnStringSumma(contract.organization_str)
+        worksheet.mergeCells(`H4`, 'K4')
+        const doer_str = worksheet.getCell(`H4`)
+        doer_str.value = returnStringSumma(contract.str)
+        worksheet.mergeCells(`A5`, `C5`)
+        const account_number = worksheet.getCell(`A5`)
+        account_number.value = `Хисоб рақами`
+        worksheet.mergeCells(`D5`, 'G5')
+        const organization_account_number = worksheet.getCell(`D5`)
+        organization_account_number.value = returnStringSumma(contract.organization_account_number)
+        worksheet.mergeCells(`H5`, 'K5')
+        const doer_account_number = worksheet.getCell(`H5`)
+        doer_account_number.value = returnStringSumma(contract.account_number)
+        const css_array = [title, organization, doer, address, inn, account_number, contract_date, organization_name, organization_str, organization_account_number, doer_name, doer_str, doer_account_number]
+        css_array.forEach((item, index) => {
+            let size = 10;
+            let bold = true;
+            let horizontal = 'center'
+            if (index === 0) size = 14;
+            if(index > 6) bold = false;
+            Object.assign(item, {
+                numFmt: '#,## ',
+                font: { size, bold, color: { argb: 'FF000000' }, name: 'Times New Roman' },
+                alignment: { vertical: 'middle', horizontal },
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } },
+                border: {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                }
+            });
+        })
 
+        worksheet.getRow(1).height = 30;
         const filePath = path.join(__dirname, '../../public/uploads/' + fileName);
         await workbook.xlsx.writeFile(filePath);
         return res.download(filePath, (err) => {
@@ -268,5 +345,5 @@ module.exports = {
     importExcelData,
     exportExcelData,
     forDataPdf,
-    conntractViewExcel
+    contractView
 };
