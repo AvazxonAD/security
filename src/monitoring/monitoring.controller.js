@@ -1,7 +1,8 @@
 const {
-    prixodRasxodService
+    prixodRasxodService,
+    monitoringService
 } = require("./monitoring.service");
-const { prixodRasxodQueryValidation } = require("../utils/validation");
+const { prixodRasxodQueryValidation, monitoringQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
@@ -33,6 +34,20 @@ const prixodRasxod = async (req, res) => {
     }
 }
 
+
+const monitoring = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const { year, month, account_number_id } = validationResponse(monitoringQueryValidation, req.query)
+        const data = await monitoringService(user_id, account_number_id, year, month)
+        resFunc(res, 200, data)
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
+
 module.exports = {
-    prixodRasxod
+    prixodRasxod,
+    monitoring
 }

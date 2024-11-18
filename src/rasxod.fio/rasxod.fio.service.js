@@ -195,6 +195,14 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                         ARRAY_AGG(ROW_TO_JSON(task))
                     FROM (
                         SELECT 
+                            c.doc_num AS contract_doc_num,
+                            c.doc_date AS contract_doc_date,
+                            o.name AS organization_name,
+                            o.address AS organization_address,
+                            o.str AS organization_str,
+                            o.bank_name AS organization_bank_name,
+                            o.mfo AS organization_mfo,
+                            o.account_number AS organization_account_number,
                             w_t.id AS worker_task_id,
                             w_t.task_time,
                             w_t.summa,

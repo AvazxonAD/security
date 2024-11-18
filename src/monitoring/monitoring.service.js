@@ -153,18 +153,81 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
-        `, [user_id, account_number_id, to])        
-            const rasxod_fio_summa_to = rasxod_fio_to.rows.length > 0 ? rasxod_fio_to.rows[0].summa : 0
-            const summa_to = prixod_summa_to - (rasxod_fio_summa_to + rasxod_summa_to)
+        `, [user_id, account_number_id, to])
+        const rasxod_fio_summa_to = rasxod_fio_to.rows.length > 0 ? rasxod_fio_to.rows[0].summa : 0
+        const summa_to = prixod_summa_to - (rasxod_fio_summa_to + rasxod_summa_to)
         let prixod = 0;
         let rasxod = 0;
         rows.forEach(item => { prixod += item.prixod_sum, rasxod += item.rasxod_sum })
-        return { rows, total: total.rows[0].total_count, summa_from, summa_to, prixod, rasxod}
+        return { rows, total: total.rows[0].total_count, summa_from, summa_to, prixod, rasxod }
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
+const monitoringService = async (user_id, account_number_id, year, month) => {
+    try {
+        const byBatalon = await pool.query(`
+            SELECT 
+                id,
+                name,
+                address
+            FROM batalon
+            WHERE user_id = $1 AND isdeleted = false 
+        `, [user_id])
+        let itogo = 0;
+        for (let batalon of byBatalon.rows) {
+            const result = await pool.query(`
+                SELECT 
+                    COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum,
+                    COALESCE(COUNT(t.id), 0)::INTEGER AS count
+                FROM task AS t
+                LEFT JOIN contract AS c ON c.id = t.contract_id
+                WHERE c.isdeleted = false 
+                AND t.batalon_id = $1
+                AND 0 = ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
+                AND c.account_number_id = $2
+                AND EXTRACT(YEAR FROM c.doc_date) = $3
+                AND EXTRACT(MONTH FROM c.doc_date) = $4
+            `, [batalon.id, account_number_id, year, month])
+            batalon.summa = result.rows[0].sum
+            batalon.count = result.rows[0].count
+            itogo += batalon.summa
+        }
+        const batalon_result = byBatalon.rows.map(item => {
+            if(item.summa === 0){
+                item.percent = 0
+            }else {
+                item.percent = Math.round((item.summa * 100 / itogo) * 100) / 100
+            }
+            return item;
+        })
+        for (let batalon of byBatalon.rows) {
+            for(let i = 1; i <= 12; i++){
+                const result = await pool.query(`
+                    SELECT 
+                        COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum,
+                        COALESCE(COUNT(t.id), 0)::INTEGER AS count
+                    FROM task AS t
+                    LEFT JOIN contract AS c ON c.id = t.contract_id
+                    WHERE c.isdeleted = false 
+                    AND t.batalon_id = $1
+                    AND 0 = ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
+                    AND c.account_number_id = $2
+                    AND EXTRACT(YEAR FROM c.doc_date) = $3
+                    AND EXTRACT(MONTH FROM c.doc_date) = $4
+                `, [batalon.id, account_number_id, year, i])
+                console.log(result.rows)
+            }
+        } 
+        batalon_result.sort((a, b) => b.percent - a.percent)
+        return { itogo, byBatalon: batalon_result }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
 }
 
 module.exports = {
-    prixodRasxodService
+    prixodRasxodService,
+    monitoringService
 }

@@ -203,10 +203,11 @@ const contractUpdateService = async (data) => {
     }
 };
 
-const getcontractService = async (user_id, offset, limit, search, from, to, account_number_id, organization_id = null) => {
+const getcontractService = async (user_id, offset, limit, search, from, to, account_number_id, organization_id = null, batalion_id = null) => {
     try {
         let organization_filter = ``
         let serach_filter = ``;
+        let batalion_filter = ``
         const params = [user_id, offset, limit, from, to, account_number_id];
         if (search) {
             serach_filter = `AND (
@@ -219,6 +220,10 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
         if(organization_id){
             organization_filter = `AND c.organization_id = $${params.length + 1}`
             params.push(organization_id)
+        }
+        if(batalion_id){
+            batalion_filter = `AND EXISTS (SELECT * FROM task AS t WHERE t.isdeleted = false AND t.batalon_id = $${params.length + 1} AND c.id = t.contract_id )`
+            params.push(batalion_id)
         }
         const { rows } = await pool.query(`
             WITH data AS (
@@ -262,14 +267,18 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     )::FLOAT AS remaining_summa
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
-                WHERE c.isdeleted = false AND c.user_id = $1 ${serach_filter} ${organization_filter} AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6
+                WHERE c.isdeleted = false 
+                    AND c.user_id = $1 
+                    ${serach_filter} ${organization_filter} ${batalion_filter}
+                    AND c.doc_date BETWEEN $4 AND $5 
+                    AND c.account_number_id = $6
                 ORDER BY c.doc_date OFFSET $2 LIMIT $3
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                (SELECT COALESCE(COUNT(c.id), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6 ${serach_filter} ${organization_filter})::INTEGER AS total_count,
-                (SELECT COALESCE(SUM(c.result_summa), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date <= $4 AND c.account_number_id = $6 ${serach_filter} ${organization_filter})::FLOAT AS from_balance,
-                (SELECT COALESCE(SUM(c.result_summa), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date <= $5 AND c.account_number_id = $6 ${serach_filter} ${organization_filter})::FLOAT AS to_balance
+                (SELECT COALESCE(COUNT(c.id), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6 ${serach_filter} ${organization_filter} ${batalion_filter})::INTEGER AS total_count,
+                (SELECT COALESCE(SUM(c.result_summa), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date <= $4 AND c.account_number_id = $6 ${serach_filter} ${organization_filter} ${batalion_filter})::FLOAT AS from_balance,
+                (SELECT COALESCE(SUM(c.result_summa), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date <= $5 AND c.account_number_id = $6 ${serach_filter} ${organization_filter} ${batalion_filter})::FLOAT AS to_balance
             FROM data
         `, params);
         return { data: rows[0]?.data || [], total: rows[0].total_count, from_balance: rows[0].from_balance, to_balance: rows[0].to_balance }

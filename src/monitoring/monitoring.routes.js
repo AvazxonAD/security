@@ -4,10 +4,13 @@ const router = Router();
 const protect = require("../middleware/auth");
 
 const {
-    prixodRasxod
+    prixodRasxod,
+    monitoring
 } = require('./monitoring.controller')
 
+router.get('/', protect, monitoring)
 router.get('/prixod/rasxod', protect, prixodRasxod)
+
 
 
 module.exports = router;
