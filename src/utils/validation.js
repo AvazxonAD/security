@@ -16,7 +16,8 @@ const prixodRasxodQueryValidation = Joi.object({
 const monitoringQueryValidation = Joi.object({
   account_number_id: Joi.number().required().min(1),
   year: Joi.string().trim().pattern(/^(20\d{2}|[2-9]\d{3})$/).required(),
-  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/) .required()
+  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/) .required(),
+  batalon_id: Joi.number().min(1)
 })
 
 const rasxodValidation = Joi.object({

@@ -85,6 +85,7 @@ const getTaskService = async (user_id, batalon_id, birgada) => {
         const data = await pool.query(`
             SELECT 
                 t.id, 
+                c.id AS contract_id,
                 t.batalon_id, 
                 b.name AS batalon_name,
                 b.birgada,
@@ -96,6 +97,7 @@ const getTaskService = async (user_id, batalon_id, birgada) => {
                 TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
                 ((t.task_time * t.worker_number) - COALESCE((SELECT SUM(task_time) FROM worker_task WHERE task_id = t.id AND isdeleted = false), 0)::FLOAT) AS remaining_task_time 
             FROM task AS t
+            JOIN contract AS c ON c.id = t.contract_id
             JOIN batalon AS b ON b.id = t.batalon_id 
             WHERE t.user_id = $1 ${batalon_filter} ${birgada_filter}  AND t.isdeleted = false
             ORDER BY id DESC

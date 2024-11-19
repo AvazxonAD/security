@@ -8,6 +8,7 @@ const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { returnStringSumma } = require('../utils/return.summa')
+const { getByIdBatalonService } = require('../batalon/batalon.service')
 
 const prixodRasxod = async (req, res) => {
     try {
@@ -38,8 +39,11 @@ const prixodRasxod = async (req, res) => {
 const monitoring = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { year, month, account_number_id } = validationResponse(monitoringQueryValidation, req.query)
-        const data = await monitoringService(user_id, account_number_id, year, month)
+        const { year, month, account_number_id, batalon_id } = validationResponse(monitoringQueryValidation, req.query)
+        if (batalon_id) {
+            await getByIdBatalonService(user_id, batalon_id)
+        }
+        const data = await monitoringService(user_id, account_number_id, year, month, batalon_id)
         resFunc(res, 200, data)
     } catch (error) {
         errorCatch(error, res)
