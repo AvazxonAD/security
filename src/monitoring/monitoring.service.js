@@ -217,9 +217,27 @@ const monitoringService = async (user_id, account_number_id, year, month) => {
                     AND EXTRACT(YEAR FROM c.doc_date) = $3
                     AND EXTRACT(MONTH FROM c.doc_date) = $4
                 `, [batalon.id, account_number_id, year, i])
-                console.log(result.rows)
+                batalon[i] = result.rows[0].sum
             }
         } 
+        const workers = await pool.query(`
+                SELECT 
+                    b.name AS batalon_name,
+                    w.fio,
+                    (
+                        SELECT COALESCE(SUM(w_t.summa), 0)
+                        FROM worker_task AS w_t
+                        JOIN task AS t ON t.id = w_t.task_id
+                        JOIN contract AS c ON c.id = t.contract_id
+                        WHERE w_t.id = w.id AND w_t.isdeleted = false 0 = ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
+                    ) AS summa,
+                FROM worker AS w
+                JOIN batalon AS b ON b.id = w.batalon_id
+                JOIN users AS u ON u.id = b.user_id
+                WHERE u.id = $1 AND w.isdeleted = false
+        `[user_id])
+
+        console.log(workers.rows)
         batalon_result.sort((a, b) => b.percent - a.percent)
         return { itogo, byBatalon: batalon_result }
     } catch (error) {
