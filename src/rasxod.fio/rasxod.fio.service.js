@@ -124,7 +124,8 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     b.name AS batalon_name
                 FROM rasxod_fio_doc AS r_d
                 JOIN batalon AS b ON b.id = r_d.batalon_id 
-                WHERE r_d.account_number_id = $1
+                WHERE r_d.account_number_id = $1 
+                AND r_d.isdeleted = false
                 AND r_d.doc_date BETWEEN $2 AND $3
                 AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false
                 OFFSET $5 LIMIT $6
