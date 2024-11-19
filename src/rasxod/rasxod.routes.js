@@ -11,12 +11,14 @@ const {
     deeleteRasxod,
     updateRasxod,
     exportExcelData,
-    exportRasoxBYId
+    exportRasoxBYId,
+    forPdfData
 } = require('./rasxod.controller')
 
 router.get('/request', protect, getPaymentRequest)
     .get('/export/:id', protect, exportRasoxBYId)
     .get('/export', protect, exportExcelData)
+    .get('/pdf', protect, forPdfData)
     .get('/:id', protect, getByIdRasxod)
     .get('/', protect, getRasxod)
     .post('/', protect, createRasxod)

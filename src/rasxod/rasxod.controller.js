@@ -256,7 +256,20 @@ const exportRasoxBYId = async (req, res) => {
     }
 }
 
-
+const forPdfData = async (req, res) => {
+    try {
+        const user_id = req.user.id
+        const { from, to, account_number_id, batalon_id } = validationResponse(rasxodQueryValidation, req.query)
+        await getByIdaccount_numberService(user_id, account_number_id)
+        if (batalon_id) {
+            await getByIdBatalonService(user_id, batalon_id, true)
+        }
+        const data = await getRasxodService(user_id, account_number_id, from, to, null, null, batalon_id)
+        resFunc(res, 200, data)
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
 
 module.exports = {
     getPaymentRequest,
@@ -266,5 +279,6 @@ module.exports = {
     deeleteRasxod,
     updateRasxod,
     exportExcelData,
-    exportRasoxBYId
+    exportRasoxBYId,
+    forPdfData
 }
