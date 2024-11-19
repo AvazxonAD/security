@@ -233,11 +233,24 @@ const exportExcelData = async (req, res) => {
     }
 }
 
+const forPdfData = async (req, res) => {
+    try {
+        const { search, from, to, account_number_id, organization_id } = validationResponse(prixodQueryValidation, req.query)
+        const user_id = req.user.id;
+        await getByIdaccount_numberService(user_id, account_number_id);
+        const data = await getPrixodService(user_id, from, to, null, null, account_number_id, search, organization_id)
+        resFunc(res, 200, data)
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
 module.exports = {
     prixodCreate,
     getPrixod,
     getByIdPrixod,
     updatePrixod,
     deletePrixod,
-    exportExcelData
+    exportExcelData,
+    forPdfData
 }
