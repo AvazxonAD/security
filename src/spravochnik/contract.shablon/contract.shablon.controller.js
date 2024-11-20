@@ -39,7 +39,8 @@ const templateGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        const result = await getContractTemplateByIdService(user_id, id, true)
+        const edit = req.query.edit
+        const result = await getContractTemplateByIdService(user_id, id, edit, true)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

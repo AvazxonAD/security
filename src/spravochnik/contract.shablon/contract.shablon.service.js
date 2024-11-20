@@ -49,7 +49,7 @@ const getContractTemplatesService = async (user_id) => {
     }
 };
 
-const getContractTemplateByIdService = async (user_id, id, isdeleted = false) => {
+const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = false) => {
     try {
         const ignoreDeleted = isdeleted ? '' : 'AND isdeleted = false';
         const result = await pool.query(
@@ -60,16 +60,20 @@ const getContractTemplateByIdService = async (user_id, id, isdeleted = false) =>
             throw new ErrorResponse('Shablon topilmadi', 404);
         }
         const data = result.rows[0]
-        const regex = /(\d+\.\d+ [^(\d+\.\d+)]*)/g;
-        data.main_section = data.main_section.match(regex)
-        data.section_1 = data.section_1.match(regex)
-        data.section_2 = data.section_2.match(regex)
-        data.section_3 = data.section_3.match(regex)
-        data.section_4 = data.section_4.match(regex)
-        data.section_5 = data.section_5.match(regex)
-        data.section_6 = data.section_6.match(regex)
-        data.section_7 = data.section_7.match(regex)
-        return data;
+        if(edit === 'true'){
+            return data;   
+        }else{
+            const regex = /(\d+\.\d+ [^(\d+\.\d+)]*)/g;
+            data.main_section = data.main_section.match(regex)
+            data.section_1 = data.section_1.match(regex)
+            data.section_2 = data.section_2.match(regex)
+            data.section_3 = data.section_3.match(regex)
+            data.section_4 = data.section_4.match(regex)
+            data.section_5 = data.section_5.match(regex)
+            data.section_6 = data.section_6.match(regex)
+            data.section_7 = data.section_7.match(regex)
+            return data;
+        }
     } catch (error) {
         throw new ErrorResponse(error.message, error.statusCode || 500);
     }
