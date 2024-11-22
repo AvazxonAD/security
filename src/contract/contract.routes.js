@@ -2,7 +2,7 @@ const { Router } = require("express");
 const router = Router();
 
 const protect = require("../middleware/auth");
-const upload = require('../utils/protect.file')
+const { uploadExcel } = require('../utils/protect.file')
 
 const {
     contractCreate,
@@ -24,7 +24,7 @@ router.post('/', protect, contractCreate)
     .get('/:id', protect, contractGetById)
     .get('/', protect, contractGet)
     .delete('/:id', protect, contractDelete)
-    .post('/excel', protect, upload.single('file'), importExcelData)
+    .post('/excel', protect, uploadExcel.single('file'), importExcelData)
 
 
 module.exports = router;

@@ -3,6 +3,8 @@ CREATE TABLE users (
     fio VARCHAR,
     login VARCHAR(100),
     password VARCHAR(100),
+    image VARCHAR(10000),
+    region VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     isdeleted BOOLEAN DEFAULT FALSE

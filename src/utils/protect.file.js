@@ -8,15 +8,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 100000000 },
-  fileFilter: function(req, file, cb) {
-    checkFileType(file, cb);
-  }
-});
-
-function checkFileType(file, cb) {
+function checkExcelFileType(file, cb) {
   const filetypes = /xlsx|xls/;
   const mimetypes = [
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -31,4 +23,38 @@ function checkFileType(file, cb) {
   }
 }
 
-module.exports = upload;
+function checkImageFileType(file, cb) {
+  const filetypes = /jpg|jpeg|png|gif/; 
+  const mimetypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif'
+  ]; 
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = mimetypes.includes(file.mimetype);
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Error: Faqat rasm fayllariga ruxsat beriladi'));
+  }
+}
+
+
+
+const uploadExcel = multer({
+  storage,
+  limits: { fileSize: 10000000000 },
+  fileFilter: function(req, file, cb) {
+    checkExcelFileType(file, cb);
+  }
+});
+
+const uploadImage = multer({
+  storage,
+  limits: { fileSize: 10000000000 },
+  fileFilter: function(req, file, cb) {
+    checkImageFileType(file, cb);
+  }
+});
+
+module.exports = { uploadExcel, uploadImage }

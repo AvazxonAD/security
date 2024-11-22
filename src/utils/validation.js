@@ -79,6 +79,14 @@ const batalionValidation = Joi.object({
   treasury1: Joi.string().trim(),
   treasury2: Joi.string().trim()
 })
+
+const userValidation = Joi.object({
+  fio: Joi.string().trim().required(),
+  login: Joi.string().trim().max(100).required(),
+  password: Joi.string().trim().max(100).required(),
+  region: Joi.string().trim().required()
+});
+
 const bxmValidation = Joi.object({
   summa: Joi.number().required().min(1)
 })
@@ -274,5 +282,6 @@ module.exports = {
   deductionValidation,
   prixodExcelValidation,
   prixodRasxodQueryValidation,
-  monitoringQueryValidation
+  monitoringQueryValidation,
+  userValidation
 };

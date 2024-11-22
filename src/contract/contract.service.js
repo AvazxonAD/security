@@ -301,7 +301,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
             organization = ` AND c.organization_id = $${params.length + 1}`
             params.push(organization_id)
         }
-        const result = await pool.query(`
+        const result = await pool.query(`--sql
             SELECT 
                 c.id,
                 c.doc_num, 
@@ -360,7 +360,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
 
 const dataForExcelService = async (user_id, account_number_id, from, to) => {
     try {
-        const data = await pool.query(`
+        const data = await pool.query(`--sql
             WITH data AS (
                 SELECT 
                     c.id,

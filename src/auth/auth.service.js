@@ -16,14 +16,16 @@ const getByLoginUserService = async (login) => {
                 a.adress,
                 b.bank AS bank_name,
                 b.mfo,
-                s.str
+                s.str,
+                u.region,
+                u.image
             FROM users AS u 
-            JOIN account_number AS a_n ON a_n.user_id = u.id
-            JOIN doer AS d ON d.user_id = u.id
-            JOIN boss ON boss.user_id = u.id
-            JOIN adress AS a ON a.user_id = u.id
-            JOIN bank AS b ON b.user_id = u.id
-            JOIN str AS s ON s.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN doer AS d ON d.user_id = u.id
+            LEFT JOIN boss ON boss.user_id = u.id
+            LEFT JOIN adress AS a ON a.user_id = u.id
+            LEFT JOIN bank AS b ON b.user_id = u.id
+            LEFT JOIN str AS s ON s.user_id = u.id
             WHERE u.login = $1 AND u.isdeleted = false
         `, [login])
         const user = rows[0]
@@ -35,6 +37,26 @@ const getByLoginUserService = async (login) => {
         throw new ErrorResponse(error, error.statusCode)
     }
 }
+
+// get By Login Service
+const getByLoginService = async (login) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT 
+                u.id
+            FROM users AS u 
+            WHERE u.login = $1 AND u.isdeleted = false
+        `, [login])
+        const user = rows[0]
+        if (user) {
+            throw new ErrorResponse("The login has already been used", 400)
+        }
+        return user
+    } catch (error) {
+        throw new ErrorResponse(error, error.statusCode)
+    }
+}
+
 
 // get by id user  
 const getBYIdUserService = async (user_id) => {
@@ -64,5 +86,6 @@ const updateAuthService = async (login, password, id, fio) => {
 module.exports = {
     getByLoginUserService,
     getBYIdUserService,
-    updateAuthService
+    updateAuthService,
+    getByLoginService
 }
