@@ -2,12 +2,12 @@ const {
     prixodRasxodService,
     monitoringService
 } = require("./admin.monitoring.service");
-const { adminPrixodRasxodQueryValidation, monitoringQueryValidation } = require("../../utils/validation");
+const { adminPrixodRasxodQueryValidation, adminMonitoringQueryValidation } = require("../../utils/validation");
 const { resFunc } = require("../../utils/resFunc");
 const { validationResponse } = require("../../utils/response.validation");
-const { errorCatch } = require('../../utils/errorCatch')
-const { returnStringSumma } = require('../../utils/return.summa')
-const { getByIdUserService } = require('../user/user.service')
+const { errorCatch } = require('../../utils/errorCatch');
+const { returnStringSumma } = require('../../utils/return.summa');
+const { getByIdUserService } = require('../user/user.service');
 
 const prixodRasxod = async (req, res) => {
     try {
@@ -38,12 +38,11 @@ const prixodRasxod = async (req, res) => {
 
 const monitoring = async (req, res) => {
     try {
-        const user_id = req.user.id
-        const { year, month, account_number_id, batalon_id } = validationResponse(monitoringQueryValidation, req.query)
-        if (batalon_id) {
-            await getByIdBatalonService(user_id, batalon_id)
+        const { year, month, user_id } = validationResponse(adminMonitoringQueryValidation, req.query)
+        if (user_id) {
+            await getByIdUserService(user_id)
         }
-        const data = await monitoringService(user_id, account_number_id, year, month, batalon_id)
+        const data = await monitoringService(year, month, user_id)
         resFunc(res, 200, data)
     } catch (error) {
         errorCatch(error, res)

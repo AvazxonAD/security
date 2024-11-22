@@ -5,7 +5,7 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
     try {
         let user_filter = ``
         const params = [from, to, offset, limit]
-        if(user_id){
+        if (user_id) {
             user_filter = `AND u.id = $${params.length + 1}`
             params.push(user_id)
         }
@@ -118,10 +118,10 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie, u.id, d.doer, a.adress, s.str, a_n.account_number,boss.boss, b.bank, b.mfo
             ORDER BY doc_date
             OFFSET $3 LIMIT $4
-        `,params)
+        `, params)
         const total_params = [from, to]
         let user_filter_total = ''
-        if(user_id){
+        if (user_id) {
             user_filter_total = `AND u.id = $${total_params.length + 1}`
             total_params.push(user_id)
         }
@@ -154,7 +154,7 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
         const summa_from_params = [from]
         const summa_to_params = [to]
         let user_date_filter = ``
-        if(user_id){
+        if (user_id) {
             user_date_filter = `AND u.id = $2`
             summa_from_params.push(user_id)
             summa_to_params.push(user_id)
@@ -235,42 +235,40 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
     }
 }
 
-const monitoringService = async (user_id, account_number_id, year, month, batalon_id) => {
+const monitoringService = async (year, month, user_id) => {
     try {
-        let params = [user_id]
-        let batalon_filter = ``
-        if(batalon_id){
-            batalon_filter = `AND b.id = $${params.length + 1}`
-            params.push(batalon_id)
+        let params = []
+        let user_filter = ``
+        if (user_id) {
+            user_filter = `AND u.id = $${params.length + 1}`
+            params.push(user_id)
         }
-        const byBatalon = await pool.query(`
+        const byUser = await pool.query(`--sql
             SELECT 
-                b.id,
-                b.name,
-                b.address
-            FROM batalon AS b
-            WHERE b.user_id = $1 AND b.isdeleted = false ${batalon_filter}
+                u.id,
+                u.region
+            FROM users AS u
+            WHERE u.isdeleted = false AND u.region IS NOT NULL ${user_filter}
         `, params)
         let itogo = 0;
-        for (let batalon of byBatalon.rows) {
-            const result = await pool.query(`
+        for (let user of byUser.rows) {
+            const result = await pool.query(`--sql
                 SELECT 
                     COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum,
                     COALESCE(COUNT(t.id), 0)::INTEGER AS count
                 FROM task AS t
                 LEFT JOIN contract AS c ON c.id = t.contract_id
                 WHERE c.isdeleted = false 
-                AND t.batalon_id = $1
+                AND c.user_id = $1
                 AND 0 = ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
-                AND c.account_number_id = $2
-                AND EXTRACT(YEAR FROM c.doc_date) = $3
-                AND EXTRACT(MONTH FROM c.doc_date) = $4
-            `, [batalon.id, account_number_id, year, month])
-            batalon.summa = result.rows[0].sum
-            batalon.count = result.rows[0].count
-            itogo += batalon.summa
+                AND EXTRACT(YEAR FROM c.doc_date) = $2
+                AND EXTRACT(MONTH FROM c.doc_date) = $3
+            `, [user.id, year, month])
+            user.summa = result.rows[0].sum
+            user.count = result.rows[0].count
+            itogo += user.summa
         }
-        const batalon_result = byBatalon.rows.map(item => {
+        const user_result = byUser.rows.map(item => {
             if (item.summa === 0) {
                 item.percent = 0
             } else {
@@ -281,60 +279,58 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
         let month_sum = {};
         for (let i = 1; i <= 12; i++) {
             month_sum[`oy_${i}`] = 0;
-            for (let batalon of byBatalon.rows) {
-                const result = await pool.query(`
-            SELECT 
-                COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum
-            FROM task AS t
-            LEFT JOIN contract AS c ON c.id = t.contract_id
-            WHERE c.isdeleted = false 
-              AND t.batalon_id = $1
-              AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
-                       FROM prixod 
-                       WHERE isdeleted = false AND contract_id = c.id)
-              AND c.account_number_id = $2
-              AND EXTRACT(YEAR FROM c.doc_date) = $3
-              AND EXTRACT(MONTH FROM c.doc_date) = $4
-        `, [batalon.id, account_number_id, year, i]);
-
-                batalon[`oy_${i}`] = result.rows[0].sum; 
+            for (let user of byUser.rows) {
+                const result = await pool.query(`--sql
+                    SELECT 
+                        COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum
+                    FROM task AS t
+                    LEFT JOIN contract AS c ON c.id = t.contract_id
+                    WHERE c.isdeleted = false 
+                    AND c.user_id = $1
+                    AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                        FROM prixod 
+                        WHERE isdeleted = false AND contract_id = c.id)
+                    AND EXTRACT(YEAR FROM c.doc_date) = $2
+                    AND EXTRACT(MONTH FROM c.doc_date) = $3
+                `, [user.id, year, i]);
+                user[`oy_${i}`] = result.rows[0].sum;
                 month_sum[`oy_${i}`] += result.rows[0].sum;
             }
         }
         for (let i = 1; i <= 12; i++) {
-            for (let item of byBatalon.rows) {
+            for (let item of byUser.rows) {
                 const total = month_sum[`oy_${i}`];
                 item[`oy_${i}_percent`] = total > 0
                     ? Math.round((item[`oy_${i}`] * 100 / total) * 100) / 100
                     : 0;
             }
         }
-        const workers = await pool.query(`
+        const workers = await pool.query(`--sql
             SELECT 
                 w.id,
                 w.fio,
+                u.region,
+                b.name AS batalon_name,
                 (
                     SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT
                     FROM worker_task AS w_t
                     JOIN task AS t ON t.id = w_t.task_id
                     JOIN contract AS c ON c.id = t.contract_id
                     WHERE w_t.worker_id = w.id  
-                    AND 0 = COALESCE(
-                        (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                    AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
                         FROM prixod 
-                        WHERE isdeleted = false AND contract_id = c.id),
-                        0
+                        WHERE isdeleted = false AND contract_id = c.id),0
                     )
                 ) AS summa 
             FROM worker AS w 
             JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON u.id = b.user_id
-            WHERE w.isdeleted = false AND b.user_id = $1 ${batalon_filter}  
+            WHERE w.isdeleted = false ${user_filter}  
             ORDER BY summa DESC
             LIMIT 10
         `, params)
-        batalon_result.sort((a, b) => b.percent - a.percent)
-        return { itogo, byBatalon: batalon_result, workers: workers.rows }
+        user_result.sort((a, b) => b.percent - a.percent)
+        return { itogo, byUser: user_result, workers: workers.rows }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }

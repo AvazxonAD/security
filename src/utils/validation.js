@@ -26,6 +26,12 @@ const monitoringQueryValidation = Joi.object({
   year: Joi.string().trim().pattern(/^(20\d{2}|[2-9]\d{3})$/).required(),
   month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/) .required(),
   batalon_id: Joi.number().min(1)
+});
+
+const adminMonitoringQueryValidation = Joi.object({
+  year: Joi.string().trim().pattern(/^(20\d{2}|[2-9]\d{3})$/).required(),
+  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/) .required(),
+  user_id: Joi.number().min(1)
 })
 
 const rasxodValidation = Joi.object({
@@ -292,5 +298,6 @@ module.exports = {
   prixodRasxodQueryValidation,
   monitoringQueryValidation,
   userValidation,
-  adminPrixodRasxodQueryValidation
+  adminPrixodRasxodQueryValidation,
+  adminMonitoringQueryValidation
 };
