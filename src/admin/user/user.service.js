@@ -56,6 +56,9 @@ const getByIdUserService = async (id) => {
     try {
         const result = await pool.query(`SELECT id, fio, login, image, region, created_at
             FROM users WHERE isdeleted = false AND id = $1 AND region IS NOT NULL`, [id]);
+        if(!result.rows[0]){
+            throw new ErrorResponse('user not found', 404);
+        };
         return result.rows[0];
     } catch (error) {
         throw new ErrorResponse(error.message, error.statusCode);

@@ -1,10 +1,24 @@
-const pool = require('../config/db')
-const ErrorResponse = require('../utils/errorResponse')
+const pool = require('../../config/db')
+const ErrorResponse = require('../../utils/errorResponse')
 
-const prixodRasxodService = async (user_id, account_number_id, from, to, offset, limit) => {
+const prixodRasxodService = async (from, to, offset, limit, user_id) => {
     try {
+        let user_filter = ``
+        const params = [from, to, offset, limit]
+        if(user_id){
+            user_filter = `AND u.id = $${params.length + 1}`
+            params.push(user_id)
+        }
         const { rows } = await pool.query(`--sql
             SELECT 
+                u.id AS user_id,
+                d.doer AS doer_name,
+                a.adress AS doer_address,
+                s.str AS doer_inn,
+                a_n.account_number AS doer_account_number,
+                boss.boss AS doer_boss,
+                b.bank AS doer_bank_name,
+                b.mfo AS doer_bank_mfo,
                 t.id AS tashkilot_id,
                 t.name AS tashkilot_name,
                 t.address AS tashkilot_address,
@@ -17,13 +31,28 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 0::FLOAT AS rasxod_sum,
                 p.summa::FLOAT AS prixod_sum    
             FROM prixod AS p 
+            JOIN users AS u ON u.id = p.user_id
+            LEFT JOIN doer AS d ON d.user_id = u.id
+            LEFT JOIN adress AS a ON a.user_id = u.id
+            LEFT JOIN str AS s ON s.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN boss ON boss.user_id = u.id
+            LEFT JOIN bank AS b ON b.user_id = u.id
             JOIN contract AS c ON c.id = p.contract_id
             JOIN organization AS t ON t.id = c.organization_id
-            WHERE p.user_id = $1 AND p.isdeleted = false AND p.account_number_id = $2 AND p.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
+            WHERE p.isdeleted = false AND p.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter}
 
             UNION ALL 
 
             SELECT 
+                u.id AS user_id,
+                d.doer AS doer_name,
+                a.adress AS doer_address,
+                s.str AS doer_inn,
+                a_n.account_number AS doer_account_number,
+                boss.boss AS doer_boss,
+                b.bank AS doer_bank_name,
+                b.mfo AS doer_bank_mfo,
                 t.id AS tashkilot_id,
                 t.name AS tashkilot_name,
                 t.address AS tashkilot_address,
@@ -36,16 +65,31 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS rasxod_sum,
                 0::FLOAT AS prixod_sum
             FROM rasxod_doc AS r_d
+            JOIN users AS u ON u.id = r_d.user_id
+            LEFT JOIN doer AS d ON d.user_id = u.id
+            LEFT JOIN adress AS a ON a.user_id = u.id
+            LEFT JOIN str AS s ON s.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN boss ON boss.user_id = u.id
+            LEFT JOIN bank AS b ON b.user_id = u.id
             JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
             JOIN task AS t_k ON t_k.id = r.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
-            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie
+            WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter}
+            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie, u.id, d.doer, a.adress, s.str, a_n.account_number,boss.boss, b.bank, b.mfo
 
             UNION ALL 
 
             SELECT 
+                u.id AS user_id,
+                d.doer AS doer_name,
+                a.adress AS doer_address,
+                s.str AS doer_inn,
+                a_n.account_number AS doer_account_number,
+                boss.boss AS doer_boss,
+                b.bank AS doer_bank_name,
+                b.mfo AS doer_bank_mfo,
                 t.id AS tashkilot_id,
                 t.name AS tashkilot_name,
                 t.address AS tashkilot_address,
@@ -58,105 +102,128 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 COALESCE(SUM(r.summa), 0)::FLOAt AS rasxod_sum,
                 0::FLOAT AS prixod_sum    
             FROM rasxod_fio_doc AS r_d
+            JOIN users AS u ON u.id = r_d.user_id
+            LEFT JOIN doer AS d ON d.user_id = u.id
+            LEFT JOIN adress AS a ON a.user_id = u.id
+            LEFT JOIN str AS s ON s.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN boss ON boss.user_id = u.id
+            LEFT JOIN bank AS b ON b.user_id = u.id
             JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
-            JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
-            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie
+            JOIN batalon AS t ON t.id = t_k.batalon_id 
+            WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter}
+            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie, u.id, d.doer, a.adress, s.str, a_n.account_number,boss.boss, b.bank, b.mfo
             ORDER BY doc_date
-            OFFSET $5 LIMIT $6
-        `, [user_id, account_number_id, from, to, offset, limit])
-
-        const total = await pool.query(`
+            OFFSET $3 LIMIT $4
+        `,params)
+        const total_params = [from, to]
+        let user_filter_total = ''
+        if(user_id){
+            user_filter_total = `AND u.id = $${total_params.length + 1}`
+            total_params.push(user_id)
+        }
+        const total = await pool.query(`--sql
             SELECT 
                 (SELECT COALESCE(COUNT(p.id), 0)::INTEGER 
                 FROM prixod AS p 
+                JOIN users AS u ON u.id = p.user_id
                 JOIN contract AS c ON c.id = p.contract_id
                 JOIN organization AS t ON t.id = c.organization_id
-                WHERE p.user_id = $1 AND p.isdeleted = false AND p.account_number_id = $2 AND p.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) + 
+                WHERE p.isdeleted = false AND  p.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter_total}) + 
                 (SELECT COALESCE(COUNT( DISTINCT r_d.id), 0)::INTEGER
                 FROM rasxod_doc AS r_d
+                JOIN users AS u ON u.id = r_d.user_id
                 JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
                 JOIN task AS t_k ON t_k.id = r.task_id
                 JOIN contract AS c ON c.id = t_k.contract_id
                 JOIN batalon AS t ON t.id = t_k.batalon_id
-                WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) + 
+                WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter_total}) + 
                 (SELECT COALESCE(COUNT(DISTINCT r_d.id), 0)::INTEGER  
                 FROM rasxod_fio_doc AS r_d
+                JOIN users AS u ON u.id = r_d.user_id
                 JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
                 JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
                 JOIN task AS t_k ON t_k.id = w_t.task_id
                 JOIN contract AS c ON c.id = t_k.contract_id
                 JOIN batalon AS t ON t.id = t_k.batalon_id
-                WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) AS total_count
-        `, [user_id, account_number_id, from, to])
-        const prixod_from = await pool.query(`
+                WHERE r_d.isdeleted = false AND  r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter_total}) AS total_count
+        `, total_params)
+        const summa_from_params = [from]
+        const summa_to_params = [to]
+        let user_date_filter = ``
+        if(user_id){
+            user_date_filter = `AND u.id = $2`
+            summa_from_params.push(user_id)
+            summa_to_params.push(user_id)
+        }
+        const prixod_from = await pool.query(`--sql
             SELECT COALESCE(SUM(p.summa), 0)::FLOAT AS summa 
             FROM prixod AS p 
+            JOIN users AS u ON u.id = p.user_id
             JOIN contract AS c ON c.id = p.contract_id
-            WHERE p.user_id = $1 AND p.account_number_id = $2 AND p.doc_date < $3 AND c.isdeleted = false AND p.isdeleted = false
-        `, [user_id, account_number_id, from])
+            WHERE p.doc_date < $1 AND c.isdeleted = false AND p.isdeleted = false ${user_date_filter}
+        `, summa_from_params)
         const prixod_summa_from = prixod_from.rows.length > 0 ? prixod_from.rows[0].summa : 0
-        const rasxod_from = await pool.query(`
+        const rasxod_from = await pool.query(`--sql
             SELECT 
                 COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS summa
             FROM rasxod_doc AS r_d
+            JOIN users AS u ON u.id = r_d.user_id
             JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
             LEFT JOIN task AS t_k ON t_k.id = r.task_id
             LEFT JOIN contract AS c ON c.id = t_k.contract_id
             LEFT JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false 
-            AND r_d.account_number_id = $2 
-            AND r_d.doc_date < $3 
-            AND c.isdeleted = false
-        `, [user_id, account_number_id, from]);
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+        `, summa_from_params);
         const rasxod_summa_from = rasxod_from.rows.length > 0 ? rasxod_from.rows[0].summa : 0
-        const rasxod_fio_from = await pool.query(`
+        const rasxod_fio_from = await pool.query(`--sql
             SELECT 
             COALESCE(SUM(r.summa), 0)::FLOAT AS summa 
             FROM rasxod_fio_doc AS r_d
+            JOIN users AS u ON u.id = r_d.user_id
             JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
-        `, [user_id, account_number_id, from])
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+        `, summa_from_params)
         const rasxod_fio_summa_from = rasxod_fio_from.rows.length > 0 ? rasxod_fio_from.rows[0].summa : 0
         const summa_from = prixod_summa_from - (rasxod_fio_summa_from + rasxod_summa_from)
-        const prixod_to = await pool.query(`
+        const prixod_to = await pool.query(`--sql
             SELECT COALESCE(SUM(p.summa), 0)::FLOAT AS summa 
             FROM prixod AS p 
+            JOIN users AS u ON u.id = p.user_id
             JOIN contract AS c ON c.id = p.contract_id
-            WHERE p.user_id = $1 AND p.account_number_id = $2 AND p.doc_date < $3 AND c.isdeleted = false AND p.isdeleted = false
-        `, [user_id, account_number_id, to])
+            WHERE p.doc_date < $1 AND c.isdeleted = false AND p.isdeleted = false ${user_date_filter}
+        `, summa_to_params)
         const prixod_summa_to = prixod_to.rows.length > 0 ? prixod_to.rows[0].summa : 0
-        const rasxod_to = await pool.query(`
+        const rasxod_to = await pool.query(`--sql
             SELECT 
             COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS summa
             FROM rasxod AS r
             JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
+            JOIN users AS u ON u.id = r_d.user_id
             JOIN task AS t_k ON t_k.id = r.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false 
-            AND r_d.account_number_id = $2 
-            AND r_d.doc_date < $3 
-            AND c.isdeleted = false
-        `, [user_id, account_number_id, to]);
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+        `, summa_to_params);
         const rasxod_summa_to = rasxod_to.rows.length > 0 ? rasxod_to.rows[0].summa : 0
-        const rasxod_fio_to = await pool.query(`
+        const rasxod_fio_to = await pool.query(`--sql
             SELECT 
             COALESCE(SUM(r.summa), 0)::FLOAT AS summa
             FROM rasxod_fio_doc AS r_d
+            JOIN users AS u ON u.id = r_d.user_id
             JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
-        `, [user_id, account_number_id, to])
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+        `, summa_to_params)
         const rasxod_fio_summa_to = rasxod_fio_to.rows.length > 0 ? rasxod_fio_to.rows[0].summa : 0
         const summa_to = prixod_summa_to - (rasxod_fio_summa_to + rasxod_summa_to)
         let prixod = 0;

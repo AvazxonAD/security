@@ -34,6 +34,7 @@ app.use('/rasxod/fio', require('./rasxod.fio/rasxod.fio.routes'));
 app.use('/rasxod', require('./rasxod/rasxod.routes'));
 app.use('/monitoring', require('./monitoring/monitoring.routes'));
 app.use('/admin/user', require('./admin/user/user.routes'));
+app.use('/admin/monitoring', require('./admin/monitoring/admin.monitoring.routes'));
 
 app.use(require('./middleware/errorHandler'));
 
