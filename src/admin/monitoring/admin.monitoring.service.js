@@ -246,9 +246,9 @@ const monitoringService = async (year, month, user_id) => {
         const byUser = await pool.query(`--sql
             SELECT 
                 u.id,
-                u.region
+                u.region_id
             FROM users AS u
-            WHERE u.isdeleted = false AND u.region IS NOT NULL ${user_filter}
+            WHERE u.isdeleted = false AND u.region_id IS NOT NULL ${user_filter}
         `, params)
         let itogo = 0;
         for (let user of byUser.rows) {
@@ -309,7 +309,7 @@ const monitoringService = async (year, month, user_id) => {
             SELECT 
                 w.id,
                 w.fio,
-                u.region,
+                u.region_id,
                 b.name AS batalon_name,
                 (
                     SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT

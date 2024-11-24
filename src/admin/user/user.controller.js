@@ -11,7 +11,6 @@ const { resFunc } = require("../../utils/resFunc");
 const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch')
 const { getByLoginService } = require('../../auth/auth.service')
-const ErrorResponse = require('../../utils/errorResponse')
 const { getByIdRegionService } = require(`../region/region.service`)
 
 const userCreate = async (req, res) => {
