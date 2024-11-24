@@ -3,7 +3,8 @@ const {
     getUserService,
     getByIdUserService,
     userUpdateService,
-    deleteuserService
+    deleteuserService,
+    checkByRegionUser
 } = require("./user.service");
 const { userValidation } = require("../../utils/validation");
 const { resFunc } = require("../../utils/resFunc");
@@ -11,6 +12,7 @@ const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch')
 const { getByLoginService } = require('../../auth/auth.service')
 const ErrorResponse = require('../../utils/errorResponse')
+const { getByIdRegionService } = require(`../region/region.service`)
 
 const userCreate = async (req, res) => {
     try {
@@ -20,6 +22,8 @@ const userCreate = async (req, res) => {
         }
         const data = validationResponse(userValidation, req.body);
         await getByLoginService(data.login);
+        await getByIdRegionService(data.region_id)
+        await checkByRegionUser(data.region_id)
         const result = await userCreateService({ ...data, url });
         resFunc(res, 200, result);
     } catch (error) {
@@ -55,10 +59,12 @@ const userUpdate = async (req, res) => {
             url = '/uploads/' + req.file.filename
         }
         const oldData = await getByIdUserService(id);
-        if(data.login !== oldData.login){   
+        if (data.login !== oldData.login) {
             await getByLoginService(data.login)
         }
-        await getByIdUserService(id);
+        if (data.region_id !== oldData.region_id) {
+            await checkByRegionUser(data.region_id)
+        }
         const result = await userUpdateService({ ...data, id, url })
         resFunc(res, 200, result);
     } catch (error) {

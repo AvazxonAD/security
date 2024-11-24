@@ -4,7 +4,7 @@ CREATE TABLE users (
     login VARCHAR(100),
     password VARCHAR(100),
     image VARCHAR(10000),
-    region VARCHAR,
+    region_id INTEGER REFERENCES regions(id) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     isdeleted BOOLEAN DEFAULT FALSE

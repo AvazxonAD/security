@@ -77,9 +77,9 @@ const loginValidation = Joi.object({
   password: Joi.string().trim().required().trim().required()
 })
 const authUpdateValidation = Joi.object({
-  login: Joi.string().trim().required(),
+  login: Joi.string().trim().required().pattern(/^[a-z_-]{6,}$/),
   oldPassword: Joi.string().trim().required(),
-  newPassword: Joi.string().trim().required(),
+  newPassword: Joi.string().trim().required().pattern(/^[a-z_-]{6,}$/),
   fio: Joi.string().required().trim()
 })
 const batalionValidation = Joi.object({
@@ -96,9 +96,9 @@ const batalionValidation = Joi.object({
 
 const userValidation = Joi.object({
   fio: Joi.string().trim().required(),
-  login: Joi.string().trim().max(100).required(),
+  login: Joi.string().trim().max(100).required().pattern(/^[a-z_-]{6,}$/),
   password: Joi.string().trim().max(100).required(),
-  region: Joi.string().trim().required()
+  region_id: Joi.number().min(1).required()
 });
 
 const bxmValidation = Joi.object({

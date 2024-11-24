@@ -4,7 +4,7 @@ const ErrorResponse = require('../utils/errorResponse')
 // get By Login User Service
 const getByLoginUserService = async (login) => {
     try {
-        const { rows } = await pool.query(`
+        const { rows } = await pool.query(`--sql
             SELECT 
                 u.id, 
                 u.password, 
@@ -17,7 +17,7 @@ const getByLoginUserService = async (login) => {
                 b.bank AS bank_name,
                 b.mfo,
                 s.str,
-                u.region,
+                u.region_id,
                 u.image
             FROM users AS u 
             LEFT JOIN account_number AS a_n ON a_n.user_id = u.id

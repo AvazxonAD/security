@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const router = Router();
 
+const { police } = require('../../middleware/police.admin')
 const protect = require("../../middleware/auth");
 
 const {
@@ -8,8 +9,8 @@ const {
     monitoring
 } = require('./admin.monitoring.controller')
 
-router.get('/', protect, monitoring)
-router.get('/prixod/rasxod', protect, prixodRasxod)
+router.get('/', protect, police(), monitoring)
+router.get('/prixod/rasxod', protect, police(), prixodRasxod)
 
 
 
