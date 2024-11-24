@@ -257,7 +257,8 @@ const monitoringService = async (year, month, user_id) => {
             const result = await pool.query(`--sql
                 SELECT 
                     COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum,
-                    COALESCE(COUNT(c.id), 0)::INTEGER AS count
+                    COALESCE(COUNT(c.id), 0)::INTEGER AS count,
+                    COALESCE(SUM(c.id), 0)::FLOAT AS task_time
                 FROM contract AS c
                 WHERE c.isdeleted = false 
                 AND c.user_id = $1
@@ -267,6 +268,7 @@ const monitoringService = async (year, month, user_id) => {
             `, [user.id, year, month])
             user.summa = result.rows[0].sum
             user.count = result.rows[0].count
+            user.task_time = result.rows[0].task_time
             itogo += user.summa
         }
         const user_result = byUser.rows.map(item => {
@@ -322,7 +324,18 @@ const monitoringService = async (year, month, user_id) => {
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
                     )
-                ) AS summa 
+                ) AS summa,
+                (
+                    SELECT COALESCE(SUM(w_t.task_time), 0)::FLOAT
+                    FROM worker_task AS w_t
+                    JOIN task AS t ON t.id = w_t.task_id
+                    JOIN contract AS c ON c.id = t.contract_id
+                    WHERE w_t.worker_id = w.id  AND w_t.isdeleted = false
+                    AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                        FROM prixod 
+                        WHERE isdeleted = false AND contract_id = c.id),0
+                    )
+                ) AS task_time 
             FROM worker AS w 
             JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON u.id = b.user_id
@@ -346,7 +359,17 @@ const monitoringService = async (year, month, user_id) => {
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
                     )
-                ) AS summa 
+                ) AS summa,
+                (
+                    SELECT COALESCE(SUM(t.task_time), 0)::FLOAT
+                    FROM task AS t
+                    JOIN contract AS c ON c.id = t.contract_id
+                    WHERE t.batalon_id = b.id  AND t.isdeleted = false 
+                    AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                        FROM prixod 
+                        WHERE isdeleted = false AND contract_id = c.id),0
+                    )
+                ) AS task_time
             FROM batalon AS b
             JOIN users AS u ON u.id = b.user_id
             JOIN regions AS r ON r.id = u.region_id

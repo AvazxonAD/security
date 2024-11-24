@@ -176,7 +176,7 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
             batalon_filter = `AND b.id = $${params.length + 1}`
             params.push(batalon_id)
         }
-        const byBatalon = await pool.query(`
+        const byBatalon = await pool.query(`--sql
             SELECT 
                 b.id,
                 b.name,
@@ -186,7 +186,7 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
         `, params)
         let itogo = 0;
         for (let batalon of byBatalon.rows) {
-            const result = await pool.query(`
+            const result = await pool.query(`--sql
                 SELECT 
                     COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum,
                     COALESCE(COUNT(t.id), 0)::INTEGER AS count
@@ -216,20 +216,19 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
             month_sum[`oy_${i}`] = 0;
             for (let batalon of byBatalon.rows) {
                 const result = await pool.query(`
-            SELECT 
-                COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum
-            FROM task AS t
-            LEFT JOIN contract AS c ON c.id = t.contract_id
-            WHERE c.isdeleted = false 
-              AND t.batalon_id = $1
-              AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
-                       FROM prixod 
-                       WHERE isdeleted = false AND contract_id = c.id)
-              AND c.account_number_id = $2
-              AND EXTRACT(YEAR FROM c.doc_date) = $3
-              AND EXTRACT(MONTH FROM c.doc_date) = $4
-        `, [batalon.id, account_number_id, year, i]);
-
+                    SELECT 
+                        COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum
+                    FROM task AS t
+                    LEFT JOIN contract AS c ON c.id = t.contract_id
+                    WHERE c.isdeleted = false 
+                    AND t.batalon_id = $1
+                    AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                            FROM prixod 
+                            WHERE isdeleted = false AND contract_id = c.id)
+                    AND c.account_number_id = $2
+                    AND EXTRACT(YEAR FROM c.doc_date) = $3
+                    AND EXTRACT(MONTH FROM c.doc_date) = $4
+                `, [batalon.id, account_number_id, year, i]);
                 batalon[`oy_${i}`] = result.rows[0].sum; 
                 month_sum[`oy_${i}`] += result.rows[0].sum;
             }
@@ -242,10 +241,11 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
                     : 0;
             }
         }
-        const workers = await pool.query(`
+        const workers = await pool.query(`--sql
             SELECT 
                 w.id,
                 w.fio,
+                b.name AS batalon_name,
                 (
                     SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT
                     FROM worker_task AS w_t
@@ -258,7 +258,20 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
                         WHERE isdeleted = false AND contract_id = c.id),
                         0
                     )
-                ) AS summa 
+                ) AS summa,
+                (
+                    SELECT COALESCE(SUM(w_t.task_time), 0)::FLOAT
+                    FROM worker_task AS w_t
+                    JOIN task AS t ON t.id = w_t.task_id
+                    JOIN contract AS c ON c.id = t.contract_id
+                    WHERE w_t.worker_id = w.id  
+                    AND 0 = COALESCE(
+                        (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                        FROM prixod 
+                        WHERE isdeleted = false AND contract_id = c.id),
+                        0
+                    )
+                ) AS task_time 
             FROM worker AS w 
             JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON u.id = b.user_id
