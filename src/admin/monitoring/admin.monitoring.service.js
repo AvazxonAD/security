@@ -246,18 +246,19 @@ const monitoringService = async (year, month, user_id) => {
         const byUser = await pool.query(`--sql
             SELECT 
                 u.id,
-                u.region_id
+                u.region_id,
+                r.name AS region_name
             FROM users AS u
+            JOIN regions AS r ON r.id = u.region_id
             WHERE u.isdeleted = false AND u.region_id IS NOT NULL ${user_filter}
         `, params)
         let itogo = 0;
         for (let user of byUser.rows) {
             const result = await pool.query(`--sql
                 SELECT 
-                    COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum,
-                    COALESCE(COUNT(t.id), 0)::INTEGER AS count
-                FROM task AS t
-                LEFT JOIN contract AS c ON c.id = t.contract_id
+                    COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum,
+                    COALESCE(COUNT(c.id), 0)::INTEGER AS count
+                FROM contract AS c
                 WHERE c.isdeleted = false 
                 AND c.user_id = $1
                 AND 0 = ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
@@ -282,9 +283,8 @@ const monitoringService = async (year, month, user_id) => {
             for (let user of byUser.rows) {
                 const result = await pool.query(`--sql
                     SELECT 
-                        COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum
-                    FROM task AS t
-                    LEFT JOIN contract AS c ON c.id = t.contract_id
+                        COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum
+                    FROM contract AS c
                     WHERE c.isdeleted = false 
                     AND c.user_id = $1
                     AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
@@ -310,13 +310,14 @@ const monitoringService = async (year, month, user_id) => {
                 w.id,
                 w.fio,
                 u.region_id,
+                r.name AS region_name,
                 b.name AS batalon_name,
                 (
                     SELECT COALESCE(SUM(w_t.summa), 0)::FLOAT
                     FROM worker_task AS w_t
                     JOIN task AS t ON t.id = w_t.task_id
                     JOIN contract AS c ON c.id = t.contract_id
-                    WHERE w_t.worker_id = w.id  
+                    WHERE w_t.worker_id = w.id  AND w_t.isdeleted = false
                     AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
@@ -325,12 +326,36 @@ const monitoringService = async (year, month, user_id) => {
             FROM worker AS w 
             JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON u.id = b.user_id
+            JOIN regions AS r ON r.id = u.region_id
             WHERE w.isdeleted = false ${user_filter}  
             ORDER BY summa DESC
             LIMIT 10
         `, params)
+        const batalons = await pool.query(`--sql
+            SELECT 
+                u.region_id,
+                r.name AS region_name,
+                b.id AS batalon_id,
+                b.name AS batalon_name,
+                (
+                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT
+                    FROM task AS t
+                    JOIN contract AS c ON c.id = t.contract_id
+                    WHERE t.batalon_id = b.id  AND t.isdeleted = false 
+                    AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                        FROM prixod 
+                        WHERE isdeleted = false AND contract_id = c.id),0
+                    )
+                ) AS summa 
+            FROM batalon AS b
+            JOIN users AS u ON u.id = b.user_id
+            JOIN regions AS r ON r.id = u.region_id
+            WHERE b.isdeleted = false ${user_filter}  
+            ORDER BY summa DESC
+            LIMIT 10
+        `, params)
         user_result.sort((a, b) => b.percent - a.percent)
-        return { itogo, byUser: user_result, workers: workers.rows }
+        return { itogo, byUser: user_result, workers: workers.rows, batalons: batalons.rows }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }

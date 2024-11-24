@@ -4,7 +4,7 @@ const ErrorResponse = require('../../utils/errorResponse')
 
 const getRegionService = async () => {
     try {
-        const data = await pool.query(`SELECT id, name FROM regions WHERE isdeleted = false`)
+        const data = await pool.query(`SELECT id::FLOAt, name FROM regions WHERE isdeleted = false`)
         return data.rows
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
@@ -13,7 +13,7 @@ const getRegionService = async () => {
 
 const getByIdRegionService = async (id) => {
     try {
-        const data = await pool.query(`SELECT id, name FROM regions WHERE isdeleted = false AND id = $1`, [id])
+        const data = await pool.query(`SELECT id::FLOAt, name FROM regions WHERE isdeleted = false AND id = $1`, [id])
         return data.rows
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

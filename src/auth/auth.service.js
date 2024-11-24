@@ -18,7 +18,8 @@ const getByLoginUserService = async (login) => {
                 b.mfo,
                 s.str,
                 u.region_id,
-                u.image
+                u.image,
+                r.name AS region_name
             FROM users AS u 
             LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
             LEFT JOIN doer AS d ON d.user_id = u.id
@@ -26,6 +27,7 @@ const getByLoginUserService = async (login) => {
             LEFT JOIN adress AS a ON a.user_id = u.id
             LEFT JOIN bank AS b ON b.user_id = u.id
             LEFT JOIN str AS s ON s.user_id = u.id
+            LEFT JOIN regions AS r ON r.id = u.region_id 
             WHERE u.login = $1 AND u.isdeleted = false
         `, [login])
         const user = rows[0]
