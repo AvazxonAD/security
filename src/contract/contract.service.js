@@ -433,7 +433,7 @@ const deletecontractService = async (id) => {
 
 const contractViewService = async (user_id, account_number_id, id) => {
     try {
-        const data = await pool.query(`
+        const data = await pool.query(`--sql
             SELECT 
                 c.id,
                 c.doc_num, 
@@ -487,7 +487,7 @@ const contractViewService = async (user_id, account_number_id, id) => {
             JOIN bank AS b_k ON b_k.user_id = $1
             WHERE c.user_id = $1 AND c.isdeleted = false AND c.account_number_id = $2  AND c.id = $3
         `, [user_id, account_number_id, id])
-        const prixods = await pool.query(`
+        const prixods = await pool.query(`--sql
             SELECT 
                 p.id, 
                 p.doc_num AS prixod_doc_num,
@@ -500,15 +500,15 @@ const contractViewService = async (user_id, account_number_id, id) => {
             JOIN organization AS o ON o.id = p.organization_id 
             WHERE p.isdeleted = false AND p.contract_id = $1
         `, [id])
-        const rasxods = await pool.query(`
+        const rasxods = await pool.query(`--sql
             SELECT 
                 r_d.id, 
                 r_d.doc_num, 
                 TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS rasxod_date, 
                 t.result_summa, 
-                b.name AS batalon_name,
+                b.name AS batalon_account_number,
                 b.str AS batalon_str,
-                b.account_number AS batalon_account_number
+                b.account_number AS batalon_name
             FROM  rasxod AS r 
             JOIN  task AS t ON t.id = r.task_id  
             JOIN contract AS c ON c.id = t.contract_id
@@ -516,21 +516,22 @@ const contractViewService = async (user_id, account_number_id, id) => {
             JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id 
             WHERE t.contract_id = $1 AND r.isdeleted = false
         `, [id])
-        const rasxod_fio = await pool.query(`
+        const rasxod_fio = await pool.query(`--sql
             SELECT 
                 r_d.id,
                 r_d.doc_num,
                 TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS rasxod_date,
-                r_f.summa,
+                COALESCE(SUM(r_f.summa), 0)::FLOAT AS summa, 
                 b.name AS batalon_name,
                 b.str AS batalon_str,
                 b.account_number AS batalon_account_number
-            FROM rasxod_fio AS r_f
+            FROM rasxod_fio_doc AS r_d
+            JOIN rasxod_fio AS r_f ON r_d.id = r_f.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r_f.worker_task_id
             JOIN task AS t ON t.id = w_t.task_id 
-            JOIN rasxod_fio_doc AS r_d ON r_d.id = r_f.rasxod_fio_doc_id
             JOIN batalon AS b ON b.id = t.batalon_id
             WHERE  t.contract_id = $1
+            GROUP BY r_d.id, r_d.doc_num, rasxod_date, b.name, b.str, b.account_number 
         `, [id])
         return { contract: data.rows[0], prixods: prixods.rows, rasxods: rasxods.rows, rasxod_fios: rasxod_fio.rows}
     } catch (error) {
