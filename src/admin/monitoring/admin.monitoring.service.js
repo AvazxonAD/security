@@ -238,10 +238,14 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
 const monitoringService = async (year, month, user_id) => {
     try {
         let params = []
-        let user_filter = ``
+        let params_2 = [year, month]
+        let user_filter = ``;
+        let user_filter_2 = ``;
         if (user_id) {
-            user_filter = `AND r.id = $${params.length + 1}`
+            user_filter = `AND u.region_id = $${params.length + 1}`
+            user_filter_2 = `AND u.region_id = $${params_2.length + 1}`
             params.push(user_id)
+            params_2.push(user_id)
         }
         const byUser = await pool.query(`--sql
             SELECT 
@@ -289,19 +293,19 @@ const monitoringService = async (year, month, user_id) => {
         let month_sum = {};
         let itogo_year = 0;
         for (let i = 1; i <= 12; i++) {
-            month_sum[`oy_${i}`] = 0;
             const result = await pool.query(`--sql
                 SELECT 
                     COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum
                 FROM contract AS c
-                WHERE c.isdeleted = false 
+                JOIN users AS u ON u.id = c.user_id 
+                WHERE c.isdeleted = false ${user_filter} 
                 AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
                     FROM prixod 
                     WHERE isdeleted = false AND contract_id = c.id)
                 AND EXTRACT(YEAR FROM c.doc_date) = $1
                 AND EXTRACT(MONTH FROM c.doc_date) = $2
             `, [year, i]);
-            month_sum[`oy_${i}`] += result.rows[0].sum;
+            month_sum[`oy_${i}`] = result.rows[0].sum;
             itogo_year += result.rows[0].sum
         }
         for (let i = 1; i <= 12; i++) {
@@ -324,6 +328,8 @@ const monitoringService = async (year, month, user_id) => {
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
                     )
+                    AND EXTRACT(YEAR FROM c.doc_date) = $1
+                    AND EXTRACT(MONTH FROM c.doc_date) = $2
                 ) AS summa,
                 (
                     SELECT COALESCE(SUM(w_t.task_time), 0)::FLOAT
@@ -335,15 +341,29 @@ const monitoringService = async (year, month, user_id) => {
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
                     )
+                    AND EXTRACT(YEAR FROM c.doc_date) = $1
+                    AND EXTRACT(MONTH FROM c.doc_date) = $2
                 ) AS task_time 
             FROM worker AS w 
             JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON u.id = b.user_id
             JOIN regions AS r ON r.id = u.region_id
-            WHERE w.isdeleted = false ${user_filter}  
+            WHERE w.isdeleted = false ${user_filter_2}  AND 0 < (
+                SELECT COALESCE(SUM(w_t.task_time), 0)::FLOAT
+                FROM worker_task AS w_t
+                JOIN task AS t ON t.id = w_t.task_id
+                JOIN contract AS c ON c.id = t.contract_id
+                WHERE w_t.worker_id = w.id  AND w_t.isdeleted = false
+                AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                    FROM prixod 
+                    WHERE isdeleted = false AND contract_id = c.id),0
+                )
+                AND EXTRACT(YEAR FROM c.doc_date) = $1
+                AND EXTRACT(MONTH FROM c.doc_date) = $2
+            ) 
             ORDER BY summa DESC
             LIMIT 10
-        `, params)
+        `, params_2)
         const batalons = await pool.query(`--sql
             SELECT 
                 u.region_id,
@@ -359,6 +379,8 @@ const monitoringService = async (year, month, user_id) => {
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
                     )
+                    AND EXTRACT(YEAR FROM c.doc_date) = $1
+                    AND EXTRACT(MONTH FROM c.doc_date) = $2
                 ) AS summa,
                 (
                     SELECT COALESCE(SUM(t.task_time), 0)::FLOAT
@@ -369,16 +391,29 @@ const monitoringService = async (year, month, user_id) => {
                         FROM prixod 
                         WHERE isdeleted = false AND contract_id = c.id),0
                     )
+                    AND EXTRACT(YEAR FROM c.doc_date) = $1
+                    AND EXTRACT(MONTH FROM c.doc_date) = $2
                 ) AS task_time
             FROM batalon AS b
             JOIN users AS u ON u.id = b.user_id
             JOIN regions AS r ON r.id = u.region_id
-            WHERE b.isdeleted = false ${user_filter}  
+            WHERE b.isdeleted = false ${user_filter_2} AND 0 < (
+                SELECT COALESCE(SUM(t.task_time), 0)::FLOAT
+                FROM task AS t
+                JOIN contract AS c ON c.id = t.contract_id
+                WHERE t.batalon_id = b.id  AND t.isdeleted = false 
+                AND 0 = COALESCE((SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                    FROM prixod 
+                    WHERE isdeleted = false AND contract_id = c.id),0
+                )
+                AND EXTRACT(YEAR FROM c.doc_date) = $1
+                AND EXTRACT(MONTH FROM c.doc_date) = $2
+            )   
             ORDER BY summa DESC
             LIMIT 10
-        `, params)
+        `, params_2)
         user_result.sort((a, b) => b.percent - a.percent)
-        return { itogo, byUser: user_result, month: {month_sum, itogo_year}, workers: workers.rows, batalons: batalons.rows}
+        return { itogo, byUser: user_result, month: { month_sum, itogo_year }, workers: workers.rows, batalons: batalons.rows }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }

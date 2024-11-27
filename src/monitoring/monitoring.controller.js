@@ -39,11 +39,11 @@ const prixodRasxod = async (req, res) => {
 const monitoring = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { year, month, account_number_id, batalon_id } = validationResponse(monitoringQueryValidation, req.query)
+        const { year, month, batalon_id } = validationResponse(monitoringQueryValidation, req.query)
         if (batalon_id) {
             await getByIdBatalonService(user_id, batalon_id)
         }
-        const data = await monitoringService(user_id, account_number_id, year, month, batalon_id)
+        const data = await monitoringService(user_id, year, month, batalon_id)
         resFunc(res, 200, data)
     } catch (error) {
         errorCatch(error, res)
