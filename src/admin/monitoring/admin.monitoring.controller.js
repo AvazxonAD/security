@@ -8,11 +8,12 @@ const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch');
 const { returnStringSumma } = require('../../utils/return.summa');
 const { getByIdUserService } = require('../user/user.service');
+const { getByIdRegionService } = require('../region/region.service')
 
 const prixodRasxod = async (req, res) => {
     try {
         const { from, to, page, limit, user_id } = validationResponse(adminPrixodRasxodQueryValidation, req.query)
-        if(user_id){
+        if (user_id) {
             await getByIdUserService(user_id)
         }
         const offset = (page - 1) * limit;
@@ -40,7 +41,7 @@ const monitoring = async (req, res) => {
     try {
         const { year, month, user_id } = validationResponse(adminMonitoringQueryValidation, req.query)
         if (user_id) {
-            await getByIdUserService(user_id)
+            await getByIdRegionService(user_id)
         }
         const data = await monitoringService(year, month, user_id)
         resFunc(res, 200, data)

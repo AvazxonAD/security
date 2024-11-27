@@ -240,7 +240,7 @@ const monitoringService = async (year, month, user_id) => {
         let params = []
         let user_filter = ``
         if (user_id) {
-            user_filter = `AND u.id = $${params.length + 1}`
+            user_filter = `AND r.id = $${params.length + 1}`
             params.push(user_id)
         }
         const byUser = await pool.query(`--sql
@@ -259,7 +259,7 @@ const monitoringService = async (year, month, user_id) => {
             "#FFC300", "#1ABC9C", "#8E44AD", "#FF5733"
         ];
 
-        for (let i = 1; i < byUser.rows.length; i++) {
+        for (let i = 1; i <= byUser.rows.length; i++) {
             const result = await pool.query(`--sql
                 SELECT 
                     COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum,
