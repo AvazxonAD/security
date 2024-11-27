@@ -254,8 +254,8 @@ const monitoringService = async (year, month, user_id) => {
         `, params)
         let itogo = 0;
         const colors = [
-            "#FF5733", "#33FF57", "#3357FF", "#FF33A6", "#FFD133", 
-            "#33FFF3", "#C70039", "#900C3F", "#581845", "#DAF7A6", 
+            "#FF5733", "#33FF57", "#3357FF", "#FF33A6", "#FFD133",
+            "#33FFF3", "#C70039", "#900C3F", "#581845", "#DAF7A6",
             "#FFC300", "#1ABC9C", "#8E44AD", "#FF5733"
         ];
 
@@ -287,32 +287,25 @@ const monitoringService = async (year, month, user_id) => {
             return item;
         })
         let month_sum = {};
+        let itogo_year = 0;
         for (let i = 1; i <= 12; i++) {
             month_sum[`oy_${i}`] = 0;
-            for (let user of byUser.rows) {
-                const result = await pool.query(`--sql
-                    SELECT 
-                        COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum
-                    FROM contract AS c
-                    WHERE c.isdeleted = false 
-                    AND c.user_id = $1
-                    AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
-                        FROM prixod 
-                        WHERE isdeleted = false AND contract_id = c.id)
-                    AND EXTRACT(YEAR FROM c.doc_date) = $2
-                    AND EXTRACT(MONTH FROM c.doc_date) = $3
-                `, [user.id, year, i]);
-                user[`oy_${i}`] = result.rows[0].sum;
-                month_sum[`oy_${i}`] += result.rows[0].sum;
-            }
+            const result = await pool.query(`--sql
+                SELECT 
+                    COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum
+                FROM contract AS c
+                WHERE c.isdeleted = false 
+                AND 0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                    FROM prixod 
+                    WHERE isdeleted = false AND contract_id = c.id)
+                AND EXTRACT(YEAR FROM c.doc_date) = $1
+                AND EXTRACT(MONTH FROM c.doc_date) = $2
+            `, [year, i]);
+            month_sum[`oy_${i}`] += result.rows[0].sum;
+            itogo_year += result.rows[0].sum
         }
         for (let i = 1; i <= 12; i++) {
-            for (let item of byUser.rows) {
-                const total = month_sum[`oy_${i}`];
-                item[`oy_${i}_percent`] = total > 0
-                    ? Math.round((item[`oy_${i}`] * 100 / total) * 100) / 100
-                    : 0;
-            }
+            month_sum[`oy_${i}_percent`] = itogo_year > 0 ? Math.round((month_sum[`oy_${i}`] * 100 / itogo_year) * 100) / 100 : 0;
         }
         const workers = await pool.query(`--sql
             SELECT 
@@ -385,7 +378,7 @@ const monitoringService = async (year, month, user_id) => {
             LIMIT 10
         `, params)
         user_result.sort((a, b) => b.percent - a.percent)
-        return { itogo, byUser: user_result, workers: workers.rows, batalons: batalons.rows }
+        return { itogo, byUser: user_result, month: {month_sum, itogo_year}, workers: workers.rows, batalons: batalons.rows}
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
