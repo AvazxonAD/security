@@ -215,7 +215,7 @@ const monitoringService = async (user_id, account_number_id, year, month, batalo
         for (let i = 1; i <= 12; i++) {
             month_sum[`oy_${i}`] = 0;
             for (let batalon of byBatalon.rows) {
-                const result = await pool.query(`
+                const result = await pool.query(`--sql
                     SELECT 
                         COALESCE(SUM(t.result_summa), 0)::FLOAT AS sum
                     FROM task AS t

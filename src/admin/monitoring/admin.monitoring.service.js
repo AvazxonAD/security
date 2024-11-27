@@ -253,7 +253,13 @@ const monitoringService = async (year, month, user_id) => {
             WHERE u.isdeleted = false AND u.region_id IS NOT NULL ${user_filter}
         `, params)
         let itogo = 0;
-        for (let user of byUser.rows) {
+        const colors = [
+            "#FF5733", "#33FF57", "#3357FF", "#FF33A6", "#FFD133", 
+            "#33FFF3", "#C70039", "#900C3F", "#581845", "#DAF7A6", 
+            "#FFC300", "#1ABC9C", "#8E44AD", "#FF5733"
+        ];
+
+        for (let i = 1; i < byUser.rows.length; i++) {
             const result = await pool.query(`--sql
                 SELECT 
                     COALESCE(SUM(c.result_summa), 0)::FLOAT AS sum,
@@ -265,12 +271,13 @@ const monitoringService = async (year, month, user_id) => {
                 AND 0 = ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                 AND EXTRACT(YEAR FROM c.doc_date) = $2
                 AND EXTRACT(MONTH FROM c.doc_date) = $3
-            `, [user.id, year, month])
-            user.summa = result.rows[0].sum
-            user.count = result.rows[0].count
-            user.task_time = result.rows[0].task_time
-            itogo += user.summa
-        }
+            `, [byUser.rows[i - 1].id, year, month])
+            byUser.rows[i - 1].summa = result.rows[0].sum
+            byUser.rows[i - 1].count = result.rows[0].count
+            byUser.rows[i - 1].task_time = result.rows[0].task_time
+            byUser.rows[i - 1].color = colors[i - 1] || colors[0]
+            itogo += byUser.rows[i - 1].summa
+        };
         const user_result = byUser.rows.map(item => {
             if (item.summa === 0) {
                 item.percent = 0
