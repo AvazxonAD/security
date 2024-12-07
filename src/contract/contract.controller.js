@@ -20,6 +20,7 @@ const { returnStringDate } = require('../utils/date.functions')
 const xlsx = require('xlsx')
 const ExcelJs = require('exceljs')
 const path = require('path')
+const pg = require('pg')
 
 
 const contractCreate = async (req, res) => {
@@ -217,34 +218,11 @@ const forDataPdf = async (req, res) => {
     }
 }
 
-const importExcelData = async (req, res) => {
-    try {
-        const user_id = req.user.id
-        if (!req.file) {
-            throw new ErrorResponse('File  not found', 404)
-        }
-        const filePath = req.file.path;
-        const workbook = xlsx.readFile(filePath);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const data = xlsx.utils.sheet_to_json(sheet).map(row => {
-            const newRow = {};
-            for (const key in row) {
-                newRow[key.trim()] = row[key];
-            }
-            return newRow;
-        });
-        res.send(data);
-    } catch (error) {
-
-    }
-}
-
 const contractView = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        const id = req.params.id 
+        const id = req.params.id
         await getByIdcontractService(user_id, id, false, account_number_id)
         const { contract, prixods, rasxod_fios, rasxods } = await contractViewService(user_id, account_number_id, id)
         resFunc(res, 200, { contract, prixods, rasxod_fios, rasxods })
@@ -311,7 +289,7 @@ const conntractViewExcel = async (req, res) => {
             let bold = true;
             let horizontal = 'center'
             if (index === 0) size = 14;
-            if(index > 6) bold = false;
+            if (index > 6) bold = false;
             Object.assign(item, {
                 numFmt: '#,## ',
                 font: { size, bold, color: { argb: 'FF000000' }, name: 'Times New Roman' },
@@ -343,8 +321,196 @@ module.exports = {
     contractGetById,
     contractUpdate,
     contractDelete,
-    importExcelData,
     exportExcelData,
     forDataPdf,
     contractView
 };
+
+const importData = async () => {
+    const oldDb = new pg.Pool({
+        host: "localhost",
+        port: 5433,
+        password: "1101jamshid",
+        database: "milliy_gvardiya",
+        user: "postgres"
+    })
+    const pool = new pg.Pool({
+        host: "localhost",
+        port: 5433,
+        password: "1101jamshid",
+        database: "gvardiyaV2",
+        user: "postgres"
+    })
+    const data = await oldDb.query(`--sql
+        SELECT 
+            c.id, 
+            c.contractnumber, 
+            c.contractdate, 
+            c.address, 
+            c.clientname, 
+            c.tasktime, 
+            c.discount,
+            (
+                SELECT ARRAY_AGG(ROW_TO_JSON(t))
+                FROM (
+                    SELECT 
+                        t.battalionname, 
+                        t.workernumber, 
+                        t.taskdate, 
+                        t.tasktime 
+                    FROM tasks t
+                    WHERE t.contract_id = c.id -- Bog‘lanish sharti
+                ) t
+            ) AS array1,
+            (
+                SELECT ARRAY_AGG(ROW_TO_JSON(t))
+                FROM (
+                    SELECT 
+                        t.battalionname, 
+                        t.workernumber, 
+                        t.taskdate, 
+                        t.tasktime 
+                    FROM iib_tasks t
+                    WHERE t.contract_id = c.id -- Bog‘lanish sharti
+                ) t
+            ) AS array2  
+        FROM contracts c WHERE user_id = 1
+    `, []);
+    const account_number = await pool.query(`SELECT id FROM account_number WHERE isdeleted = false`)
+
+    for (let contract of data.rows) {
+        if (contract.array1 && contract.array2) {
+            contract.result_array = [...contract.array1, ...contract.array2]
+        } else if (!contract.array1 && contract.array2) {
+            contract.result_array = contract.array2
+        } else if (contract.array1 && !contract.array2) {
+            contract.result_array = contract.array1
+        }
+        const bxm = await pool.query(`SELECT id, summa::FLOAT FROM bxm WHERE isdeleted = false AND user_id = $1`, [1])
+        let all_worker_number = 0;
+        let all_task_time = 0;
+        let discount_money = 0;
+        let summa = 0;
+        let result_summa = 0;
+        contract.result_array.forEach(element => {
+            all_task_time += element.tasktime;
+            all_worker_number += element.workernumber;
+            summa += element.tasktime * element.workernumber * bxm.rows[0].summa;
+        });
+        if (contract.discount) {
+            discount_money = summa * (contract.discount / 100);
+            result_summa = summa - discount_money;
+        } else {
+            result_summa = summa;
+        }
+        const organization = await pool.query(`SELECT id FROM organization WHERE name = $1`, [contract.clientname.trim()])
+        if (!organization.rows[0]) {
+            await pool.query(
+                `INSERT INTO organization(name, user_id) VALUES($1, $2)`,
+                [contract.clientname.trim(), 1]
+            );
+        }
+        if (!contract.discount) {
+            contract.discount = 0
+        }
+        const result = await pool.query(`--sql
+            INSERT INTO contract(
+                doc_num, 
+                doc_date, 
+                adress, 
+                discount, 
+                summa, 
+                organization_id, 
+                account_number_id,
+                user_id,
+                all_worker_number,
+                all_task_time,
+                discount_money,
+                result_summa
+            ) 
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *    
+        `, [
+            contract.contractnumber,
+            contract.contractdate,
+            contract.adress,
+            contract.discount,
+            summa,
+            organization.rows[0].id,
+            account_number.rows[0].id,
+            1,
+            all_worker_number,
+            all_task_time,
+            discount_money,
+            result_summa
+        ])
+        for (let task of contract.result_array) {
+            let task_discount_money = 0;
+            let task_result_summa = 0;
+            let task_summa = task.tasktime * task.workernumber * bxm.rows[0].summa;
+            if (contract.discount) {
+                task_discount_money = task_summa * (contract.discount / 100);
+                task_result_summa = task_summa - task_discount_money;
+            } else {
+                task_result_summa = task_summa;
+            }
+            const batalon = await pool.query(`SELECT id FROM batalon WHERE name = $1 AND isdeleted = false`, [task.battalionname])
+            if (!batalon.rows[0]) {
+                throw new Error('batalon not found')
+            }
+            await pool.query(`--sql
+                INSERT INTO 
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+            `, [
+                result.rows[0].id,
+                batalon.rows[0].id,
+                task.tasktime,
+                task.workernumber,
+                task_summa,
+                1,
+                task.taskdate,
+                task_discount_money,
+                task_result_summa
+            ]);
+        }
+    }
+}
+
+const importWorker = async () => {
+    const oldDb = new pg.Pool({
+        host: "localhost",
+        port: 5433,
+        password: "1101jamshid",
+        database: "milliy_gvardiya",
+        user: "postgres"
+    })
+    const pool = new pg.Pool({
+        host: "localhost",
+        port: 5433,
+        password: "1101jamshid",
+        database: "gvardiyaV2",
+        user: "postgres"
+    })
+    const oldWorkers = await oldDb.query(`
+        select w.fio, username 
+        from workers AS w
+        JOIN users as u ON u.id = w.user_id
+    `)
+    for (let item of oldWorkers.rows) {
+        const batalon = await pool.query(`SELECT id FROM batalon WHERE name = $1 AND isdeleted = false`, [item.username])
+        const worker = await pool.query(`SELECT * FROM worker WHERE fio = $1`, [item.fio.trim()])
+        if(!worker.rows[0]){
+            await pool.query(`INSERT INTO worker(fio, batalon_id) VALUES($1, $2) RETURNING *`, [item.fio.trim(), batalon.rows[0].id])
+        }
+        if (!batalon.rows[0]) {
+            throw new Error('batalon not found')
+        }
+
+    }
+
+}
+
+
+const start = async () => {
+    await importWorker()
+}

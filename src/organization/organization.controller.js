@@ -7,12 +7,15 @@ const {
     getByStrOrganizationService,
     excelDataOrganizationService
 } = require("./organization.service");
+const ErrorResponse = require('../utils/errorResponse')
 const { organizationValidation, allQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const ExcelJS = require('exceljs')
 const path = require('path')
+const pool = require('../config/db')
+const xlsx = require('xlsx')
 
 const organizationCreate = async (req, res) => {
     try {
@@ -66,7 +69,7 @@ const organizationUpdate = async (req, res) => {
         if (oldData.str !== data.str) {
             await getByStrOrganizationService(data.str, user_id)
         }
-        const result = await organizationUpdateService({...data, id})
+        const result = await organizationUpdateService({ ...data, id })
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -124,7 +127,7 @@ const excelDataOrganization = async (req, res) => {
             worksheet.getColumn(col).alignment = { vertical: 'middle', horizontal: 'center' };
         }
 
-        const {data, total} = await excelDataOrganizationService(user_id);
+        const { data, total } = await excelDataOrganizationService(user_id);
         for (let organizationData of data) {
             worksheet.addRow(organizationData);
         }
@@ -148,8 +151,48 @@ const excelDataOrganization = async (req, res) => {
 const forPdfData = async (req, res) => {
     try {
         const user_id = req.user.id
-        const {data, total} = await excelDataOrganizationService(user_id);
-        resFunc(res, 200, {total, data})
+        const { data, total } = await excelDataOrganizationService(user_id);
+        resFunc(res, 200, { total, data })
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
+const importExcelData = async (req, res) => {
+    const user_id = req.user.id;
+
+    if (!req.file) {
+        throw new ErrorResponse('File not found', 404);
+    }
+
+    const filePath = req.file.path;
+    try {
+        const workbook = xlsx.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const data = xlsx.utils.sheet_to_json(sheet).map(row => {
+            const newRow = {};
+            for (const key in row) {
+                newRow[key.trim()] = row[key];
+            }
+            return newRow;
+        });
+
+        for (let item of data) {
+            if (!item.name) {
+                throw new ErrorResponse(`Row contains empty 'name' field: ${JSON.stringify(item)}`, 400);
+            }
+
+            await pool.query(
+                `INSERT INTO organization(name, user_id) VALUES($1, $2)`,
+                [item.name.trim(), user_id]
+            );
+        }
+
+        return res.status(201).json({
+            message: 'Created successfully',
+        });
     } catch (error) {
         errorCatch(error, res)
     }
@@ -164,5 +207,6 @@ module.exports = {
     organizationUpdate,
     organizationDelete,
     excelDataOrganization,
-    forPdfData
+    forPdfData,
+    importExcelData
 };

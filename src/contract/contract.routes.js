@@ -10,7 +10,6 @@ const {
     contractGetById,
     contractUpdate,
     contractDelete,
-    importExcelData,
     exportExcelData,
     forDataPdf,
     contractView
@@ -24,7 +23,6 @@ router.post('/', protect, contractCreate)
     .get('/:id', protect, contractGetById)
     .get('/', protect, contractGet)
     .delete('/:id', protect, contractDelete)
-    .post('/excel', protect, uploadExcel.single('file'), importExcelData)
 
 
 module.exports = router;

@@ -2,6 +2,7 @@ const { Router } = require("express");
 const router = Router();
 
 const protect = require("../middleware/auth");
+const { uploadExcel } = require('../utils/protect.file')
 
 const {
     organizationCreate,
@@ -10,7 +11,8 @@ const {
     organizationUpdate,
     organizationDelete,
     excelDataOrganization,
-    forPdfData
+    forPdfData,
+    importExcelData
 } = require('./organization.controller')
 
 router.post('/', protect, organizationCreate)
@@ -20,6 +22,6 @@ router.post('/', protect, organizationCreate)
     .get('/:id', protect, organizationGetById)
     .get('/', protect, organizationGet)
     .delete('/:id', protect, organizationDelete)
-
+    .post('/import', protect, uploadExcel.single('file'), importExcelData)
 
 module.exports = router;

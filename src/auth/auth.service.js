@@ -63,7 +63,7 @@ const getByLoginService = async (login) => {
 // get by id user  
 const getBYIdUserService = async (user_id) => {
     try {
-        const { rows } = await pool.query(`SELECT id, password, login, fio FROM users WHERE id = $1 AND isdeleted = false`, [user_id])
+        const { rows } = await pool.query(`SELECT id, password, login, fio, image FROM users WHERE id = $1 AND isdeleted = false`, [user_id])
         const user = rows[0]
         if (!user) {
             throw new ErrorResponse('user not found', 404)
@@ -74,10 +74,10 @@ const getBYIdUserService = async (user_id) => {
     }
 }
 
-const updateAuthService = async (login, password, id, fio) => {
+const updateAuthService = async (login, password, fio, image, id) => {
     try {
-        const { rows } = await pool.query(`UPDATE users SET login = $1, password = $2, fio = $4 WHERE id = $3 RETURNING id, login, fio`,
-            [login, password, id, fio],
+        const { rows } = await pool.query(`UPDATE users SET login = $1, password = $2, fio = $3, image = $4 WHERE id = $5 RETURNING id, login, fio, image`,
+            [login, password, fio, image, id],
         );
         return rows[0]
     } catch (error) {

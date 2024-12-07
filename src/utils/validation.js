@@ -76,10 +76,10 @@ const loginValidation = Joi.object({
   password: Joi.string().trim().required().trim().required()
 })
 const authUpdateValidation = Joi.object({
-  login: Joi.string().trim().required().pattern(/^[a-z_-]{6,}$/),
-  oldPassword: Joi.string().trim().required(),
-  newPassword: Joi.string().trim().required().pattern(/^[a-z_-]{6,}$/),
-  fio: Joi.string().required().trim()
+  login: Joi.string().trim(),
+  oldPassword: Joi.string().trim(),
+  newPassword: Joi.string().trim(),
+  fio: Joi.string().trim() 
 })
 const batalionValidation = Joi.object({
   name: Joi.string().trim().required(),

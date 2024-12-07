@@ -1,4 +1,4 @@
-const { getByLoginUserService, getBYIdUserService, updateAuthService } = require("./auth.service");
+const { getByLoginUserService, getBYIdUserService, updateAuthService, getByLoginService } = require("./auth.service");
 const bcrypt = require("bcrypt");
 const ErrorResponse = require("../utils/errorResponse");
 const generateToken = require("../utils/generate.token");
@@ -31,22 +31,27 @@ const update = async (req, res) => {
         const id = req.user.id
         const { login, oldPassword, newPassword, fio } = validationResponse(authUpdateValidation, req.body)
         const user = await getBYIdUserService(id);
-        const matchPassword = await bcrypt.compare(oldPassword, user.password);
-        if (!matchPassword) {
-            throw new ErrorResponse("Incorrect password", 403)
+        if (oldPassword && newPassword) {
+            const matchPassword = await bcrypt.compare(oldPassword, user.password);
+            if (!matchPassword) {
+                throw new ErrorResponse("Incorrect password", 403)
+            }
+            const newHashedPassword = await bcrypt.hash(newPassword, 10);
+            user.password = newHashedPassword;
         }
-        const newHashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = newHashedPassword;
         if (login) {
             if (login !== user.login) {
-                const test = await getByLoginUserService(login);
-                if (test) {
-                    return next(new ErrorResponse("The login has already been used", 400));
-                }
+                await getByLoginService(login);
                 user.login = login;
             }
         }
-        const result = await updateAuthService(user.login, user.password, id, fio);
+        if (req.file) {
+            user.image = '/uploads/' + req.file.filename
+        }
+        if (fio) {
+            user.fio = fio;
+        }
+        const result = await updateAuthService(user.login, user.password, user.fio, user.image, id);
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
