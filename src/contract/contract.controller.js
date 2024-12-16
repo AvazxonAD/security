@@ -335,8 +335,8 @@ const importData = async () => {
         user: "postgres"
     })
     const pool = new pg.Pool({
-        host: "localhost",
-        port: 5433,
+        host: "147.45.107.174",
+        port: 5432,
         password: "1101jamshid",
         database: "gvardiyaV2",
         user: "postgres"
@@ -485,7 +485,7 @@ const importWorker = async () => {
         user: "postgres"
     })
     const pool = new pg.Pool({
-        host: "localhost",
+        host: "147.45.107.174",
         port: 5433,
         password: "1101jamshid",
         database: "gvardiyaV2",
@@ -512,5 +512,5 @@ const importWorker = async () => {
 
 
 const start = async () => {
-    await importWorker()
+    await importData()
 }

@@ -12,6 +12,7 @@ const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch')
 const { getByLoginService } = require('../../auth/auth.service')
 const { getByIdRegionService } = require(`../region/region.service`)
+const bcrypt = require('bcrypt')
 
 const userCreate = async (req, res) => {
     try {
@@ -23,6 +24,7 @@ const userCreate = async (req, res) => {
         await getByLoginService(data.login);
         await getByIdRegionService(data.region_id)
         await checkByRegionUser(data.region_id)
+        data.password = await bcrypt.hash(data.password, 10)
         const result = await userCreateService({ ...data, url });
         resFunc(res, 200, result);
     } catch (error) {
@@ -64,8 +66,9 @@ const userUpdate = async (req, res) => {
         if (data.region_id !== oldData.region_id) {
             await checkByRegionUser(data.region_id)
         }
+        data.password = await bcrypt.hash(data.password, 10)
         const result = await userUpdateService({ ...data, id, url })
-        resFunc(res, 200, result);
+        resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
     }
