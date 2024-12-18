@@ -95,7 +95,7 @@ const batalionValidation = Joi.object({
 
 const userValidation = Joi.object({
   fio: Joi.string().trim().required(),
-  login: Joi.string().trim().max(100).required().pattern(/^[a-z_-]{6,}$/),
+  login: Joi.string().trim().max(100).required(),
   password: Joi.string().trim().max(100).required(),
   region_id: Joi.number().min(1).required()
 });
