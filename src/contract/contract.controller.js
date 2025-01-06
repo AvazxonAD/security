@@ -3,9 +3,10 @@ const {
     getcontractService,
     getByIdcontractService,
     contractUpdateService,
-    deletecontractService,
+    deleteContractService,
     dataForExcelService,
-    contractViewService
+    contractViewService,
+    checkRaxodContract
 } = require("./contract.service");
 const { contractValidation, conrtactQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
@@ -81,9 +82,15 @@ const contractUpdate = async (req, res) => {
     try {
         const id = req.params.id
         const user_id = req.user.id
-        const account_number_id = req.query.account_number_id
+        const account_number_id = req.query.account_number_id;
         await getByIdaccount_numberService(user_id, account_number_id)
         await getByIdcontractService(user_id, id, false, account_number_id)
+        const checkRasxodDoc = await checkRaxodContract(id);
+        if (checkRasxodDoc) {
+            return res.status(400).json({
+                message: "This document is linked to other documents. Please open them first"
+            })
+        }
         const data = validationResponse(contractValidation, req.body)
         const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
@@ -103,7 +110,13 @@ const contractDelete = async (req, res) => {
         const id = req.params.id
         const account_number_id = req.query.account_number_id
         await getByIdcontractService(user_id, id, false, account_number_id)
-        await deletecontractService(id)
+        const checkRasxodDoc = await checkRaxodContract(id);
+        if (checkRasxodDoc) {
+            return res.status(400).json({
+                message: "This document is linked to other documents. Please open them first"
+            })
+        }
+        await deleteContractService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
         errorCatch(error, res)
@@ -326,6 +339,7 @@ module.exports = {
     contractView
 };
 
+
 const importData = async () => {
     const oldDb = new pg.Pool({
         host: "localhost",
@@ -499,7 +513,7 @@ const importWorker = async () => {
     for (let item of oldWorkers.rows) {
         const batalon = await pool.query(`SELECT id FROM batalon WHERE name = $1 AND isdeleted = false`, [item.username])
         const worker = await pool.query(`SELECT * FROM worker WHERE fio = $1`, [item.fio.trim()])
-        if(!worker.rows[0]){
+        if (!worker.rows[0]) {
             await pool.query(`INSERT INTO worker(fio, batalon_id) VALUES($1, $2) RETURNING *`, [item.fio.trim(), batalon.rows[0].id])
         }
         if (!batalon.rows[0]) {

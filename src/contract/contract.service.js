@@ -80,14 +80,14 @@ const contractCreateService = async (data) => {
                 task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa) 
                 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
             `, [
-                contract.id, 
-                task.batalon_id, 
-                task.task_time, 
-                task.worker_number, 
-                task_summa, 
-                data.user_id, 
-                task.task_date, 
-                task_discount_money, 
+                contract.id,
+                task.batalon_id,
+                task.task_time,
+                task.worker_number,
+                task_summa,
+                data.user_id,
+                task.task_date,
+                task_discount_money,
                 task_result_summa
             ]);
         });
@@ -112,7 +112,7 @@ const contractUpdateService = async (data) => {
         let discount_money = 0;
         let summa = 0;
         let result_summa = 0;
-        await client.query('BEGIN'); 
+        await client.query('BEGIN');
         data.tasks.forEach(element => {
             all_task_time += element.task_time;
             all_worker_number += element.worker_number;
@@ -161,7 +161,7 @@ const contractUpdateService = async (data) => {
             data.id
         ]);
         const contract = rows[0];
-        await client.query(`DELETE FROM task WHERE contract_id = $1`, [data.id]);
+        await client.query(`UPDATE task SET isdeleted = true WHERE contract_id = $1`, [data.id]);
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
@@ -180,28 +180,45 @@ const contractUpdateService = async (data) => {
                     summa, user_id, task_date, discount_money, result_summa
                 ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
             `, [
-                contract.id, 
-                task.batalon_id, 
-                task.task_time, 
-                task.worker_number, 
-                task_summa, 
-                data.user_id, 
-                task.task_date, 
-                task_discount_money, 
+                contract.id,
+                task.batalon_id,
+                task.task_time,
+                task.worker_number,
+                task_summa,
+                data.user_id,
+                task.task_date,
+                task_discount_money,
                 task_result_summa
             ]);
         });
         const tasks = await Promise.all(taskPromises);
         contract.tasks = tasks.map(task => task.rows[0]);
-        await client.query('COMMIT'); 
+        await client.query('COMMIT');
         return contract;
     } catch (error) {
-        await client.query('ROLLBACK'); 
+        await client.query('ROLLBACK');
         throw new ErrorResponse(error.message || 'Error updating contract', error.statusCode || 500);
     } finally {
-        client.release(); 
+        client.release();
     }
 };
+
+const checkRaxodContract = async (contract_id) => {
+    const query = `--sql
+        SELECT t.contract_id, d.rasxod_fio_doc_id AS d 
+        FROM rasxod_fio d
+        JOIN worker_task AS w_t ON w_t.id = d.worker_task_id 
+        JOIN task AS t ON t.id = w_t.task_id
+        WHERE t.contract_id = $1 AND d.isdeleted = false 
+        UNION ALL 
+        SELECT t.contract_id,  d.rasxod_doc_id AS d 
+        FROM rasxod d
+        JOIN task AS t ON t.id = d.task_id
+        WHERE t.contract_id = $1 AND d.isdeleted = false
+    `;
+    const result = await pool.query(query, [contract_id]);
+    return result.rows[0];
+}
 
 const getcontractService = async (user_id, offset, limit, search, from, to, account_number_id, organization_id = null, batalion_id = null) => {
     try {
@@ -217,11 +234,11 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
             `
             params.push(search)
         }
-        if(organization_id){
+        if (organization_id) {
             organization_filter = `AND c.organization_id = $${params.length + 1}`
             params.push(organization_id)
         }
-        if(batalion_id){
+        if (batalion_id) {
             batalion_filter = `AND EXISTS (SELECT * FROM task AS t WHERE t.isdeleted = false AND t.batalon_id = $${params.length + 1} AND c.id = t.contract_id )`
             params.push(batalion_id)
         }
@@ -297,7 +314,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
             filter = `AND c.isdeleted = false`
             filter_task = ` AND t.isdeleted = false`
         }
-        if(organization_id){
+        if (organization_id) {
             organization = ` AND c.organization_id = $${params.length + 1}`
             params.push(organization_id)
         }
@@ -356,7 +373,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
-}
+};
 
 const dataForExcelService = async (user_id, account_number_id, from, to) => {
     try {
@@ -416,13 +433,13 @@ const dataForExcelService = async (user_id, account_number_id, from, to) => {
                 (SELECT COALESCE(COUNT(id), 0) FROM contract WHERE user_id = $1 AND isdeleted = false AND account_number_id = $2  AND doc_date BETWEEN $3 AND $4 )::FLOAT AS total_count 
             FROM data  
         `, [user_id, account_number_id, from, to])
-        return {data: data.rows[0]?.data || [], total: data.rows[0].total_count}
+        return { data: data.rows[0]?.data || [], total: data.rows[0].total_count }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
 }
 
-const deletecontractService = async (id) => {
+const deleteContractService = async (id) => {
     try {
         await pool.query(`UPDATE task SET isdeleted = true WHERE contract_id = $1 AND isdeleted = false`, [id])
         await pool.query(`UPDATE contract SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
@@ -533,7 +550,7 @@ const contractViewService = async (user_id, account_number_id, id) => {
             WHERE  t.contract_id = $1
             GROUP BY r_d.id, r_d.doc_num, rasxod_date, b.name, b.str, b.account_number 
         `, [id])
-        return { contract: data.rows[0], prixods: prixods.rows, rasxods: rasxods.rows, rasxod_fios: rasxod_fio.rows}
+        return { contract: data.rows[0], prixods: prixods.rows, rasxods: rasxods.rows, rasxod_fios: rasxod_fio.rows }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
@@ -546,7 +563,8 @@ module.exports = {
     getcontractService,
     getByIdcontractService,
     contractUpdateService,
-    deletecontractService,
+    deleteContractService,
     dataForExcelService,
-    contractViewService
+    contractViewService,
+    checkRaxodContract
 }
