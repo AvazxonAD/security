@@ -3,7 +3,7 @@ const pool = require('../config/db')
 
 const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => {
     try {
-        const result = await pool.query(`
+        const result = await pool.query(`--sql
             SELECT w_t.id 
             FROM worker_task AS w_t
             JOIN task AS t ON t.id = w_t.task_id
@@ -13,6 +13,7 @@ const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => 
                 AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
         `, [batalon_id, worker_task_id, user_id])
         if (!result.rows[0]) {
+            console.log(worker_task_id)
             throw new ErrorResponse('worker task not found', 404)
         }
         return result.rows[0]
@@ -45,6 +46,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
             WHERE c.account_number_id = $1  AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4 AND c.isdeleted = false
                 AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                 AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
+                AND w_t.isdeleted = false
         `, [account_number, from, to, batalon_id])
         return result.rows
     } catch (error) {
