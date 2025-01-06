@@ -2,7 +2,7 @@ const Joi = require("joi");
 
 const deductionValidation = Joi.object({
   name: Joi.string().trim().required(),
-  percent: Joi.number().required().min(1).max(100)
+  percent: Joi.number().required().min(1).max(99)
 })
 
 const prixodRasxodQueryValidation = Joi.object({
