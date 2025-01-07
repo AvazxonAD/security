@@ -15,7 +15,8 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS doc_date,
                 p.opisanie,
                 0::FLOAT AS rasxod_sum,
-                p.summa::FLOAT AS prixod_sum    
+                p.summa::FLOAT AS prixod_sum,
+                'prixod' AS type  
             FROM prixod AS p 
             JOIN contract AS c ON c.id = p.contract_id
             JOIN organization AS t ON t.id = c.organization_id
@@ -34,7 +35,8 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
                 r_d.opisanie,
                 COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS rasxod_sum,
-                0::FLOAT AS prixod_sum
+                0::FLOAT AS prixod_sum,
+                'rasxod' AS type
             FROM rasxod_doc AS r_d
             JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
             JOIN task AS t_k ON t_k.id = r.task_id
@@ -56,7 +58,8 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
                 r_d.opisanie,
                 COALESCE(SUM(r.summa), 0)::FLOAt AS rasxod_sum,
-                0::FLOAT AS prixod_sum    
+                0::FLOAT AS prixod_sum,
+                'rasxod fio' AS type    
             FROM rasxod_fio_doc AS r_d
             JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id

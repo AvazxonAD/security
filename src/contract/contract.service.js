@@ -13,7 +13,7 @@ const contractCreateService = async (data) => {
         data.tasks.forEach(element => {
             all_task_time += element.task_time;
             all_worker_number += element.worker_number;
-            summa += element.task_time * element.worker_number * data.bxm.summa;
+            summa += element.task_time * element.worker_number * (data.bxm.summa * 0.07);
         });
 
         if (data.discount) {
@@ -66,7 +66,7 @@ const contractCreateService = async (data) => {
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
-            let task_summa = task.task_time * task.worker_number * data.bxm.summa;
+            let task_summa = task.task_time * task.worker_number * (data.bxm.summa * 0.07);
 
             if (data.discount) {
                 task_discount_money = task_summa * (data.discount / 100);
@@ -116,7 +116,7 @@ const contractUpdateService = async (data) => {
         data.tasks.forEach(element => {
             all_task_time += element.task_time;
             all_worker_number += element.worker_number;
-            summa += element.task_time * element.worker_number * data.bxm.summa;
+            summa += element.task_time * element.worker_number * (data.bxm.summa * 0.07);
         });
         if (data.discount) {
             discount_money = summa * (data.discount / 100);
@@ -165,7 +165,7 @@ const contractUpdateService = async (data) => {
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
-            let task_summa = task.task_time * task.worker_number * data.bxm.summa;
+            let task_summa = task.task_time * task.worker_number * (data.bxm.summa * 0.07);
 
             if (data.discount) {
                 task_discount_money = task_summa * (data.discount / 100);
