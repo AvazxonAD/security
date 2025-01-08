@@ -11,6 +11,7 @@ const bxmGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getbxmService(user_id)
+        result.summa = Math.round((result.summa * 0.07) * 100) / 100;
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
