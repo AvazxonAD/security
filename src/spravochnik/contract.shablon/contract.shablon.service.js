@@ -64,14 +64,14 @@ const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = fal
             return data;   
         }else{
             const regex = /(\d+\.\d+ [^(\d+\.\d+)]*)/g;
-            data.main_section = [data.main_section]
-            data.section_1 = data.section_1.match(regex)
-            data.section_2 = data.section_2.match(regex)
-            data.section_3 = data.section_3.match(regex)
-            data.section_4 = data.section_4.match(regex)
-            data.section_5 = data.section_5.match(regex)
-            data.section_6 = data.section_6.match(regex)
-            data.section_7 = data.section_7.match(regex)
+            data.main_section = [data.main_section];
+            data.section_1 = data.section_1.match(regex);
+            data.section_2 = data.section_2.match(regex);
+            data.section_3 = data.section_3.match(regex);
+            data.section_4 = data.section_4.match(regex);
+            data.section_5 = data.section_5.match(regex);
+            data.section_6 = data.section_6.match(regex);
+            data.section_7 = data.section_7.match(regex);
             return data;
         }
     } catch (error) {
