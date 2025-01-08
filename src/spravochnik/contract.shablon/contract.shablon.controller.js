@@ -9,16 +9,11 @@ const { contractTemplateValidation } = require("../../utils/validation");
 const { resFunc } = require("../../utils/resFunc");
 const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch')
-const { checkTemplateString } = require('../../utils/check.template')
 
 const templateCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(contractTemplateValidation, req.body)
-        checkTemplateString(data.main_section, ['${client.name}', '${raxbar}' ])
-        checkTemplateString(data.section_1, [ '${start_date}', '${end_date}', '${start_time}', '${end_time}', '${address}' ])
-        checkTemplateString(data.section_2, ['${summa}']);
-        checkTemplateString(data.section_7, ['${period}']);
         const result = await createContractTemplateService({ ...data, user_id })
         resFunc(res, 200, result)
     } catch (error) {
@@ -53,11 +48,7 @@ const templateUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const data = validationResponse(contractTemplateValidation, req.body)
-        await getContractTemplateByIdService(user_id, id)
-        checkTemplateString(data.main_section, ['${client.name}', '${ijrochi}', '${raxbar}' ])
-        checkTemplateString(data.section_1, [ '${start_date}', '${end_date}', '${start_time}', '${end_time}', '${address}' ])
-        checkTemplateString(data.section_2, ['${summa}']);
-        checkTemplateString(data.section_7, ['${period}']);
+        await getContractTemplateByIdService(user_id, id);
         const result = await updateContractTemplateService({ ...data, id })
         resFunc(res, 200, result)
     } catch (error) {

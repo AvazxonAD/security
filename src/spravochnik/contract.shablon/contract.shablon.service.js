@@ -4,7 +4,7 @@ const ErrorResponse = require('../../utils/errorResponse');
 const createContractTemplateService = async (data) => {
     try {
         const result = await pool.query(
-            `INSERT INTO contract_shablon (
+            `INSERT INTO shablon (
                 user_id, 
                 shablon_name, 
                 title,
@@ -40,7 +40,7 @@ const createContractTemplateService = async (data) => {
 const getContractTemplatesService = async (user_id) => {
     try {
         const result = await pool.query(
-            `SELECT id, shablon_name FROM contract_shablon WHERE user_id = $1 AND isdeleted = false`,
+            `SELECT id, shablon_name FROM shablon WHERE user_id = $1 AND isdeleted = false`,
             [user_id]
         );
         return result.rows;
@@ -53,27 +53,14 @@ const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = fal
     try {
         const ignoreDeleted = isdeleted ? '' : 'AND isdeleted = false';
         const result = await pool.query(
-            `SELECT * FROM contract_shablon WHERE id = $1 AND user_id = $2 ${ignoreDeleted}`,
+            `SELECT * FROM shablon WHERE id = $1 AND user_id = $2 ${ignoreDeleted}`,
             [id, user_id]
         );
         if (!result.rows[0]) {
             throw new ErrorResponse('Shablon topilmadi', 404);
         }
-        const data = result.rows[0]
-        if (edit === 'true') {
-            return data;
-        } else {
-            const regex = /(\d+\.\d+ [^(\d+\.\d+)]*)/g;
-            data.main_section = [data.main_section];
-            data.section_1 = data.section_1.match(regex)?.map(item => item + '.');
-            data.section_2 = data.section_2.match(regex)?.map(item => item + '.');
-            data.section_3 = data.section_3.match(regex)?.map(item => item + '.');
-            data.section_4 = data.section_4.match(regex)?.map(item => item + '.');
-            data.section_5 = data.section_5.match(regex)?.map(item => item + '.');
-            data.section_6 = data.section_6.match(regex)?.map(item => item + '.');
-            data.section_7 = data.section_7.match(regex)?.map(item => item + '.');
-            return data;
-        }
+        return result.rows[0];
+
     } catch (error) {
         throw new ErrorResponse(error.message, error.statusCode || 500);
     }
@@ -82,7 +69,7 @@ const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = fal
 const updateContractTemplateService = async (data) => {
     try {
         const result = await pool.query(
-            `UPDATE contract_shablon 
+            `UPDATE shablon 
             SET 
                 shablon_name = $1, title = $2, 
                 main_section = $3, 
@@ -120,7 +107,7 @@ const updateContractTemplateService = async (data) => {
 const deleteContractTemplateService = async (id) => {
     try {
         const result = await pool.query(
-            `DELETE FROM contract_shablon WHERE id = $1 RETURNING *`,
+            `DELETE FROM shablon WHERE id = $1 RETURNING *`,
             [id]
         );
         if (!result.rows[0]) {
@@ -135,7 +122,7 @@ const deleteContractTemplateService = async (id) => {
 const checkNameService = async (user_id, shablon_name) => {
     try {
         const result = await pool.query(
-            `SELECT * FROM contract_shablon WHERE user_id = $1 AND isdeleted = false AND shablon_name = $2`,
+            `SELECT * FROM shablon WHERE user_id = $1 AND isdeleted = false AND shablon_name = $2`,
             [user_id, shablon_name]
         );
         if (result.rows[0]) {
