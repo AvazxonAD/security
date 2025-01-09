@@ -59,7 +59,7 @@ const contractGet = async (req, res) => {
             from_balance: returnStringSumma(from_balance),
             to_balance: returnStringSumma(to_balance)
         }
-        resFunc(res, 200, data, meta)
+        resFunc(res, 200, data, meta);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -78,11 +78,10 @@ const contractGetById = async (req, res) => {
         result.discount_money = Math.round(result.discount_money * 100) / 100;
         for(let task of result.tasks){
             task.summa = Math.round(task.summa * 100) / 100;
-            task.summa = Math.round(task.summa * 100) / 100;
             task.timemoney = Math.round(task.timemoney * 100) / 100;
             task.discount_money = Math.round(task.discount_money * 100) / 100;
             task.result_summa = Math.round(task.result_summa * 100) / 100;
-        }
+        };
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
