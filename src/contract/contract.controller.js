@@ -72,6 +72,16 @@ const contractGetById = async (req, res) => {
         await getByIdaccount_numberService(user_id, account_number_id)
         const id = req.params.id
         const result = await getByIdcontractService(user_id, id, true, account_number_id)
+        result.summa = Math.round(result.summa * 100) / 100;
+        result.result_summa = Math.round(result.result_summa * 100) / 100;
+        result.remaining_balance = Math.round(result.remaining_balance * 100) / 100;
+        result.discount_money = Math.round(result.discount_money * 100) / 100;
+        for(let task of result.tasks){
+            task.summa = Math.round(task.summa * 100) / 100;
+            task.summa = Math.round(task.summa * 100) / 100;
+            task.discount_money = Math.round(task.discount_money * 100) / 100;
+            task.result_summa = Math.round(task.result_summa * 100) / 100;
+        }
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
