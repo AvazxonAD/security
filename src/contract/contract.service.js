@@ -346,7 +346,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                         t.task_time, 
                         t.worker_number,
                         t.summa, 
-                        (t.summa / t.task_time) AS timemoney, 
+                        (t.summa / t.task_time * t.worker_number) AS timemoney, 
                         t.discount_money,
                         t.result_summa,
                         TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
