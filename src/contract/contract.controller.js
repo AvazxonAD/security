@@ -79,6 +79,7 @@ const contractGetById = async (req, res) => {
         for(let task of result.tasks){
             task.summa = Math.round(task.summa * 100) / 100;
             task.summa = Math.round(task.summa * 100) / 100;
+            task.timemoney = Math.round(task.timemoney * 100) / 100;
             task.discount_money = Math.round(task.discount_money * 100) / 100;
             task.result_summa = Math.round(task.result_summa * 100) / 100;
         }
