@@ -228,7 +228,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
             WHERE r_d.account_number_id = $1 AND r_d.user_id = $2 AND r_d.id = $3  ${ignore_filter}
         `, [account_number_id, user_id, id])
         if (!data.rows[0]) {
-            throw new ErrorResponse('rasxod_fio doc not found', 404)
+            throw new ErrorResponse('rasxod doc not found', 404)
         }
         return data.rows[0]
     } catch (error) {
