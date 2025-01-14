@@ -361,7 +361,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                     FROM task AS t
                     JOIN batalon AS b ON b.id = t.batalon_id
                     WHERE  t.user_id = $1 ${filter_task} AND t.contract_id = c.id AND t.isdeleted = false
-                    ORDER BY task_date DESC
+                    ORDER BY task_date
                     ) AS tasks
                 ) AS tasks 
             FROM contract  AS c 
