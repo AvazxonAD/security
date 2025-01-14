@@ -360,7 +360,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                         ) AS remaining_task_time
                     FROM task AS t
                     JOIN batalon AS b ON b.id = t.batalon_id
-                    WHERE  t.user_id = $1 ${filter_task} AND t.contract_id = c.id 
+                    WHERE  t.user_id = $1 ${filter_task} AND t.contract_id = c.id AND t.isdeleted = false
                     ) AS tasks
                 ) AS tasks 
             FROM contract  AS c 
