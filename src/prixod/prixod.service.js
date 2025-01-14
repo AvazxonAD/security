@@ -19,7 +19,7 @@ const prixodCreateService = async (data) => {
             data.organization_id,
             data.contract_id,
             data.opisanie,
-            data.doc_dum,
+            data.doc_num,
             data.doc_date,
             data.summa,
             data.account_number_id

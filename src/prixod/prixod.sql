@@ -5,7 +5,7 @@ CREATE TABLE prixod (
     contract_id INTEGER REFERENCES contract(id),
     accaunt_number_id INTEGER REFERENCES accaunt_number(id),
     opisanie VARCHAR,
-    doc_dum VARCHAR,
+    doc_num VARCHAR,
     doc_date DATE,
     summa DECIMAL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
