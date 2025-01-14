@@ -130,12 +130,12 @@ const workerValidation = Joi.object({
 })
 const organizationValidation = Joi.object({
   name: Joi.string().trim().required(),
-  address: Joi.string().trim(),
-  str: Joi.string().trim(),
-  bank_name: Joi.string().trim(),
-  mfo: Joi.string().trim().pattern(/^\d+$/),
-  account_number: Joi.string().trim().pattern(/^\d+$/),
-  treasury1: Joi.string().trim().pattern(/^\d+$/).allow(''),
+  address: Joi.string().trim().allow('', null),
+  str: Joi.string().trim().allow('', null),
+  bank_name: Joi.string().trim().allow('', null),
+  mfo: Joi.string().trim().pattern(/^\d+$/).allow('', null),
+  account_number: Joi.string().trim().pattern(/^\d+$/).allow('', null),
+  treasury1: Joi.string().trim().pattern(/^\d+$/).allow('', null),
   treasury2: Joi.string().trim().pattern(/^\d+$/).allow(''),
 });
 const allQueryValidation = Joi.object({
