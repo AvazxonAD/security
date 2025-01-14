@@ -30,6 +30,8 @@ const contractCreate = async (req, res) => {
         const account_number_id = req.query.account_number_id
         await getByIdaccount_numberService(user_id, account_number_id)
         const data = validationResponse(contractValidation, req.body)
+        data.end_date = null
+        data.end_date = null
         const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
         for (let task of data.tasks) {
