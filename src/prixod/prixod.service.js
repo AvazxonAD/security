@@ -64,6 +64,7 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
                 JOIN contract AS c ON c.id = p.contract_id 
                 JOIN organization AS o ON c.organization_id = o.id 
                 WHERE p.isdeleted = false AND p.user_id = $1 AND p.doc_date BETWEEN $2 AND $3 AND p.account_number_id = $4 ${offset_limit}
+                ORDER BY p.doc_num DESC
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
