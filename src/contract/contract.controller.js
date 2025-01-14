@@ -8,7 +8,7 @@ const {
     contractViewService,
     checkRaxodContract
 } = require("./contract.service");
-const { contractValidation, conrtactQueryValidation } = require("../utils/validation");
+const { contractValidation, conrtactQueryValidation, contractUpdateValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
@@ -106,7 +106,7 @@ const contractUpdate = async (req, res) => {
                 message: "This document is linked to other documents. Please open them first"
             })
         }
-        const data = validationResponse(contractValidation, req.body)
+        const data = validationResponse(contractUpdateValidation, req.body)
         const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
         for (let task of data.tasks) {
