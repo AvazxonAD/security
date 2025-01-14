@@ -289,7 +289,8 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     ${serach_filter} ${organization_filter} ${batalion_filter}
                     AND c.doc_date BETWEEN $4 AND $5 
                     AND c.account_number_id = $6
-                ORDER BY c.id DESC OFFSET $2 LIMIT $3
+                ORDER BY CAST(c.doc_num AS INTEGER) DESC
+                OFFSET $2 LIMIT $3
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
