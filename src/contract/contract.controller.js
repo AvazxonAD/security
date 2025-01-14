@@ -61,8 +61,8 @@ const contractGet = async (req, res) => {
             currentPage: page,
             nextPage: page >= pageCount ? null : page + 1,
             backPage: page === 1 ? null : page - 1,
-            from_balance: returnStringSumma(from_balance),
-            to_balance: returnStringSumma(to_balance)
+            from_balance: returnStringSumma(Math.round(from_balance * 100) / 100),
+            to_balance: returnStringSumma(Math.round(to_balance * 100) / 100)
         }
         resFunc(res, 200, data, meta);
     } catch (error) {
