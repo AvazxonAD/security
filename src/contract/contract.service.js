@@ -294,11 +294,45 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                (SELECT COALESCE(COUNT(c.id), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date BETWEEN $4 AND $5 AND c.account_number_id = $6 ${serach_filter} ${organization_filter} ${batalion_filter})::INTEGER AS total_count,
-                (SELECT COALESCE(SUM(c.result_summa), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date <= $4 AND c.account_number_id = $6 ${serach_filter} ${organization_filter} ${batalion_filter})::FLOAT AS from_balance,
-                (SELECT COALESCE(SUM(c.result_summa), 0) FROM contract AS c JOIN organization AS o ON o.id = c.organization_id WHERE c.isdeleted = false AND c.user_id = $1 AND c.doc_date <= $5 AND c.account_number_id = $6 ${serach_filter} ${organization_filter} ${batalion_filter})::FLOAT AS to_balance
+                (
+                    SELECT COALESCE(COUNT(c.id), 0) 
+                    FROM contract AS c 
+                    JOIN organization AS o ON o.id = c.organization_id 
+                    WHERE c.isdeleted = false 
+                        AND c.user_id = $1 
+                        AND c.doc_date BETWEEN $4 AND $5 
+                        AND c.account_number_id = $6 
+                        ${serach_filter} 
+                        ${organization_filter} 
+                        ${batalion_filter}
+                )::INTEGER AS total_count,
+                (
+                    SELECT COALESCE(SUM(c.result_summa), 0) 
+                    FROM contract AS c 
+                    JOIN organization AS o ON o.id = c.organization_id 
+                    WHERE c.isdeleted = false 
+                        AND c.user_id = $1 
+                        AND c.doc_date <= $4 
+                        AND c.account_number_id = $6 
+                        ${serach_filter} 
+                        ${organization_filter} 
+                        ${batalion_filter}
+                )::FLOAT AS from_balance,
+                (
+                    SELECT COALESCE(SUM(c.result_summa), 0) 
+                    FROM contract AS c 
+                    JOIN organization AS o ON o.id = c.organization_id 
+                    WHERE c.isdeleted = false 
+                        AND c.user_id = $1 
+                        AND c.doc_date <= $5 
+                        AND c.account_number_id = $6 
+                        ${serach_filter} 
+                        ${organization_filter} 
+                        ${batalion_filter}
+                )::FLOAT AS to_balance
             FROM data
         `, params);
+        console.log(params)
         return { data: rows[0]?.data || [], total: rows[0].total_count, from_balance: rows[0].from_balance, to_balance: rows[0].to_balance }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode);
