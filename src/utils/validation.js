@@ -34,7 +34,7 @@ const adminMonitoringQueryValidation = Joi.object({
 })
 
 const rasxodValidation = Joi.object({
-  doc_num: Joi.string().required().trim().pattern('^\d+(\.\d+)?$'),
+  doc_num: Joi.string().required().trim().pattern(/^\d+(\.\d+)?$/),
   doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   batalon_id: Joi.number().required().min(1),
   opisanie: Joi.string().trim(),
@@ -150,7 +150,7 @@ const workerQueryValidation = Joi.object({
   batalon_id: Joi.number().min(1)
 })
 const contractValidation = Joi.object({
-  doc_num: Joi.string().trim().required().pattern('^\d+(\.\d+)?$'),
+  doc_num: Joi.string().trim().required().pattern(/^\d+(\.\d+)?$/),
   doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   period: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   adress: Joi.string().trim().required(),
@@ -171,7 +171,7 @@ const contractValidation = Joi.object({
 });
 
 const contractUpdateValidation = Joi.object({
-  doc_num: Joi.string().trim().required().pattern('^\d+(\.\d+)?$'),
+  doc_num: Joi.string().trim().required().pattern(/^\d+(\.\d+)?$/),
   doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   period: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).allow(null, ''),
   adress: Joi.string().trim().required(),
@@ -209,7 +209,7 @@ const prixodValidation = Joi.object({
   organization_id: Joi.number().integer().required().min(1),
   contract_id: Joi.number().integer().required().min(1),
   opisanie: Joi.string().allow(null, '').optional(),
-  doc_num: Joi.string().required().pattern('^\d+(\.\d+)?$'),
+  doc_num: Joi.string().required().pattern(/^\d+(\.\d+)?$/),
   doc_date: Joi.date().required(),
   summa: Joi.number().precision(2).min(1).required()
 });
