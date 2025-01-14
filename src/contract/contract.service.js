@@ -464,6 +464,7 @@ const dataForExcelService = async (user_id, account_number_id, from, to) => {
                 JOIN organization AS o ON o.id = c.organization_id
                 JOIN account_number AS a_n ON a_n.id = c.account_number_id
                 WHERE c.user_id = $1 AND c.isdeleted = false AND c.account_number_id = $2  AND c.doc_date BETWEEN $3 AND $4
+                ORDER BY CAST(c.doc_num AS FLOAT)
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
