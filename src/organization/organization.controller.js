@@ -21,7 +21,9 @@ const organizationCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(organizationValidation, req.body)
-        await getByStrOrganizationService(data.str, user_id)
+        if(data.str){
+            await getByStrOrganizationService(data.str, user_id)
+        }
         const result = await organizationCreateService({ ...data, user_id })
         resFunc(res, 200, result)
     } catch (error) {
