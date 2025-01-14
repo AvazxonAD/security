@@ -49,6 +49,11 @@ const contractGet = async (req, res) => {
         await getByIdaccount_numberService(user_id, account_number_id)
         const offset = (page - 1) * limit
         const { data, total, from_balance, to_balance } = await getcontractService(user_id, offset, limit, search, from, to, account_number_id, organization_id, batalon_id)
+        for (let doc of data) {
+            doc.result_summa = Math.round(doc.result_summa * 100) / 100;
+            doc.remaining_balance = Math.round(doc.remaining_balance * 100) / 100;
+            doc.remaining_summa = Math.round(doc.remaining_summa * 100) / 100;
+        }
         const pageCount = Math.ceil(total / limit);
         const meta = {
             pageCount: pageCount,
@@ -76,7 +81,7 @@ const contractGetById = async (req, res) => {
         result.result_summa = Math.round(result.result_summa * 100) / 100;
         result.remaining_balance = Math.round(result.remaining_balance * 100) / 100;
         result.discount_money = Math.round(result.discount_money * 100) / 100;
-        for(let task of result.tasks){
+        for (let task of result.tasks) {
             task.summa = Math.round(task.summa * 100) / 100;
             task.timemoney = Math.round(task.timemoney * 100) / 100;
             task.discount_money = Math.round(task.discount_money * 100) / 100;
