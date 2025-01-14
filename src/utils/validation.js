@@ -23,13 +23,13 @@ const adminPrixodRasxodQueryValidation = Joi.object({
 
 const monitoringQueryValidation = Joi.object({
   year: Joi.string().trim().pattern(/^(20\d{2}|[2-9]\d{3})$/).required(),
-  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/) .required(),
+  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/).required(),
   batalon_id: Joi.number().min(1)
 });
 
 const adminMonitoringQueryValidation = Joi.object({
   year: Joi.string().trim().pattern(/^(20\d{2}|[2-9]\d{3})$/).required(),
-  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/) .required(),
+  month: Joi.string().trim().pattern(/^(0[1-9]|1[0-2])$/).required(),
   user_id: Joi.number().min(1)
 })
 
@@ -79,7 +79,7 @@ const authUpdateValidation = Joi.object({
   login: Joi.string().trim(),
   oldPassword: Joi.string().trim(),
   newPassword: Joi.string().trim(),
-  fio: Joi.string().trim() 
+  fio: Joi.string().trim()
 })
 const batalionValidation = Joi.object({
   name: Joi.string().trim().required(),
@@ -130,7 +130,7 @@ const workerValidation = Joi.object({
 })
 const organizationValidation = Joi.object({
   name: Joi.string().trim().required(),
-  address: Joi.string().trim().allow('', null),
+  address: Joi.string().trim().allow(null, ''),
   str: Joi.string().trim().allow('', null),
   bank_name: Joi.string().trim().allow('', null),
   mfo: Joi.string().trim().pattern(/^\d+$/).allow('', null),
@@ -152,12 +152,12 @@ const workerQueryValidation = Joi.object({
 const contractValidation = Joi.object({
   doc_num: Joi.string().trim().required().pattern(/^\d+(\.\d+)?$/),
   doc_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
-  period: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).allow(null, '').default(null),
+  period: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   adress: Joi.string().trim().required(),
-  start_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).allow(null, '').default(null),
-  end_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).allow(null, '').default(null),
-  start_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
-  end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
+  start_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  end_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  start_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow(''),
+  end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow(''),
   discount: Joi.number().min(0).default(0).max(100),
   organization_id: Joi.number().integer().required(),
   tasks: Joi.array().items(
@@ -202,7 +202,7 @@ const prixodExcelValidation = Joi.object({
       prixod_summa: Joi.number().required(),
       prixod_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
     })
-  ).min(1).required() 
+  ).min(1).required()
 }).options({ stripUnknown: true });
 
 const prixodValidation = Joi.object({
