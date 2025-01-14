@@ -289,7 +289,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     ${serach_filter} ${organization_filter} ${batalion_filter}
                     AND c.doc_date BETWEEN $4 AND $5 
                     AND c.account_number_id = $6
-                ORDER BY CAST(c.doc_num AS FLOAT) DESC
+                ORDER BY CAST(c.doc_num AS FLOAT)
                 OFFSET $2 LIMIT $3
             )
             SELECT 
