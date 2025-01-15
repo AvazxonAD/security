@@ -321,7 +321,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                 (
                     SELECT COALESCE(SUM(c.result_summa), 0) 
                     FROM contract AS c 
-                    JOIN organization AS o ON o.id = c.organization_id 
+                    LEFT JOIN organization AS o ON o.id = c.organization_id 
                     WHERE c.isdeleted = false 
                         AND c.user_id = $1 
                         AND c.doc_date <= $5 
