@@ -103,6 +103,13 @@ const userValidation = Joi.object({
 const bxmValidation = Joi.object({
   summa: Joi.number().required().min(1)
 })
+
+const getByIdBxmSchema = Joi.object({
+  params: Joi.object({
+    id: Joi.number().integer().min(1).required()
+  })
+}).options({ stripUnknown: true });
+
 const accountNumberValidation = Joi.object({
   account_number: Joi.string().trim().required().pattern(/^\d+$/)
 });
@@ -320,5 +327,6 @@ module.exports = {
   userValidation,
   adminPrixodRasxodQueryValidation,
   adminMonitoringQueryValidation,
-  contractUpdateValidation
+  contractUpdateValidation,
+  getByIdBxmSchema
 };

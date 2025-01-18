@@ -5,10 +5,14 @@ const protect = require("../../middleware/auth");
 
 const {
     bxmGet,
-    bxmUpdate
+    bxmUpdate,
+    getByIdBxm,
+    createBxm
 } = require('./bxm.controller')
 
 router.put('/:id', protect, bxmUpdate)
-    .get('/', protect, bxmGet)
+    .get('/:id', protect, getByIdBxm)
+    .post('/', protect, createBxm)
+    .get('/', protect, bxmGet);
 
 module.exports = router;

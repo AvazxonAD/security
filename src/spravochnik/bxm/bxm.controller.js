@@ -1,8 +1,10 @@
 const {
     getbxmService,
-    bxmUpdateService
+    bxmUpdateService,
+    getByIdBxmService,
+    createBxmService
 } = require("./bxm.service");
-const { bxmValidation } = require("../../utils/validation");
+const { bxmValidation, getByIdBxmSchema } = require("../../utils/validation");
 const { resFunc } = require("../../utils/resFunc");
 const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch')
@@ -29,7 +31,37 @@ const bxmUpdate = async (req, res) => {
     }
 }
 
+const createBxm = async (req, res) => {
+    try {
+        const user_id = req.user.id
+
+        const { summa } = validationResponse(bxmValidation, req.body)
+        
+        const result = await createBxmService(user_id, summa);
+       
+        resFunc(res, 200, result)
+    } catch (error) {
+        errorCatch(error, res)
+    }
+}
+
+const getByIdBxm = async (req, res) => {
+    try {
+        const user_id = req.user.id
+
+        const { params } = validationResponse(getByIdBxmSchema, req);
+
+        const bxm = await getByIdBxmService(user_id, params.id);
+        
+        resFunc(res, 200, bxm);
+    } catch (error) {
+        errorCatch(error, res);
+    }
+}
+
 module.exports = {
     bxmGet,
-    bxmUpdate
+    bxmUpdate,
+    getByIdBxm,
+    createBxm
 };

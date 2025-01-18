@@ -242,7 +242,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
             batalion_filter = `AND EXISTS (SELECT * FROM task AS t WHERE t.isdeleted = false AND t.batalon_id = $${params.length + 1} AND c.id = t.contract_id )`
             params.push(batalion_id)
         }
-        const { rows } = await pool.query(`
+        const query = `
             WITH data AS (
                 SELECT 
                     c.id,
@@ -250,6 +250,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
                     c.result_summa,
                     c.adress, 
+                    c.dist,
                     o.id AS organization_id,
                     o.name AS organization_name,
                     o.address AS organization_address,
@@ -331,8 +332,10 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                         ${batalion_filter}
                 )::FLOAT AS to_balance
             FROM data
-        `, params);
-        console.log(params)
+        `;
+
+        const { rows } = await pool.query(query, params);
+        
         return { data: rows[0]?.data || [], total: rows[0].total_count, from_balance: rows[0].from_balance, to_balance: rows[0].to_balance }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode);
@@ -372,6 +375,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                 c.end_time,
                 c.all_worker_number,
                 c.all_task_time,
+                c.dist,
                 ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = $2) AS remaining_balance,
                 (SELECT ARRAY_AGG(row_to_json(tasks))
                     FROM (
