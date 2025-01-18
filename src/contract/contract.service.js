@@ -13,7 +13,7 @@ const contractCreateService = async (data) => {
         data.tasks.forEach(element => {
             all_task_time += element.task_time;
             all_worker_number += element.worker_number;
-            summa += element.task_time * element.worker_number * (data.bxm.summa * 0.07);
+            summa += element.task_time * element.worker_number * element.bxm_summa;
         });
 
         if (data.discount) {
@@ -40,9 +40,10 @@ const contractCreateService = async (data) => {
                 all_worker_number,
                 all_task_time,
                 discount_money,
-                result_summa
+                result_summa,
+                dist
             ) 
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -60,13 +61,14 @@ const contractCreateService = async (data) => {
             all_worker_number,
             all_task_time,
             discount_money,
-            result_summa
+            result_summa,
+            data.dist
         ]);
         const contract = rows[0];
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
-            let task_summa = task.task_time * task.worker_number * (data.bxm.summa * 0.07);
+            let task_summa = task.task_time * task.worker_number * task.bxm_summa;
 
             if (data.discount) {
                 task_discount_money = task_summa * (data.discount / 100);
@@ -77,8 +79,8 @@ const contractCreateService = async (data) => {
 
             return client.query(`
                 INSERT INTO 
-                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa) 
-                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
             `, [
                 contract.id,
                 task.batalon_id,
@@ -88,7 +90,10 @@ const contractCreateService = async (data) => {
                 data.user_id,
                 task.task_date,
                 task_discount_money,
-                task_result_summa
+                task_result_summa,
+                task.bxm_id,
+                task.bxm_summa,
+                task.address
             ]);
         });
 
@@ -116,7 +121,7 @@ const contractUpdateService = async (data) => {
         data.tasks.forEach(element => {
             all_task_time += element.task_time;
             all_worker_number += element.worker_number;
-            summa += element.task_time * element.worker_number * (data.bxm.summa * 0.07);
+            summa += element.task_time * element.worker_number * element.bxm_summa;
         });
         if (data.discount) {
             discount_money = summa * (data.discount / 100);
@@ -165,7 +170,7 @@ const contractUpdateService = async (data) => {
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
-            let task_summa = task.task_time * task.worker_number * (data.bxm.summa * 0.07);
+            let task_summa = task.task_time * task.worker_number * task.bxm_summa;
 
             if (data.discount) {
                 task_discount_money = task_summa * (data.discount / 100);
@@ -175,10 +180,9 @@ const contractUpdateService = async (data) => {
             }
 
             return client.query(`
-                INSERT INTO task(
-                    contract_id, batalon_id, task_time, worker_number, 
-                    summa, user_id, task_date, discount_money, result_summa
-                ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+                INSERT INTO 
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
             `, [
                 contract.id,
                 task.batalon_id,
@@ -188,8 +192,12 @@ const contractUpdateService = async (data) => {
                 data.user_id,
                 task.task_date,
                 task_discount_money,
-                task_result_summa
+                task_result_summa,
+                task.bxm_id,
+                task.bxm_summa,
+                task.address
             ]);
+            
         });
         const tasks = await Promise.all(taskPromises);
         contract.tasks = tasks.map(task => task.rows[0]);
@@ -385,18 +393,20 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
                         t.task_time, 
                         t.worker_number,
                         t.summa, 
-                        (t.summa / (t.task_time * t.worker_number)) AS timemoney, 
+                        t.time_money AS timemoney, 
                         t.discount_money,
                         t.result_summa,
                         TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
                         b.name AS batalon_name,
+                        t.address,
                         (   
                             (t.task_time * t.worker_number) - (
                                 SELECT COALESCE(SUM(task_time), 0)
                                 FROM worker_task 
                                 WHERE task_id = t.id AND isdeleted = false
                             ) 
-                        ) AS remaining_task_time
+                        ) AS remaining_task_time,
+                        t.bxm_id
                     FROM task AS t
                     JOIN batalon AS b ON b.id = t.batalon_id
                     WHERE  t.user_id = $1 ${filter_task} AND t.contract_id = c.id AND t.isdeleted = false

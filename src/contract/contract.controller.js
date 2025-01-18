@@ -15,13 +15,13 @@ const { errorCatch } = require('../utils/errorCatch')
 const { getByIdBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
-const { getbxmService } = require('../spravochnik/bxm/bxm.service');
+const { getByIdBxmService } = require('../spravochnik/bxm/bxm.service');
 const { returnStringSumma } = require('../utils/return.summa');
 const { returnStringDate } = require('../utils/date.functions')
-const xlsx = require('xlsx')
 const ExcelJs = require('exceljs')
 const path = require('path')
 const pg = require('pg')
+const ErrorResponse = require('../utils/errorResponse')
 
 
 const contractCreate = async (req, res) => {
@@ -30,12 +30,16 @@ const contractCreate = async (req, res) => {
         const account_number_id = req.query.account_number_id
         await getByIdaccount_numberService(user_id, account_number_id)
         const data = validationResponse(contractValidation, req.body)
-        const bxm = await getbxmService(user_id)
+
         await getByIdorganizationService(user_id, data.organization_id)
+
         for (let task of data.tasks) {
-            await getByIdBatalonService(user_id, task.batalon_id)
+            await getByIdBatalonService(user_id, task.batalon_id);
+            const bxm = await getByIdBxmService(user_id, task.bxm_id)
+            task.bxm_summa = bxm.bxm_07;
         }
-        const result = await contractCreateService({ ...data, user_id, bxm, account_number_id })
+
+        const result = await contractCreateService({ ...data, user_id, account_number_id })
         resFunc(res, 201, result)
     } catch (error) {
         errorCatch(error, res)
@@ -46,13 +50,13 @@ const contractGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const { page, limit, search, from, to, account_number_id, organization_id, batalon_id } = validationResponse(conrtactQueryValidation, req.query)
-        
+
         await getByIdaccount_numberService(user_id, account_number_id)
         const offset = (page - 1) * limit
-        
+
         const { data, total, from_balance, to_balance } = await getcontractService(
-            user_id, offset, limit, search, 
-            from, to, account_number_id, 
+            user_id, offset, limit, search,
+            from, to, account_number_id,
             organization_id, batalon_id
         );
 
@@ -116,12 +120,15 @@ const contractUpdate = async (req, res) => {
             })
         }
         const data = validationResponse(contractUpdateValidation, req.body)
-        const bxm = await getbxmService(user_id)
         await getByIdorganizationService(user_id, data.organization_id)
+        
         for (let task of data.tasks) {
-            await getByIdBatalonService(user_id, task.batalon_id)
+            await getByIdBatalonService(user_id, task.batalon_id);
+            const bxm = await getByIdBxmService(user_id, task.bxm_id)
+            task.bxm_summa = bxm.bxm_07;
         }
-        const result = await contractUpdateService({ ...data, user_id, bxm, id })
+
+        const result = await contractUpdateService({ ...data, user_id, id })
         resFunc(res, 201, result)
     } catch (error) {
         errorCatch(error, res)
