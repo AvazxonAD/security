@@ -132,8 +132,8 @@ const strValidation = Joi.object({
 const workerValidation = Joi.object({
   fio: Joi.string().trim().required(),
   batalon_id: Joi.number().required(),
-  account_number: Joi.string().trim().required().pattern(/^\d{16}$/),
-  xisob_raqam: Joi.string().trim().required().pattern(/^\d{20}$/)
+  account_number: Joi.string().trim().required(),
+  xisob_raqam: Joi.string().trim().required()
 })
 const organizationValidation = Joi.object({
   name: Joi.string().trim().required(),

@@ -167,6 +167,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
         if (!ignore) {
             ignore_filter = `AND r_d.isdeleted = false`
         }
+
         const data = await pool.query(`
             SELECT 
                 r_d.id,
@@ -215,18 +216,19 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                             w.xisob_raqam,
                             w.fio
                         FROM rasxod_fio AS r 
-                        JOIN worker_task AS w_t ON r.worker_task_id = w_t.id
-                        JOIN worker AS w ON w.id = w_t.worker_id
-                        JOIN task AS t ON t.id = w_t.task_id 
-                        JOIN contract AS c ON c.id = t.contract_id
-                        JOIN organization AS o ON o.id = c.organization_id
+                        LEFT JOIN worker_task AS w_t ON r.worker_task_id = w_t.id
+                        LEFT JOIN worker AS w ON w.id = w_t.worker_id
+                        LEFT JOIN task AS t ON t.id = w_t.task_id 
+                        LEFT JOIN contract AS c ON c.id = t.contract_id
+                        LEFT JOIN organization AS o ON o.id = c.organization_id
                         WHERE r.rasxod_fio_doc_id = $3
                     ) AS task
                 ) AS worker_tasks 
             FROM rasxod_fio_doc AS r_d
-            JOIN batalon AS b ON b.id = r_d.batalon_id
+            LEFT JOIN batalon AS b ON b.id = r_d.batalon_id
             WHERE r_d.account_number_id = $1 AND r_d.user_id = $2 AND r_d.id = $3  ${ignore_filter}
         `, [account_number_id, user_id, id])
+        
         if (!data.rows[0]) {
             throw new ErrorResponse('rasxod doc not found', 404)
         }
