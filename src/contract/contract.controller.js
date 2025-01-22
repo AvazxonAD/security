@@ -12,7 +12,7 @@ const { contractValidation, conrtactQueryValidation, contractUpdateValidation } 
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
-const { getByIdBatalonService } = require('../batalon/batalon.service')
+const { getByIdBatalonService, getBatalonService } = require('../batalon/batalon.service')
 const { getByIdorganizationService } = require('../organization/organization.service')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { getByIdBxmService } = require('../spravochnik/bxm/bxm.service');
@@ -21,7 +21,9 @@ const { returnStringDate } = require('../utils/date.functions')
 const ExcelJs = require('exceljs')
 const path = require('path')
 const pg = require('pg')
-const ErrorResponse = require('../utils/errorResponse')
+const pool = require('../config/db')
+const ErrorResponse = require('../utils/errorResponse');
+const xlsx = require('xlsx');
 
 
 const contractCreate = async (req, res) => {
@@ -121,7 +123,7 @@ const contractUpdate = async (req, res) => {
         }
         const data = validationResponse(contractUpdateValidation, req.body)
         await getByIdorganizationService(user_id, data.organization_id)
-        
+
         for (let task of data.tasks) {
             await getByIdBatalonService(user_id, task.batalon_id);
             const bxm = await getByIdBxmService(user_id, task.bxm_id)
@@ -359,7 +361,7 @@ const conntractViewExcel = async (req, res) => {
     }
 }
 
-const importData = async (req, res) => {
+const importDataDB = async (req, res) => {
     const oldDb = new pg.Pool({
         host: "localhost",
         port: 5433,
@@ -503,6 +505,125 @@ const importData = async (req, res) => {
     }
 };
 
+const importData = async (req, res) => {
+
+    const workbook = xlsx.readFile(req.file.path);
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    let result_summa = 0;
+    let task_result_summa = 0;
+
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    const batalons = await getBatalonService(1);
+    for (let doc of data) {
+        doc.timeMoney = doc.summa / (doc.worker * doc.time);
+        doc.client = doc.client.replace(/\(.*?\)/, '').trim();
+        doc.client = doc.client.replace(/["\\]/g, '').trim();
+
+        if (doc.doc_num <= 600) {
+            result_summa += doc.summa;
+        }
+
+        doc.tasks = [];
+
+        for (let batalon of batalons) {
+            const key = batalon.name;
+            if (doc[key]) {
+                const task = {
+                    worker_number: doc[key],
+                    batalon_id: batalon.id,
+                    task_time: doc.time,
+                    timeMoney: doc.timeMoney,
+                    summa: (doc.time * doc[key]) * doc.timeMoney,
+                    result_summa: (doc.time * doc[key]) * doc.timeMoney
+                }
+
+                if (!task.result_summa) {
+                    console.log(doc)
+                }
+
+                if (doc.doc_num <= 600) {
+                    task_result_summa += task.result_summa;
+                }
+
+                doc.tasks.push(task)
+            }
+        }
+
+        const organization = await pool.query(`SELECT id FROM organization WHERE name ILIKE '%' || $1 || '%'`, [doc.client]);
+        if (!organization.rows[0]) {
+            const organ = await pool.query(`INSERT INTO organization(name) VALUES($1) RETURNING id`, [doc.client]);
+            doc.organ_id = organ.rows[0].id;
+        } else {
+            doc.organ_id = organization.rows[0].id;
+        }
+
+        const client = await pool.connect()
+        await client.query('BEGIN')
+        const docDate = doc.doc_date ? new Date(doc.doc_date) : new Date();
+
+        const validDate = docDate.getTime() && docDate.toString() !== 'Invalid Date' ? docDate : new Date();
+
+        try {
+            const contract = await pool.query(`
+                INSERT INTO contract(
+                    doc_num, 
+                    doc_date,
+                    summa, 
+                    organization_id, 
+                    account_number_id,
+                    user_id,
+                    all_worker_number,
+                    all_task_time,
+                    result_summa
+                ) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id    
+            `, [
+                doc.doc_num,
+                validDate,
+                doc.summa,
+                doc.organ_id,
+                2,
+                1,
+                doc.worker_number,
+                doc.worker_number * doc.time,
+                doc.summa
+            ])
+
+    
+            for (let task of doc.tasks) {
+                await pool.query(`
+                    INSERT INTO 
+                    task(contract_id, batalon_id, task_time, worker_number, summa, user_id, result_summa, time_money) 
+                    VALUES($1, $2, $3, $4, $5, $6, $7, $8)    
+                `, [
+                    contract.rows[0].id,
+                    task.batalon_id,
+                    task.task_time,
+                    task.worker_number,
+                    task.summa,
+                    1,
+                    task.result_summa,
+                    task.time_money
+                ])
+            }
+            await client.query('COMMIT')
+        } catch (error) {
+            await client.query('ROLLBACK')
+            console.log(error)    
+            return res.send(error.message);
+        } finally {
+            client.release()
+        }
+
+    }
+
+
+    resFunc(res, 200, data, { result_summa, task_result_summa });
+}
 
 module.exports = {
     contractCreate,
