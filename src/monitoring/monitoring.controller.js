@@ -8,7 +8,7 @@ const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
 const { returnStringSumma } = require('../utils/return.summa')
-const { getByIdBatalonService } = require('../batalon/batalon.service')
+const { getByIdBatalonService } = require('../batalon/db')
 
 const prixodRasxod = async (req, res) => {
     try {

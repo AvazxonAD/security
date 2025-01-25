@@ -1,9 +1,0 @@
-CREATE TABLE bank (
-    id SERIAL PRIMARY KEY,
-    bank VARCHAR(1000),
-    mfo VARCHAR(5),
-    user_id INTEGER REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    isdeleted BOOLEAN DEFAULT FALSE
-);

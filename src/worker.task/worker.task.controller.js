@@ -12,7 +12,7 @@ const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch');
 const { getByIdTaskService } = require('../task/task.service');
 const ErrorResponse = require("../utils/errorResponse");
-const { getByBatalonIdAndIdWorkerService } = require('../worker/worker.service')
+const { getByBatalonIdAndIdWorkerService } = require('../worker/service')
 const { getByIdcontractService } = require('../contract/contract.service')
 
 const workerTaskCreate = async (req, res) => {

@@ -5,7 +5,7 @@ const {
     batalonUpdateService,
     deleteBatalonService,
     getByNameBatalonService
-} = require("./batalon.service");
+} = require("./db.js");
 const { batalionValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
