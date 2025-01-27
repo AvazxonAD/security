@@ -66,7 +66,7 @@ const getorganizationService = async (user_id, search, offset, limit) => {
                 SELECT id, name, address, str, bank_name, mfo, account_number, treasury1, treasury2
                 FROM organization  
                 WHERE isdeleted = false AND user_id = $1 ${filter}
-                ORDER BY name OFFSET $2 LIMIT $3
+                ORDER BY id DESC, name OFFSET $2 LIMIT $3
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,

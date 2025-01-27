@@ -253,17 +253,6 @@ const exportExcelData = async (req, res) => {
     }
 };
 
-const forDataPdf = async (req, res) => {
-    try {
-        const user_id = req.user.id
-        const { from, to, account_number_id } = validationResponse(conrtactQueryValidation, req.query);
-        const { data, total } = await dataForExcelService(user_id, account_number_id, from, to);
-        resFunc(res, 200, { total, data })
-    } catch (error) {
-        errorCatch(error, res)
-    }
-}
-
 const contractView = async (req, res) => {
     try {
         const user_id = req.user.id
@@ -607,7 +596,7 @@ const importData = async (req, res) => {
                     task.summa,
                     1,
                     task.result_summa,
-                    task.time_money
+                    task.timeMoney
                 ])
             }
             await client.query('COMMIT')
@@ -632,7 +621,6 @@ module.exports = {
     contractUpdate,
     contractDelete,
     exportExcelData,
-    forDataPdf,
     contractView,
     importData
 };
