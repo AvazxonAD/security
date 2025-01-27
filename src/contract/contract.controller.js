@@ -7,7 +7,7 @@ const {
     dataForExcelService,
     contractViewService,
     checkRaxodContract
-} = require("./contract.service");
+} = require("./db");
 const { contractValidation, conrtactQueryValidation, contractUpdateValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");

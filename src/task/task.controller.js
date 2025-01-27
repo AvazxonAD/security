@@ -1,7 +1,7 @@
 const { resFunc } = require("../utils/resFunc");
 const { errorCatch } = require('../utils/errorCatch');
 const { getByIdTaskService, getByContractIdTaskService, getTaskService } = require('../task/task.service');
-const { getByIdcontractService } = require('../contract/contract.service')
+const { getByIdcontractService } = require('../contract/db')
 
 const getTask = async (req, res) => {
     try {
