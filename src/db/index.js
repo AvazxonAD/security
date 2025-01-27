@@ -17,6 +17,16 @@ class Db {
 
     static getInstance() {
         if (!Db.instance) {
+            if (
+                !process.env.DB_USER || 
+                !process.env.DB_PASSWORD || 
+                !process.env.DB_PORT || 
+                !process.env.DB_HOST || 
+                !process.env.DB_DATABASE
+            ) {
+                throw new Error('Env file error')
+            }
+
             const options = {
                 user: process.env.DB_USER,
                 password: process.env.DB_PASSWORD,
@@ -24,6 +34,7 @@ class Db {
                 host: process.env.DB_HOST,
                 database: process.env.DB_DATABASE,
             };
+
             Db.instance = new Db(options);
         }
         return Db.instance;
