@@ -5,7 +5,8 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const path = require('path')
-const { Db } = require('./db/index')
+const { Db } = require('./db/index');
+const i18next  = require('./i18next');
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -14,6 +15,12 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cors())
 
 app.use(express.static(path.join(__dirname, '../public')));
+
+app.use(i18next, (req, res, next) => {
+    req.i18n.changeLanguage(req.headers['x-app-lang']);
+
+    next();
+});
 
 app.use(require('./middleware/response.metods'))
 

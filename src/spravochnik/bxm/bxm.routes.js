@@ -8,7 +8,7 @@ const {
     bxmUpdate,
     getByIdBxm,
     createBxm
-} = require('./bxm.controller')
+} = require('./controler')
 
 router.put('/:id', protect, bxmUpdate)
     .get('/:id', protect, getByIdBxm)

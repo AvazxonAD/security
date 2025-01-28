@@ -1,5 +1,26 @@
 const pool = require('../../config/db')
-const ErrorResponse = require('../../utils/errorResponse')
+const ErrorResponse = require('../../utils/errorResponse');
+const { db } = require('../../db/index');
+
+
+const BxmDB = class {
+    static async deleteBxm(params) {
+        const query = `UPDATE bxm SET isdeleted = true WHERE id = $1 RETURNING id`;
+        
+        const result = await db.query(query, params);
+        
+        return result[0];
+    }
+
+    static async getByIdBxm(params) {
+        const query = `SELECT id, summa::FLOAT FROM bxm WHERE isdeleted = false AND user_id = $1 AND id = $2`;
+        
+        const result = await db.query(query, params);
+        
+        return result[0];
+    }
+};
+
 
 const bxmUpdateService = async (summa, id, user_id) => {
     try {
@@ -59,5 +80,6 @@ module.exports = {
     getbxmService,
     bxmUpdateService,
     getByIdBxmService,
-    createBxmService
+    createBxmService,
+    BxmDB
 }
