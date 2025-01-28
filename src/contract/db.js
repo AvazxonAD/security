@@ -88,7 +88,7 @@ const contractCreateService = async (data) => {
                 task.worker_number,
                 task_summa,
                 data.user_id,
-                task.task_date,
+                task.task_date ? task.task_date : null,
                 task_discount_money,
                 task_result_summa,
                 task.bxm_id,
