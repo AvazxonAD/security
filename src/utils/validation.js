@@ -173,7 +173,7 @@ const contractValidation = Joi.object({
       batalon_id: Joi.number().integer().min(1).required(),
       task_time: Joi.number().min(1).required(),
       worker_number: Joi.number().integer().min(1).required(),
-      task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+      task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/),
       address: Joi.string().trim().required(),
       bxm_id: Joi.number().integer().min(1).required()
     })
@@ -197,7 +197,7 @@ const contractUpdateValidation = Joi.object({
       batalon_id: Joi.number().integer().min(1).required(),
       task_time: Joi.number().min(1).required(),
       worker_number: Joi.number().integer().min(1).required(),
-      task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+      task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/),
       address: Joi.string().trim().required(),
       bxm_id: Joi.number().integer().min(1).required()
     })
