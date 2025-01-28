@@ -11,7 +11,9 @@ const Controller = class {
             return res.error('Bxm not found', 404);
         }
 
-        return res.success()
+        const result = await BxmService.deleteBxm({ id });
+
+        return res.success('deleteSuccess', 200, result)
     }
 }
 
@@ -88,5 +90,6 @@ module.exports = {
     bxmGet,
     bxmUpdate,
     getByIdBxm,
-    createBxm
+    createBxm,
+    Controller
 };
