@@ -40,7 +40,7 @@ const createContractTemplateService = async (data) => {
 const getContractTemplatesService = async (user_id) => {
     try {
         const result = await pool.query(
-            `SELECT id, shablon_name FROM shablon WHERE user_id = $1 AND isdeleted = false`,
+            `SELECT id, shablon_name FROM shablon WHERE user_id = $1 AND isdeleted = false ORDER BY id`,
             [user_id]
         );
         return result.rows;
