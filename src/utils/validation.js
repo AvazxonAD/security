@@ -91,7 +91,7 @@ const batalionValidation = Joi.object({
   account_number: Joi.string().trim().required(),
   treasury1: Joi.string().trim(),
   treasury2: Joi.string().trim()
-})
+}).options({ stripUnknown: true });
 
 const userValidation = Joi.object({
   fio: Joi.string().trim().required(),
