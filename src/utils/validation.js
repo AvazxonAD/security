@@ -165,7 +165,7 @@ const contractValidation = Joi.object({
   end_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   start_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
   end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
-  discount: Joi.number().min(0).default(0).max(100),
+  discount: Joi.number().min(0).default(0).max(100).allow(null, 0),
   organization_id: Joi.number().integer().required(),
   dist: Joi.boolean().default(false),
   tasks: Joi.array().items(
@@ -187,9 +187,9 @@ const contractUpdateValidation = Joi.object({
   adress: Joi.string().trim().required(),
   start_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
   end_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
-  start_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow(''),
-  end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow(''),
-  discount: Joi.number().min(0).default(0).max(100),
+  start_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
+  end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
+  discount: Joi.number().min(0).default(0).max(100).allow(null, 0),
   organization_id: Joi.number().integer().required(),
   dist: Joi.boolean().default(false),
   tasks: Joi.array().items(
