@@ -145,8 +145,9 @@ const contractUpdateService = async (data) => {
                 all_worker_number = $12,
                 all_task_time = $13,
                 discount_money = $14,
-                result_summa = $15
-            WHERE id = $16 AND isdeleted = false RETURNING *
+                result_summa = $15,
+                dist = $16
+            WHERE id = $17 AND isdeleted = false RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -163,6 +164,7 @@ const contractUpdateService = async (data) => {
             all_task_time,
             discount_money,
             result_summa,
+            data.dist,
             data.id
         ]);
         const contract = rows[0];
@@ -190,7 +192,7 @@ const contractUpdateService = async (data) => {
                 task.worker_number,
                 task_summa,
                 data.user_id,
-                task.task_date,
+                task.task_date ? task.task_date : null,
                 task_discount_money,
                 task_result_summa,
                 task.bxm_id,
