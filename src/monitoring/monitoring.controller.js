@@ -6,7 +6,7 @@ const { prixodRasxodQueryValidation, monitoringQueryValidation } = require("../u
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
-const { getByIdaccount_numberService } = require('../spravochnik/accountNumber/account.number.service')
+const { getByIdaccount_numberService } = require('../spravochnik/account.number/account.number.service')
 const { returnStringSumma } = require('../utils/return.summa')
 const { getByIdBatalonService } = require('../batalon/db')
 

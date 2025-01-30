@@ -5,7 +5,7 @@ const protect = require("./middleware/auth");
 router.use('/auth', require('./auth/auth.routes'))
     .use('/batalon', protect, require('./batalon/batalon.routes'))
     .use('/bxm', protect, require('./spravochnik/bxm/bxm.routes'))
-    .use('/account', protect, require('./spravochnik/accountNumber/account.number.routes'))
+    .use('/account', protect, require('./spravochnik/account.number/account.number.routes'))
     .use('/doer', protect, require('./spravochnik/doer/doer.routes'))
     .use('/boss', protect, require('./spravochnik/boss/boss.routes'))
     .use('/adress', protect, require('./spravochnik/adress/adress.routes'))
