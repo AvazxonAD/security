@@ -16,25 +16,24 @@ class Db {
     }
 
     static getInstance() {
+        const options = {
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            port: process.env.DB_PORT,
+            host: process.env.DB_HOST,
+            database: process.env.DB_DATABASE,
+        };
+
         if (!Db.instance) {
             if (
-                !process.env.DB_USER || 
-                !process.env.DB_PASSWORD || 
-                !process.env.DB_PORT || 
-                !process.env.DB_HOST || 
-                !process.env.DB_DATABASE
+                !options.user || 
+                !options.password || 
+                !options.port || 
+                !options.host || 
+                !options.database
             ) {
-                console.log(options);
                 throw new Error('Env file error');
             }
-
-            const options = {
-                user: process.env.DB_USER,
-                password: process.env.DB_PASSWORD,
-                port: process.env.DB_PORT,
-                host: process.env.DB_HOST,
-                database: process.env.DB_DATABASE,
-            };
 
             Db.instance = new Db(options);
         }
