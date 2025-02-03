@@ -24,7 +24,8 @@ class Db {
                 !process.env.DB_HOST || 
                 !process.env.DB_DATABASE
             ) {
-                throw new Error('Env file error')
+                console.log(options);
+                throw new Error('Env file error');
             }
 
             const options = {
@@ -34,8 +35,6 @@ class Db {
                 host: process.env.DB_HOST,
                 database: process.env.DB_DATABASE,
             };
-
-            console.log(options)
 
             Db.instance = new Db(options);
         }
