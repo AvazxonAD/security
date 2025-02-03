@@ -32,6 +32,7 @@ class Db {
                 !options.host || 
                 !options.database
             ) {
+                console.log(options)
                 throw new Error('Env file error');
             }
 
