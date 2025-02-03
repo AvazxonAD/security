@@ -35,6 +35,8 @@ class Db {
                 database: process.env.DB_DATABASE,
             };
 
+            console.log(options)
+
             Db.instance = new Db(options);
         }
         return Db.instance;
