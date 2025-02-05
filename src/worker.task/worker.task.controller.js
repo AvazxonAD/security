@@ -101,14 +101,14 @@ const workerTaskDelete = async (req, res) => {
 
 const getByContractIdWorkerTask = async (req, res) => {
     try {
-        const user_id = req.user.id
-        const contract_id = req.params.id
-        const account_number_id = req.query.account_number_id
-        await getByIdcontractService(user_id, contract_id, false, account_number_id)
-        const result = await getByContractIdWorkerTaskService(contract_id)
-        resFunc(res, 200, result)
+        const user_id = req.user.id;
+        const contract_id = req.params.id;
+        const account_number_id = req.query.account_number_id;
+        await getByIdcontractService(user_id, contract_id, false, account_number_id);
+        const result = await getByContractIdWorkerTaskService(contract_id);
+        resFunc(res, 200, result);
     } catch (error) {
-        errorCatch(error, res)
+        errorCatch(error, res);
     }
 }
 
