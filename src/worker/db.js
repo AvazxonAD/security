@@ -72,17 +72,28 @@ exports.WorkerDB = class {
         return { data: result[0]?.data || [], total: result[0].total_count }
     }
 
-    static async workerGetById(params, isdeleted = null) {
+    static async getById(params, isdeleted = null, batalon_id = null) {
+        let batalon_filter = ``;
 
-        const result = await db.query(`
+        if (batalon_id) {
+            params.push(batalon_id)
+            batalon_filter = `AND b.id = $${params.length}`;
+        }
+
+        const query = `
             SELECT 
                 w.id, w.fio, w.account_number, w.user_id, 
                 b.name AS batalon_name, w.xisob_raqam
             FROM worker w 
             LEFT JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON w.user_id = u.id
-            WHERE u.id = $1 AND w.id = $2 ${!isdeleted ? 'AND w.isdeleted = false' : ''}
-        `, params);
+            WHERE u.id = $1 
+                AND w.id = $2 
+                ${batalon_filter}
+                ${!isdeleted ? 'AND w.isdeleted = false' : ''}
+        `;
+
+        const result = await db.query(query, params);
 
         return result[0];
     }

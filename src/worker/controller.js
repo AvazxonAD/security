@@ -56,11 +56,11 @@ exports.Controller = class {
         res.success('Get successfully', 200, meta, data);
     }
 
-    static async workerGetById(req, res) {
+    static async getById(req, res) {
         const user_id = req.user.id;
         const id = req.params.id;
 
-        const result = await WorkerService.workerGetById({ user_id, id, isdeleted: true });
+        const result = await WorkerService.getById({ user_id, id, isdeleted: true });
 
         if (!result) {
             return res.error('Worker not found', 404);
@@ -74,7 +74,7 @@ exports.Controller = class {
         const id = req.params.id
         const { fio, batalon_id, account_number, xisob_raqam } = req.body;
 
-        const oldData = await WorkerService.workerGetById({ user_id, id });
+        const oldData = await WorkerService.getById({ user_id, id });
         if (!oldData) {
             return res.error('Worker not found', 404);
         }
@@ -117,7 +117,7 @@ exports.Controller = class {
         const user_id = req.user.id
         const id = req.params.id
 
-        const worker = await WorkerService.workerGetById({ user_id, id });
+        const worker = await WorkerService.getById({ user_id, id });
         if (!worker) {
             return res.error('Worker not found', 404);
         }

@@ -12,7 +12,7 @@ const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch');
 const { getByIdTaskService } = require('../task/task.service');
 const ErrorResponse = require("../utils/errorResponse");
-const { getByBatalonIdAndIdWorkerService } = require('../worker/service')
+const { WorkerService } = require('../worker/service')
 const { getByIdcontractService } = require('../contract/db')
 
 const workerTaskCreate = async (req, res) => {
@@ -23,7 +23,11 @@ const workerTaskCreate = async (req, res) => {
         const task = await getByIdTaskService(user_id, task_id, false, true)
         let all_task_time = 0
         for (let worker of workers) {
-            await getByBatalonIdAndIdWorkerService(task.batalon_id, worker.worker_id)
+            const checkWorker = await WorkerService.getById({ batalon_id: task.batalon_id, id: worker.worker_id, user_id });
+            if (!checkWorker) {
+                return res.error(req.i18n.t('workerNotFound'), 404);
+            }
+
             all_task_time += worker.task_time
         }
         if (all_task_time > task.remaining_task_time) {
@@ -58,7 +62,10 @@ const workerTaskUpdate = async (req, res) => {
         const { workers } = validationResponse(workerTaskValidation, req.body);
         let all_task_time = 0
         for (let worker of workers) {
-            await getByBatalonIdAndIdWorkerService(task.batalon_id, worker.worker_id)
+            const checkWorker = await WorkerService.getById({ batalon_id: task.batalon_id, id: worker.worker_id, user_id });
+            if (!checkWorker) {
+                return res.error(req.i18n.t('workerNotFound'), 404);
+            }
             all_task_time += worker.task_time
         }
         if (all_task_time > task.real_task_time) {
@@ -78,8 +85,12 @@ const workerTaskDelete = async (req, res) => {
         const worker_id = req.query.worker_id;
         const task_id = req.query.task_id
         const task = await getByIdTaskService(user_id, task_id)
-        
-        await getByBatalonIdAndIdWorkerService(task.batalon_id, worker_id)
+
+        const checkWorker = await WorkerService.getById({ batalon_id: task.batalon_id, id: worker.worker_id, user_id });
+        if (!checkWorker) {
+            return res.error(req.i18n.t('workerNotFound'), 404);
+        }
+
         await getByTaskIdANDWorkerIdWorkerTaskService(task_id, worker_id)
         await deleteWorkerTaskService(worker_id, task_id);
         resFunc(res, 200, 'delete success true');

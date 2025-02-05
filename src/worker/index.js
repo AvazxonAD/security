@@ -10,7 +10,7 @@ router.post('/', validator(Controller.workerCreate, Schema.createSchema()))
     .get('/template', validator(Controller.WorkerTemplate))
     .get('/excel', validator(Controller.exportExcel, Schema.exportSchema()))
     .put('/:id', validator(Controller.workerUpdate, Schema.updateSchema()))
-    .get('/:id', validator(Controller.workerGetById))
+    .get('/:id', validator(Controller.getById))
     .get('/', validator(Controller.workerGet))
     .delete('/:id', validator(Controller.workerDelete))
     .post('/excel', uploadExcel.single('file'), validator(Controller.importData));

@@ -18,8 +18,8 @@ exports.WorkerService = class {
         return result;
     }
 
-    static async workerGetById(data) {
-        const result = await WorkerDB.workerGetById([data.user_id, data.id], data.isdeleted);
+    static async getById(data) {
+        const result = await WorkerDB.getById([data.user_id, data.id], data.isdeleted);
         return result;
     }
 
