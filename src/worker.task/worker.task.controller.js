@@ -86,7 +86,7 @@ const workerTaskDelete = async (req, res) => {
         const task_id = req.query.task_id
         const task = await getByIdTaskService(user_id, task_id)
 
-        const checkWorker = await WorkerService.getById({ batalon_id: task.batalon_id, id: worker.worker_id, user_id });
+        const checkWorker = await WorkerService.getById({ batalon_id: task.batalon_id, id: worker_id, user_id });
         if (!checkWorker) {
             return res.error(req.i18n.t('workerNotFound'), 404);
         }
