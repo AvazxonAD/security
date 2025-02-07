@@ -3,7 +3,7 @@ const ErrorResponse = require('../../utils/errorResponse');
 const { tashkentTime } = require('../../utils/date.functions')
 
 
-const checkByRegionUser = async (region_id) =>  {
+const checkByRegionUser = async (region_id, lang) =>  {
     try {
         const result = await pool.query(`SELECT 
             u.id, u.fio, u.login, u.image, u.region_id, u.created_at, r.name
@@ -11,9 +11,11 @@ const checkByRegionUser = async (region_id) =>  {
             JOIN regions AS r ON r.id = u.region_id 
             WHERE u.isdeleted = false AND u.region_id = $1
         `, [region_id]);
+        
         if(result.rows[0]){
-            throw new ErrorResponse('this information already exists', 409);
+            throw new ErrorResponse(lang.t('userExists'), 409);
         };
+        
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
@@ -69,7 +71,7 @@ const userUpdateService = async (data) => {
     }
 };
 
-const getByIdUserService = async (id) => {
+const getByIdUserService = async (id, lang) => {
     try {
         const result = await pool.query(`SELECT 
             u.id, u.fio, u.login, u.image, u.region_id, u.created_at, r.name
@@ -78,7 +80,7 @@ const getByIdUserService = async (id) => {
             WHERE u.isdeleted = false AND u.id = $1 AND u.region_id IS NOT NULL
         `, [id]);
         if(!result.rows[0]){
-            throw new ErrorResponse('user not found', 404);
+            throw new ErrorResponse(lang.t('userNotFound'), 404);
         };
         return result.rows[0];
     } catch (error) {

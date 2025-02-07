@@ -22,10 +22,10 @@ const prixodCreate = async (req, res) => {
     try {
         const user_id = req.user.id;
         const account_number_id = req.query.account_number_id;
-        await getByIdaccount_numberService(user_id, account_number_id);
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
         const data = validationResponse(prixodValidation, req.body);
-        await getByIdorganizationService(user_id, data.organization_id);
-        const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id)
+        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n);
+        const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id, req.i18n)
         if (contract.remaining_balance < data.summa) {
             throw new ErrorResponse(req.i18n.t('prixodSummaError'), 400);
         }
@@ -41,8 +41,8 @@ const getByIdPrixod = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const account_number_id = req.query.account_number_id;
-        await getByIdaccount_numberService(user_id, account_number_id);
-        const data = await getByIdPrixodService(user_id, id, account_number_id, true);
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
+        const data = await getByIdPrixodService(user_id, id, account_number_id, true, req.i18n);
         data.summa = Math.round(data.summa * 100) / 100;
         resFunc(res, 200, data)
     } catch (error) {
@@ -54,7 +54,7 @@ const getPrixod = async (req, res) => {
     try {
         const { page, limit, search, from, to, account_number_id, organization_id } = validationResponse(prixodQueryValidation, req.query)
         const user_id = req.user.id;
-        await getByIdaccount_numberService(user_id, account_number_id);
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
         const offset = (page - 1) * limit
         const { data, total, from_balance, to_balance, summa } = await getPrixodService(user_id, from, to, offset, limit, account_number_id, search, organization_id)
         const pageCount = Math.ceil(total / limit);
@@ -81,10 +81,10 @@ const updatePrixod = async (req, res) => {
         const id = req.params.id;
         const account_number_id = req.query.account_number_id;
         const data = validationResponse(prixodValidation, req.body);
-        const oldData = await getByIdPrixodService(user_id, id, account_number_id)
-        await getByIdaccount_numberService(user_id, account_number_id);
-        await getByIdorganizationService(user_id, data.organization_id);
-        const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id)
+        const oldData = await getByIdPrixodService(user_id, id, account_number_id, null, req.i18n)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
+        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n);
+        const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id, req.i18n)
         if (contract.remaining_balance + oldData.prixod_summa < data.summa) {
             throw new ErrorResponse(req.i18n.t('prixodSummaError'), 400);
         }
@@ -100,8 +100,8 @@ const deletePrixod = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const account_number_id = req.query.account_number_id;
-        await getByIdaccount_numberService(user_id, account_number_id);
-        await getByIdPrixodService(user_id, id, account_number_id, true)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
+        await getByIdPrixodService(user_id, id, account_number_id, true, req.i18n)
         await deletePrixodService(id)
         resFunc(res, 200, req.i18n.t('deleteSuccess'))
     } catch (error) {
@@ -113,7 +113,7 @@ const exportExcelData = async (req, res) => {
     try {
         const { search, from, to, account_number_id, organization_id } = validationResponse(prixodQueryValidation, req.query)
         const user_id = req.user.id;
-        await getByIdaccount_numberService(user_id, account_number_id);
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
         const { data, total, from_balance, to_balance, summa } = await getPrixodService(user_id, from, to, null, null, account_number_id, search, organization_id)
         const workbook = new ExcelJS.Workbook()
         const file_name = `prixod_${new Date().getTime()}.xlsx`;
@@ -238,7 +238,7 @@ const forPdfData = async (req, res) => {
     try {
         const { search, from, to, account_number_id, organization_id } = validationResponse(prixodQueryValidation, req.query)
         const user_id = req.user.id;
-        await getByIdaccount_numberService(user_id, account_number_id);
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
         const data = await getPrixodService(user_id, from, to, null, null, account_number_id, search, organization_id)
         resFunc(res, 200, data)
     } catch (error) {

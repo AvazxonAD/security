@@ -19,7 +19,7 @@ const getByIdTask = async (req, res) => {
     try {
         const user_id = req.user.id
         const task_id = req.params.id
-        const task = await getByIdTaskService(user_id, task_id, true)
+        const task = await getByIdTaskService(user_id, task_id, true, null, req.i18n)
         resFunc(res, 200, task)
     } catch (error) {
         errorCatch(error, res)
@@ -31,7 +31,7 @@ const getByConrtactIdTask = async (req, res) => {
         const usr_id = req.user.id
         const contract_id = req.params.id
         const account_number_id = req.query.account_number_id
-        await getByIdcontractService(usr_id, contract_id, false, account_number_id)
+        await getByIdcontractService(usr_id, contract_id, false, account_number_id, null, req.i18n)
         const result = await getByContractIdTaskService(contract_id)
         resFunc(res, 200, result)
     } catch (error) {

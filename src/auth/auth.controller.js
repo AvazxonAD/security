@@ -11,10 +11,10 @@ const { errorCatch } = require('../utils/errorCatch')
 const login = async (req, res) => {
     try {
         const { login, password } = validationResponse(loginValidation, req.body)
-        const user = await getByLoginUserService(login);
+        const user = await getByLoginUserService(login, req.i18n);
         const matchPassword = await bcrypt.compare(password, user.password);
         if (!matchPassword) {
-            throw new ErrorResponse("Incorrect login or password", 403)
+            throw new ErrorResponse(req.i18n.t('loginError'), 403)
         }
         delete user.password
         const token = generateToken(user);
@@ -30,18 +30,18 @@ const update = async (req, res) => {
     try {
         const id = req.user.id
         const { login, oldPassword, newPassword, fio } = validationResponse(authUpdateValidation, req.body)
-        const user = await getBYIdUserService(id);
+        const user = await getBYIdUserService(id, req.i18n);
         if (oldPassword && newPassword) {
             const matchPassword = await bcrypt.compare(oldPassword, user.password);
             if (!matchPassword) {
-                throw new ErrorResponse("Incorrect password", 403)
+                throw new ErrorResponse(req.i18n.t('passwordError'), 403)
             }
             const newHashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = newHashedPassword;
         }
         if (login) {
             if (login !== user.login) {
-                await getByLoginService(login);
+                await getByLoginService(login, req.i18n);
                 user.login = login;
             }
         }

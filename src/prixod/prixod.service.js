@@ -90,7 +90,7 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
     }
 }
 
-const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = false) => {
+const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = false, lang) => {
     try {
         let filter = ``
         if (!isdeleted) {
@@ -122,7 +122,7 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
             WHERE p.isdeleted = false AND p.user_id = $1 AND p.account_number_id = $3 AND p.id = $2 ${filter}
         `, [user_id, id, account_number_id])
         if(!data.rows[0]){
-            throw new ErrorResponse('prixod not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return data.rows[0]
     } catch (error) {

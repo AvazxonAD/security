@@ -17,7 +17,7 @@ const deductionCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(deductionValidation, req.body)
-        await getBynamedeductionService(data.name, user_id)
+        await getBynamedeductionService(data.name, user_id, req.i18n)
         const result = await deductionCreateService({ ...data, user_id })
         resFunc(res, 200, result)
     } catch (error) {
@@ -49,7 +49,7 @@ const deductionGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        const result = await getByIddeductionService(user_id, id, true)
+        const result = await getByIddeductionService(user_id, id, true, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -61,9 +61,9 @@ const deductionUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const data = validationResponse(deductionValidation, req.body)
-        const oldData = await getByIddeductionService(user_id, id)
+        const oldData = await getByIddeductionService(user_id, id, null, req.i18n)
         if (oldData.name !== data.name) {
-            await getBynamedeductionService(data.name, user_id)
+            await getBynamedeductionService(data.name, user_id, req.i18n)
         }
         const result = await deductionUpdateService({...data, id})
         resFunc(res, 200, result)
@@ -76,7 +76,7 @@ const deductionDelete = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        await getByIddeductionService(user_id, id)
+        await getByIddeductionService(user_id, id, null, req.i18n)
         await deletedeductionService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {

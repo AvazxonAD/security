@@ -14,7 +14,7 @@ const prixodRasxod = async (req, res) => {
     try {
         const { from, to, page, limit, user_id } = validationResponse(adminPrixodRasxodQueryValidation, req.query)
         if (user_id) {
-            await getByIdUserService(user_id)
+            await getByIdUserService(user_id, req.i18n)
         }
         const offset = (page - 1) * limit;
         const { rows, total, summa_from, summa_to, prixod, rasxod } = await prixodRasxodService(from, to, offset, limit, user_id)

@@ -15,7 +15,7 @@ const batalonCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const data = validationResponse(batalionValidation, req.body)
-        await getByNameBatalonService(user_id, data.name)
+        await getByNameBatalonService(user_id, data.name, true, req.i18n)
         const result = await batalonCreateService({user_id, ...data})
         resFunc(res, 200,result)
     } catch (error) {
@@ -38,7 +38,7 @@ const batalonGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id 
-        const result = await getByIdBatalonService(user_id, id)
+        const result = await getByIdBatalonService(user_id, id, null, null, req.i18n)
         resFunc(res, 200,result)
     } catch (error) {
         errorCatch(error, res)
@@ -50,9 +50,9 @@ const batalonUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id 
         const data = validationResponse(batalionValidation, req.body)
-        const oldvalue = await getByIdBatalonService(user_id, id)
+        const oldvalue = await getByIdBatalonService(user_id, id, null, null, req.i18n)
         if(oldvalue.name !== data.name){
-            await getByNameBatalonService(user_id, data.name)
+            await getByNameBatalonService(user_id, data.name, true, req.i18n)
         }
         const result = await batalonUpdateService({...data, id})
         resFunc(res, 200,result)
@@ -65,7 +65,7 @@ const batalonDelete = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id 
-        await getByIdBatalonService(user_id, id)
+        await getByIdBatalonService(user_id, id, null, null, req.i18n)
         await deleteBatalonService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {

@@ -22,7 +22,7 @@ const organizationCreate = async (req, res) => {
         const user_id = req.user.id
         const data = validationResponse(organizationValidation, req.body)
         if(data.str){
-            await getByStrOrganizationService(data.str, user_id)
+            await getByStrOrganizationService(data.str, user_id, req.i18n)
         }
         const result = await organizationCreateService({ ...data, user_id })
         resFunc(res, 200, result)
@@ -55,7 +55,7 @@ const organizationGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        const result = await getByIdorganizationService(user_id, id, true)
+        const result = await getByIdorganizationService(user_id, id, true, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -67,9 +67,9 @@ const organizationUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const data = validationResponse(organizationValidation, req.body)
-        const oldData = await getByIdorganizationService(user_id, id)
+        const oldData = await getByIdorganizationService(user_id, id, null, req.i18n)
         if (oldData.str !== data.str) {
-            await getByStrOrganizationService(data.str, user_id)
+            await getByStrOrganizationService(data.str, user_id, req.i18n)
         }
         const result = await organizationUpdateService({ ...data, id })
         resFunc(res, 200, result)
@@ -82,7 +82,7 @@ const organizationDelete = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        await getByIdorganizationService(user_id, id)
+        await getByIdorganizationService(user_id, id, null, req.i18n)
         await deleteorganizationService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
@@ -164,7 +164,7 @@ const importExcelData = async (req, res) => {
     const user_id = req.user.id;
 
     if (!req.file) {
-        throw new ErrorResponse('File not found', 404);
+        throw new ErrorResponse(req.i18n.t('fileErrror'), 404);
     }
 
     const filePath = req.file.path;

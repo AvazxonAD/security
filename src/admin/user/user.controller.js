@@ -21,9 +21,9 @@ const userCreate = async (req, res) => {
             url = '/uploads/' + req.file.filename
         }
         const data = validationResponse(userValidation, req.body);
-        await getByLoginService(data.login);
+        await getByLoginService(data.login, req.i18n);
         await getByIdRegionService(data.region_id)
-        await checkByRegionUser(data.region_id)
+        await checkByRegionUser(data.region_id, req.i18n)
         data.password = await bcrypt.hash(data.password, 10)
         const result = await userCreateService({ ...data, url });
         resFunc(res, 200, result);
@@ -44,7 +44,7 @@ const userGet = async (req, res) => {
 const userGetById = async (req, res) => {
     try {
         const id = req.params.id
-        const result = await getByIdUserService(id)
+        const result = await getByIdUserService(id, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -59,9 +59,9 @@ const userUpdate = async (req, res) => {
         if (req.file) {
             url = '/uploads/' + req.file.filename
         }
-        const oldData = await getByIdUserService(id);
+        const oldData = await getByIdUserService(id, req.i18n);
         if (data.login !== oldData.login) {
-            await getByLoginService(data.login)
+            await getByLoginService(data.login, req.i18n)
         }
         if (data.region_id !== oldData.region_id) {
             await checkByRegionUser(data.region_id)
@@ -77,7 +77,7 @@ const userUpdate = async (req, res) => {
 const userDelete = async (req, res) => {
     try {
         const id = req.params.id;
-        await getByIdUserService(id);
+        await getByIdUserService(id, req.i18n);
         const delete_value = await deleteuserService(id);
         if (delete_value) {
             return resFunc(res, 200, 'delete success true');

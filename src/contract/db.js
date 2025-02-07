@@ -352,7 +352,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
     }
 };
 
-const getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id, organization_id = null) => {
+const getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id, organization_id = null, lang) => {
     try {
         const params = [user_id, id, account_number_id]
         let organization = ``
@@ -420,7 +420,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
             WHERE c.user_id = $1 ${filter} AND c.id = $2 AND c.account_number_id = $3 ${organization} 
         `, params)
         if (!result.rows[0]) {
-            throw new ErrorResponse('contract not found', 404)
+            throw new ErrorResponse(lang.t('contractNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {

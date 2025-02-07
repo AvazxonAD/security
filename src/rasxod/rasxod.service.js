@@ -1,7 +1,7 @@
 const ErrorResponse = require('../utils/errorResponse')
 const pool = require('../config/db')
 
-const getByIdTaskService = async (batalon_id, task_id, user_id) => {
+const getByIdTaskService = async (batalon_id, task_id, user_id, lang) => {
     try {
         const result = await pool.query(`
             SELECT t.id 
@@ -14,7 +14,7 @@ const getByIdTaskService = async (batalon_id, task_id, user_id) => {
                 AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = t.id)
         `, [batalon_id, task_id, user_id])
         if (!result.rows[0]) {
-            throw new ErrorResponse('task not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -178,7 +178,7 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
     }
 }
 
-const getByIdRasxodService = async (user_id, account_number_id, id, ignore = false) => {
+const getByIdRasxodService = async (user_id, account_number_id, id, ignore = false, lang) => {
     try {
         let ignore_filter = ``
         if (!ignore) {
@@ -235,7 +235,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
             WHERE r_d.account_number_id = $1 AND r_d.user_id = $2 AND r_d.id = $3  ${ignore_filter}
         `, [account_number_id, user_id, id])
         if (!data.rows[0]) {
-            throw new ErrorResponse('rasxod doc not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return data.rows[0]
     } catch (error) {

@@ -90,7 +90,7 @@ const getByContractIdWorkerTaskService = async (contract_id) => {
     }
 }
 
-const getByTaskIdANDWorkerIdWorkerTaskService = async (task_id, worker_id) => {
+const getByTaskIdANDWorkerIdWorkerTaskService = async (task_id, worker_id, lang) => {
     try {
         const worker = await pool.query(`
             SELECT w.id, w.fio, w.batalon_id, SUM(w_t.summa)
@@ -100,7 +100,7 @@ const getByTaskIdANDWorkerIdWorkerTaskService = async (task_id, worker_id) => {
             GROUP BY w.id, w.fio, w.batalon_id
         `, [task_id, worker_id])
         if(!worker.rows[0]){
-            throw new ErrorResponse('worker task not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return worker.rows[0]
     } catch (error) {

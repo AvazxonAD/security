@@ -58,7 +58,7 @@ const getdeductionService = async (user_id, search, offset, limit) => {
     }
 }
 
-const getByIddeductionService = async (user_id, id, isdeleted = false) => {
+const getByIddeductionService = async (user_id, id, isdeleted = false, lang) => {
     try {
         let filter = ``
         if (!isdeleted) {
@@ -70,7 +70,7 @@ const getByIddeductionService = async (user_id, id, isdeleted = false) => {
             WHERE user_id = $1 AND id = $2 ${filter} 
         `, [user_id, id])
         if (!result.rows[0]) {
-            throw new ErrorResponse('deduction not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -86,11 +86,11 @@ const deletedeductionService = async (id) => {
     }
 }
 
-const getBynamedeductionService = async (name, user_id) => {
+const getBynamedeductionService = async (name, user_id, lang) => {
     try {
         const { rows } = await pool.query(`SELECT * FROM deduction WHERE name = $1 AND isdeleted = false AND user_id = $2`, [name, user_id])
         if (rows[0]) {
-            throw new ErrorResponse('This name is already entered', 409)
+            throw new ErrorResponse(lang.t('deductionExists'), 409)
         }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

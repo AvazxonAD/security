@@ -30,14 +30,14 @@ const contractCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const data = validationResponse(contractValidation, req.body)
 
-        await getByIdorganizationService(user_id, data.organization_id)
+        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
 
         for (let task of data.tasks) {
-            await getByIdBatalonService(user_id, task.batalon_id);
-            const bxm = await getByIdBxmService(user_id, task.bxm_id)
+            await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
+            const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
             task.bxm_summa = bxm.bxm_07;
         }
 
@@ -53,7 +53,7 @@ const contractGet = async (req, res) => {
         const user_id = req.user.id
         const { page, limit, search, from, to, account_number_id, organization_id, batalon_id } = validationResponse(conrtactQueryValidation, req.query)
 
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const offset = (page - 1) * limit
 
         const { data, total, from_balance, to_balance } = await getcontractService(
@@ -89,9 +89,9 @@ const contractGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const id = req.params.id
-        const result = await getByIdcontractService(user_id, id, true, account_number_id)
+        const result = await getByIdcontractService(user_id, id, true, account_number_id, null, req.i18n)
         result.summa = Math.round(result.summa * 100) / 100;
         result.result_summa = Math.round(result.result_summa * 100) / 100;
         result.remaining_balance = Math.round(result.remaining_balance * 100) / 100;
@@ -113,8 +113,8 @@ const contractUpdate = async (req, res) => {
         const id = req.params.id
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id;
-        await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdcontractService(user_id, id, false, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+        await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
         const checkRasxodDoc = await checkRaxodContract(id);
         if (checkRasxodDoc) {
             return res.status(400).json({
@@ -122,11 +122,11 @@ const contractUpdate = async (req, res) => {
             })
         }
         const data = validationResponse(contractUpdateValidation, req.body)
-        await getByIdorganizationService(user_id, data.organization_id)
+        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
 
         for (let task of data.tasks) {
-            await getByIdBatalonService(user_id, task.batalon_id);
-            const bxm = await getByIdBxmService(user_id, task.bxm_id)
+            await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
+            const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
             task.bxm_summa = bxm.bxm_07;
         }
 
@@ -142,7 +142,7 @@ const contractDelete = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const account_number_id = req.query.account_number_id
-        await getByIdcontractService(user_id, id, false, account_number_id)
+        await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
         const checkRasxodDoc = await checkRaxodContract(id);
         if (checkRasxodDoc) {
             return res.status(400).json({
@@ -258,7 +258,7 @@ const contractView = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         const id = req.params.id
-        await getByIdcontractService(user_id, id, false, account_number_id)
+        await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
         const { contract, prixods, rasxod_fios, rasxods } = await contractViewService(user_id, account_number_id, id)
         resFunc(res, 200, { contract, prixods, rasxod_fios, rasxods })
     } catch (error) {

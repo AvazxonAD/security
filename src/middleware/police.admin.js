@@ -3,7 +3,7 @@ const police = () => {
   try {
     return (req, res, next) => {
       if (req.user.region) {
-        throw new ErrorResponse('Access denied: You do not have permission to perform this action', 403)
+        throw new ErrorResponse(req.i18n.t('policeError'), 403)
       }
       next();
     };

@@ -15,7 +15,7 @@ const prixodRasxod = async (req, res) => {
         const user_id = req.user.id;
         const { account_number_id, from, to, page, limit } = validationResponse(prixodRasxodQueryValidation, req.query)
         const offset = (page - 1) * limit;
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const { rows, total, summa_from, summa_to, prixod, rasxod } = await prixodRasxodService(user_id, account_number_id, from, to, offset, limit)
         const pageCount = Math.ceil(total / limit);
         const meta = {
@@ -41,7 +41,7 @@ const monitoring = async (req, res) => {
         const user_id = req.user.id
         const { year, month, batalon_id } = validationResponse(monitoringQueryValidation, req.query)
         if (batalon_id) {
-            await getByIdBatalonService(user_id, batalon_id)
+            await getByIdBatalonService(user_id, batalon_id, null, null, req.i18n)
         }
         const data = await monitoringService(user_id, year, month, batalon_id)
         resFunc(res, 200, data)

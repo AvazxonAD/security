@@ -118,7 +118,7 @@ exports.getBatalonService = async (user_id, birgada = false) => {
     }
 }
 
-exports.getByIdBatalonService = async (user_id, id, birgada = false, batalon = false) => {
+exports.getByIdBatalonService = async (user_id, id, birgada = false, batalon = false, lang) => {
     try {
         birgada_filter = ``
         batalon_filter = ``
@@ -132,7 +132,7 @@ exports.getByIdBatalonService = async (user_id, id, birgada = false, batalon = f
             FROM batalon WHERE isdeleted = false AND user_id = $1 AND id = $2 ${birgada_filter} ${batalon_filter}
         `, [user_id, id])
         if (!result.rows[0]) {
-            throw new ErrorResponse('batalon not found', 404)
+            throw new ErrorResponse(lang.t('batalonNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -140,18 +140,18 @@ exports.getByIdBatalonService = async (user_id, id, birgada = false, batalon = f
     }
 }
 
-exports.getByNameBatalonService = async (user_id, name, check = true) => {
+exports.getByNameBatalonService = async (user_id, name, check = true, lang) => {
     try {
         const result = await pool.query(`SELECT id, name, address, str, bank_name, mfo, account_number,treasury1, treasury2, birgada
             FROM batalon WHERE isdeleted = false AND user_id = $1 AND name = $2
         `, [user_id, name])
         if (check) {
             if (result.rows[0]) {
-                throw new ErrorResponse('This data has already been provided', 409)
+                throw new ErrorResponse(lang.t('batalonExists'), 409)
             }
         } else {
             if (!result.rows[0]) {
-                throw new ErrorResponse('batalon not found', 404)
+                throw new ErrorResponse(lang.t('batalonNotFound'), 404)
             }
         }
         return result.rows[0]

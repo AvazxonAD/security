@@ -1,7 +1,7 @@
 const ErrorResponse = require('../utils/errorResponse')
 const pool = require('../config/db')
 
-const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => {
+const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id, lang) => {
     try {
         const result = await pool.query(`--sql
             SELECT w_t.id 
@@ -14,7 +14,7 @@ const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id) => 
         `, [batalon_id, worker_task_id, user_id])
         if (!result.rows[0]) {
             console.log(worker_task_id)
-            throw new ErrorResponse('worker task not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -161,7 +161,7 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
     }
 }
 
-const getByIdRasxodService = async (user_id, account_number_id, id, ignore = false) => {
+const getByIdRasxodService = async (user_id, account_number_id, id, ignore = false, lang) => {
     try {
         let ignore_filter = ``
         if (!ignore) {
@@ -230,7 +230,7 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
         `, [account_number_id, user_id, id])
         
         if (!data.rows[0]) {
-            throw new ErrorResponse('rasxod doc not found', 404)
+            throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return data.rows[0]
     } catch (error) {

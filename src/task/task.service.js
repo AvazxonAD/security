@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const ErrorResponse = require('../utils/errorResponse');
 
-const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false, batalon = false) => {
+const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false, batalon = false, lang) => {
     try {
         let batalon_filter = ``
         if(batalon){
@@ -33,7 +33,7 @@ const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false, ba
         `, [task_id, user_id]);
 
         if (!task.rows[0]) {
-            throw new ErrorResponse('task not found', 404);
+            throw new ErrorResponse(lang.t('docNotFound'), 404);
         }
         return task.rows[0]
     } catch (error) {

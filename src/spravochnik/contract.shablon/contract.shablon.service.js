@@ -49,7 +49,7 @@ const getContractTemplatesService = async (user_id) => {
     }
 };
 
-const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = false) => {
+const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = false, lang) => {
     try {
         const ignoreDeleted = isdeleted ? '' : 'AND isdeleted = false';
         const result = await pool.query(
@@ -57,7 +57,7 @@ const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = fal
             [id, user_id]
         );
         if (!result.rows[0]) {
-            throw new ErrorResponse('Shablon topilmadi', 404);
+            throw new ErrorResponse(lang.t('templateNotFound'), 404);
         }
         return result.rows[0];
 
@@ -66,7 +66,7 @@ const getContractTemplateByIdService = async (user_id, id, edit, isdeleted = fal
     }
 };
 
-const updateContractTemplateService = async (data) => {
+const updateContractTemplateService = async (data, lang) => {
     try {
         const result = await pool.query(
             `UPDATE shablon 
@@ -96,7 +96,7 @@ const updateContractTemplateService = async (data) => {
             ]
         );
         if (!result.rows[0]) {
-            throw new ErrorResponse('Shablon yangilanishi mumkin emas', 404);
+            throw new ErrorResponse(lang.t('templateUpdateError'), 404);
         }
         return result.rows[0];
     } catch (error) {
@@ -104,14 +104,14 @@ const updateContractTemplateService = async (data) => {
     }
 };
 
-const deleteContractTemplateService = async (id) => {
+const deleteContractTemplateService = async (id, lang) => {
     try {
         const result = await pool.query(
             `DELETE FROM shablon WHERE id = $1 RETURNING *`,
             [id]
         );
         if (!result.rows[0]) {
-            throw new ErrorResponse('Shablon topilmadi', 404);
+            throw new ErrorResponse(lang.t('docNotFound'), 404);
         }
         return result.rows[0];
     } catch (error) {
@@ -119,14 +119,14 @@ const deleteContractTemplateService = async (id) => {
     }
 };
 
-const checkNameService = async (user_id, shablon_name) => {
+const checkNameService = async (user_id, shablon_name, lang) => {
     try {
         const result = await pool.query(
             `SELECT * FROM shablon WHERE user_id = $1 AND isdeleted = false AND shablon_name = $2`,
             [user_id, shablon_name]
         );
         if (result.rows[0]) {
-            throw new ErrorResponse('Bu shablon nomi allaqachon mavjud', 409);
+            throw new ErrorResponse(lang.t('templateExists'), 409);
         }
         return result.rows[0];
     } catch (error) {

@@ -15,7 +15,7 @@ const account_numberCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const { account_number } = validationResponse(accountNumberValidation, req.body)
-        await getByaccount_numberaccount_numberService(user_id, account_number)
+        await getByaccount_numberaccount_numberService(user_id, account_number, req.i18n)
         const result = await account_numberCreateService(account_number, user_id)
         resFunc(res, 200, result)
     } catch (error) {
@@ -37,7 +37,7 @@ const account_numberGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        const result = await getByIdaccount_numberService(user_id, id, true)
+        const result = await getByIdaccount_numberService(user_id, id, true, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -51,7 +51,7 @@ const account_numberUpdate = async (req, res) => {
         const { account_number } = validationResponse(accountNumberValidation, req.body)
         const oldvalue = await getByIdaccount_numberService(user_id, id)
         if (oldvalue.account_number !== account_number) {
-            await getByaccount_numberaccount_numberService(user_id, account_number)
+            await getByaccount_numberaccount_numberService(user_id, account_number, req.i18n)
         }
         const result = await account_numberUpdateService(account_number, id)
         resFunc(res, 200, result)

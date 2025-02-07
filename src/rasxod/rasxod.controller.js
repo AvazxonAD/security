@@ -15,8 +15,8 @@ const getPaymentRequest = async (req, res) => {
     try {
         const user_id = req.user.id
         const { account_number_id, batalon_id, to, from } = validationResponse(paymentRequestValidation, req.query)
-        await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdBatalonService(user_id, batalon_id, true)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+        await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n)
         const { data, itogo } = await paymentRequestService(account_number_id, batalon_id, from, to)
         return resFunc(res, 200, data, { itogo })
     } catch (error) {
@@ -29,10 +29,10 @@ const createRasxod = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         const data = validationResponse(rasxodValidation, req.body)
-        await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdBatalonService(user_id, data.batalon_id, true)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+        await getByIdBatalonService(user_id, data.batalon_id, true, null, req.i18n)
         for (let task of data.tasks) {
-            await getByIdTaskService(data.batalon_id, task.task_id, user_id)
+            await getByIdTaskService(data.batalon_id, task.task_id, user_id, req.i18n)
         }
         const result = await createRasxodDocService({ ...data, user_id, account_number_id })
         resFunc(res, 200, result)
@@ -45,9 +45,9 @@ const getRasxod = async (req, res) => {
     try {
         const user_id = req.user.id
         const { from, to, account_number_id, page, limit, batalon_id } = validationResponse(rasxodQueryValidation, req.query)
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         if (batalon_id) {
-            await getByIdBatalonService(user_id, batalon_id, true)
+            await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n)
         }
         const offset = (page - 1) * limit
         const { total, data, summa_from, summa_to, summa } = await getRasxodService(user_id, account_number_id, from, to, offset, limit, batalon_id)
@@ -72,9 +72,9 @@ const getByIdRasxod = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const id = req.params.id
-        const data = await getByIdRasxodService(user_id, account_number_id, id, true)
+        const data = await getByIdRasxodService(user_id, account_number_id, id, true, req.i18n)
         resFunc(res, 200, data)
     } catch (error) {
         errorCatch(error, res)
@@ -86,7 +86,7 @@ const deeleteRasxod = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         const id = req.params.id
-        await getByIdRasxodService(user_id, account_number_id, id)
+        await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n)
         await deeleteRasxodService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
@@ -99,14 +99,14 @@ const updateRasxod = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         const id = req.params.id
-        const oldData = await getByIdRasxodService(user_id, account_number_id, id)
+        const oldData = await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n)
         const data = validationResponse(rasxodValidation, req.body)
-        await getByIdaccount_numberService(user_id, account_number_id)
-        await getByIdBatalonService(user_id, data.batalon_id, true)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+        await getByIdBatalonService(user_id, data.batalon_id, true, null, req.i18n)
         for (let task of data.tasks) {
             const test = oldData.tasks.find(item => item.task_id === task.task_id)
             if (!test || oldData.batalon_id !== data.batalon_id) {
-                await getByIdTaskService(data.batalon_id, task.task_id, user_id)
+                await getByIdTaskService(data.batalon_id, task.task_id, user_id, req.i18n)
             }
         }
         const result = await updateRasxodService({ ...data, id })
@@ -120,9 +120,9 @@ const exportExcelData = async (req, res) => {
     try {
         const user_id = req.user.id
         const { from, to, account_number_id, batalon_id } = validationResponse(rasxodQueryValidation, req.query)
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         if (batalon_id) {
-            await getByIdBatalonService(user_id, batalon_id, true)
+            await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n)
         }
         const { total, data, summa_from, summa_to } = await getRasxodService(user_id, account_number_id, from, to, null, null, batalon_id)
         const workbook = new ExcelJS.Workbook()
@@ -248,9 +248,9 @@ const exportRasoxBYId = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const id = req.params.id
-        const data = await getByIdRasxodService(user_id, account_number_id, id, true)
+        const data = await getByIdRasxodService(user_id, account_number_id, id, true, req.i18n)
     } catch (error) {
         errorCatch(error, res)
     }
@@ -260,9 +260,9 @@ const forPdfData = async (req, res) => {
     try {
         const user_id = req.user.id
         const { from, to, account_number_id, batalon_id } = validationResponse(rasxodQueryValidation, req.query)
-        await getByIdaccount_numberService(user_id, account_number_id)
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         if (batalon_id) {
-            await getByIdBatalonService(user_id, batalon_id, true)
+            await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n)
         }
         const data = await getRasxodService(user_id, account_number_id, from, to, null, null, batalon_id)
         resFunc(res, 200, data)

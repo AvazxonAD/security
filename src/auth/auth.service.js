@@ -2,7 +2,7 @@ const pool = require('../config/db')
 const ErrorResponse = require('../utils/errorResponse')
 
 // get By Login User Service
-const getByLoginUserService = async (login) => {
+const getByLoginUserService = async (login, lang) => {
     try {
         const { rows } = await pool.query(`--sql
             SELECT 
@@ -32,7 +32,7 @@ const getByLoginUserService = async (login) => {
         `, [login])
         const user = rows[0]
         if (!user) {
-            throw new ErrorResponse('Incorrect username or password', 403)
+            throw new ErrorResponse(lang.t('loginError'), 403)
         }
         return user
     } catch (error) {
@@ -41,7 +41,7 @@ const getByLoginUserService = async (login) => {
 }
 
 // get By Login Service
-const getByLoginService = async (login) => {
+const getByLoginService = async (login, lang) => {
     try {
         const { rows } = await pool.query(`
             SELECT 
@@ -51,7 +51,7 @@ const getByLoginService = async (login) => {
         `, [login])
         const user = rows[0]
         if (user) {
-            throw new ErrorResponse("The login has already been used", 400)
+            throw new ErrorResponse(lang.t('loginExists'), 400)
         }
         return user
     } catch (error) {
@@ -61,12 +61,12 @@ const getByLoginService = async (login) => {
 
 
 // get by id user  
-const getBYIdUserService = async (user_id) => {
+const getBYIdUserService = async (user_id, lang) => {
     try {
         const { rows } = await pool.query(`SELECT id, password, login, fio, image FROM users WHERE id = $1 AND isdeleted = false`, [user_id])
         const user = rows[0]
         if (!user) {
-            throw new ErrorResponse('user not found', 404)
+            throw new ErrorResponse(lang.t('userNotFound'), 404)
         }
         return user
     } catch (error) {

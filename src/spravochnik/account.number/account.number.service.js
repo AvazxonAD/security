@@ -30,7 +30,7 @@ const getaccount_numberService = async (user_id) => {
     }
 }
 
-const getByIdaccount_numberService = async (user_id, id, ignore_deleted = false) => {
+const getByIdaccount_numberService = async (user_id, id, ignore_deleted = false, lang) => {
     try {
         let ignore = ``
         if(!ignore_deleted){
@@ -38,7 +38,7 @@ const getByIdaccount_numberService = async (user_id, id, ignore_deleted = false)
         }
         const result = await pool.query(`SELECT id, account_number FROM account_number WHERE ${ignore} user_id = $1 AND id = $2`, [user_id, id])
         if(!result.rows[0]){
-            throw new ErrorResponse('account_number not found', 404)
+            throw new ErrorResponse(lang.t('accountNumberNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -46,11 +46,11 @@ const getByIdaccount_numberService = async (user_id, id, ignore_deleted = false)
     }
 }
 
-const getByaccount_numberaccount_numberService = async (user_id, account_number) => {
+const getByaccount_numberaccount_numberService = async (user_id, account_number, lang) => {
     try {
         const result = await pool.query(`SELECT * FROM account_number WHERE isdeleted = false AND user_id = $1 AND account_number = $2`, [user_id, account_number])
         if(result.rows[0]){
-            throw new ErrorResponse('This data has already been provided', 404)
+            throw new ErrorResponse(lang.t('accountNumberExists'), 404)
         }
         return result.rows[0]
     } catch (error) {

@@ -36,7 +36,7 @@ const templateGetById = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const edit = req.query.edit
-        const result = await getContractTemplateByIdService(user_id, id, edit, true)
+        const result = await getContractTemplateByIdService(user_id, id, edit, true, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -48,8 +48,8 @@ const templateUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const data = validationResponse(contractTemplateValidation, req.body)
-        await getContractTemplateByIdService(user_id, id);
-        const result = await updateContractTemplateService({ ...data, id })
+        await getContractTemplateByIdService(user_id, id, null, null, req.i18n);
+        const result = await updateContractTemplateService({ ...data, id }, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -60,8 +60,8 @@ const templateDelete = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        await getContractTemplateByIdService(user_id, id)
-        await deleteContractTemplateService(id)
+        await getContractTemplateByIdService(user_id, id, null, null, req.i18n)
+        await deleteContractTemplateService(id, req.i18n)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
         errorCatch(error, res)

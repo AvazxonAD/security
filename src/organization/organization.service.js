@@ -101,7 +101,7 @@ const excelDataOrganizationService = async (user_id) => {
 }
 
 
-const getByIdorganizationService = async (user_id, id, isdeleted = false) => {
+const getByIdorganizationService = async (user_id, id, isdeleted = false, lang) => {
     try {
         let filter = ``
         if (!isdeleted) {
@@ -113,7 +113,7 @@ const getByIdorganizationService = async (user_id, id, isdeleted = false) => {
             WHERE user_id = $1 AND id = $2 ${filter} 
         `, [user_id, id])
         if (!result.rows[0]) {
-            throw new ErrorResponse('organization not found', 404)
+            throw new ErrorResponse(lang.t('organizationNotFound'), 404)
         }
         return result.rows[0]
     } catch (error) {
@@ -129,14 +129,14 @@ const deleteorganizationService = async (id) => {
     }
 }
 
-const getByStrOrganizationService = async (str, user_id) => {
+const getByStrOrganizationService = async (str, user_id, lang) => {
     try {
         const { rows } = await pool.query(`SELECT organization.* 
             FROM organization 
             WHERE str = $1 AND isdeleted = false AND user_id = $2
         `, [str, user_id])
         if (rows[0]) {
-            throw new ErrorResponse('This str is already entered', 409)
+            throw new ErrorResponse(lang.t('organizationExists'), 409)
         }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

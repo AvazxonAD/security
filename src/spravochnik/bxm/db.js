@@ -22,12 +22,12 @@ const BxmDB = class {
 };
 
 
-const bxmUpdateService = async (summa, id, user_id) => {
+const bxmUpdateService = async (summa, id, user_id, lang) => {
     try {
         const result = await pool.query(`UPDATE bxm SET summa = $1 WHERE id = $2 AND isdeleted = false AND user_id = $3 RETURNING *`, [summa, id, user_id])
 
         if (!result.rows[0]) {
-            throw new ErrorResponse('bxm not found', 404)
+            throw new ErrorResponse(lang.t('bxmFound'), 404)
         }
 
         return result.rows[0]
@@ -50,11 +50,11 @@ const getbxmService = async (user_id) => {
     }
 }
 
-const getByIdBxmService = async (user_id, id) => {
+const getByIdBxmService = async (user_id, id, lang) => {
     try {
         const result = await pool.query(`SELECT id, summa::FLOAT FROM bxm WHERE isdeleted = false AND user_id = $1 AND id = $2`, [user_id, id])
         if (!result.rows[0]) {
-            throw new ErrorResponse('Bxm not found', 404);
+            throw new ErrorResponse(lang.t('bxmNotFound'), 404);
         }
 
         result.rows[0].bxm_07 = Math.round(result.rows[0].summa * 0.07 * 100) / 100;

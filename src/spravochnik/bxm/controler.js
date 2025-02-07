@@ -51,7 +51,7 @@ const bxmUpdate = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const { summa } = validationResponse(bxmValidation, req.body)
-        const result = await bxmUpdateService(summa, id, user_id)
+        const result = await bxmUpdateService(summa, id, user_id, req.i18n)
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -78,7 +78,7 @@ const getByIdBxm = async (req, res) => {
 
         const { params } = validationResponse(getByIdBxmSchema, req);
 
-        const bxm = await getByIdBxmService(user_id, params.id);
+        const bxm = await getByIdBxmService(user_id, params.id, req.i18n);
 
         resFunc(res, 200, bxm);
     } catch (error) {
