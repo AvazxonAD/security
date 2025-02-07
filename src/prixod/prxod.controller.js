@@ -27,7 +27,7 @@ const prixodCreate = async (req, res) => {
         await getByIdorganizationService(user_id, data.organization_id);
         const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id)
         if (contract.remaining_balance < data.summa) {
-            throw new ErrorResponse('You are overpaying for this contract', 400);
+            throw new ErrorResponse(req.i18n.t('prixodSummaError'), 400);
         }
         const prixod = await prixodCreateService({ ...data, account_number_id, user_id })
         resFunc(res, 201, prixod);
@@ -86,7 +86,7 @@ const updatePrixod = async (req, res) => {
         await getByIdorganizationService(user_id, data.organization_id);
         const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id)
         if (contract.remaining_balance + oldData.prixod_summa < data.summa) {
-            throw new ErrorResponse('You are overpaying for this contract', 400);
+            throw new ErrorResponse(req.i18n.t('prixodSummaError'), 400);
         }
         const result = await updatePrixodService({ ...data, id })
         resFunc(res, 200, result)
@@ -103,7 +103,7 @@ const deletePrixod = async (req, res) => {
         await getByIdaccount_numberService(user_id, account_number_id);
         await getByIdPrixodService(user_id, id, account_number_id, true)
         await deletePrixodService(id)
-        resFunc(res, 200, 'Delete success true')
+        resFunc(res, 200, req.i18n.t('deleteSuccess'))
     } catch (error) {
         errorCatch(error, res)
     }

@@ -19,5 +19,6 @@
     "fileErrror": "File yuklashda xatolik !",
     "validationError": "Malumot notog'ri kiritildi !",
     "accountNumberError": "Malumot notog'ri kiritildi !",
-    "workerNotFound": "Gvardiya xodimi topilmadi!"
+    "workerNotFound": "Gvardiya xodimi topilmadi!",
+    "prixodSummaError": "Shartnoma summasidan ortiq summa kiritildi!"
 }
