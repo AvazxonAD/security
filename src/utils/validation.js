@@ -114,7 +114,8 @@ const accountNumberValidation = Joi.object({
   account_number: Joi.string().trim().required().pattern(/^\d+$/)
 });
 const doerValidation = Joi.object({
-  doer: Joi.string().trim().required()
+  doer: Joi.string().trim().required(),
+  title: Joi.string().trim().required()
 })
 const bossValidation = Joi.object({
   boss: Joi.string().trim().required()

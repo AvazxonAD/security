@@ -2,7 +2,7 @@ const {
     getdoerService,
     doerUpdateService
 } = require("./doer.service");
-const {  doerValidation } = require("../../utils/validation");
+const { doerValidation } = require("../../utils/validation");
 const { resFunc } = require("../../utils/resFunc");
 const { validationResponse } = require("../../utils/response.validation");
 const { errorCatch } = require('../../utils/errorCatch')
@@ -20,8 +20,10 @@ const doerGet = async (req, res) => {
 const doerUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { doer } = validationResponse(doerValidation, req.body)
-        const result = await doerUpdateService(doer, user_id)
+        
+        const { doer, title } = validationResponse(doerValidation, req.body)
+        const result = await doerUpdateService(doer, title, user_id)
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
