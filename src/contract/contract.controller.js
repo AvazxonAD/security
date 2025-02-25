@@ -31,7 +31,10 @@ const contractCreate = async (req, res) => {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        const data = validationResponse(contractValidation, req.body)
+        const { error, value: data } = contractValidation.validate(req.body);
+        if (error) {
+            return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
+        }
 
         await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
 
@@ -582,7 +585,7 @@ const importData = async (req, res) => {
                 doc.summa
             ])
 
-    
+
             for (let task of doc.tasks) {
                 await pool.query(`
                     INSERT INTO 
@@ -602,7 +605,7 @@ const importData = async (req, res) => {
             await client.query('COMMIT')
         } catch (error) {
             await client.query('ROLLBACK')
-            console.log(error)    
+            console.log(error)
             return res.send(error.message);
         } finally {
             client.release()
