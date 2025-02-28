@@ -1,3 +1,30 @@
+exports.Controller = class {
+    static async create(req, res) {
+        const user_id = req.user.id       
+        const { account_number_id } = req.query;
+        
+        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+        const { error, value: data } = contractValidation.validate(req.body);
+        if (error) {
+            return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
+        }
+
+        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+
+        for (let task of data.tasks) {
+            await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
+            const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
+            task.bxm_summa = bxm.bxm_07;
+        }
+
+        const result = await contractCreateService({ ...data, user_id, account_number_id })
+        resFunc(res, 201, result)
+    }
+}
+
+
+
+
 const {
     contractCreateService,
     getcontractService,
@@ -26,7 +53,7 @@ const ErrorResponse = require('../utils/errorResponse');
 const xlsx = require('xlsx');
 
 
-const contractCreate = async (req, res) => {
+exports.contractCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
@@ -51,7 +78,7 @@ const contractCreate = async (req, res) => {
     }
 }
 
-const contractGet = async (req, res) => {
+exports.contractGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const { page, limit, search, from, to, account_number_id, organization_id, batalon_id } = validationResponse(conrtactQueryValidation, req.query)
@@ -88,7 +115,7 @@ const contractGet = async (req, res) => {
     }
 }
 
-const contractGetById = async (req, res) => {
+exports.contractGetById = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
@@ -111,7 +138,7 @@ const contractGetById = async (req, res) => {
     }
 }
 
-const contractUpdate = async (req, res) => {
+exports.contractUpdate = async (req, res) => {
     try {
         const id = req.params.id
         const user_id = req.user.id
@@ -140,7 +167,7 @@ const contractUpdate = async (req, res) => {
     }
 }
 
-const contractDelete = async (req, res) => {
+exports.contractDelete = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
@@ -159,7 +186,7 @@ const contractDelete = async (req, res) => {
     }
 }
 
-const exportExcelData = async (req, res) => {
+exports.exportExcelData = async (req, res) => {
     try {
         const user_id = req.user.id;
         const { from, to, account_number_id } = validationResponse(conrtactQueryValidation, req.query);
@@ -256,7 +283,7 @@ const exportExcelData = async (req, res) => {
     }
 };
 
-const contractView = async (req, res) => {
+exports.contractView = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
@@ -269,7 +296,7 @@ const contractView = async (req, res) => {
     }
 }
 
-const conntractViewExcel = async (req, res) => {
+exports.conntractViewExcel = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
@@ -353,7 +380,7 @@ const conntractViewExcel = async (req, res) => {
     }
 }
 
-const importDataDB = async (req, res) => {
+exports.importDataDB = async (req, res) => {
     const oldDb = new pg.Pool({
         host: "localhost",
         port: 5433,
@@ -497,7 +524,7 @@ const importDataDB = async (req, res) => {
     }
 };
 
-const importData = async (req, res) => {
+exports.importData = async (req, res) => {
 
     const workbook = xlsx.readFile(req.file.path);
 
@@ -616,14 +643,3 @@ const importData = async (req, res) => {
 
     resFunc(res, 200, data, { result_summa, task_result_summa });
 }
-
-module.exports = {
-    contractCreate,
-    contractGet,
-    contractGetById,
-    contractUpdate,
-    contractDelete,
-    exportExcelData,
-    contractView,
-    importData
-};

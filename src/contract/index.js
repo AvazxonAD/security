@@ -13,7 +13,7 @@ const {
     exportExcelData,
     contractView,
     importData
-} = require('./contract.controller')
+} = require('./controller')
 
 router.post('/', protect, contractCreate)
     .post('/excel', protect, uploadExcel.single('file'), importData)

@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     login VARCHAR(100),
     password VARCHAR(100),
@@ -7,7 +7,7 @@ CREATE TABLE users (
     isdeleted BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE batalon ( 
+CREATE TABLE IF NOT EXISTS batalon (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
     user_id INTEGER REFERENCES users(id),
@@ -16,9 +16,9 @@ CREATE TABLE batalon (
     isdeleted BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE bxm (summa DECIMAL);
+CREATE TABLE IF NOT EXISTS bxm (summa DECIMAL);
 
-CREATE TABLE commands (
+CREATE TABLE IF NOT EXISTS commands (
     id SERIAL NOT NULL PRIMARY KEY,
     commanddate DATE NOT NULL,
     date1 DATE NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE commands (
     user_id INTEGER
 );
 
-CREATE TABLE workers (
+CREATE TABLE IF NOT EXISTS workers (
     id SERIAL NOT NULL PRIMARY KEY,
     FIO VARCHAR(200) NOT NULL,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -37,7 +37,7 @@ CREATE TABLE workers (
     createdAt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE contracts (
+CREATE TABLE IF NOT EXISTS contracts (
     id SERIAL NOT NULL PRIMARY KEY,
     contractnumber double precision NOT NULL,
     contractdate DATE NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE contracts (
     user_id INTEGER
 );
 
-CREATE TABLE tasks (
+CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL NOT NULL PRIMARY KEY,
     battalionname VARCHAR(200) NOT NULL,
     contract_id INTEGER REFERENCES contracts(id) ON DELETE CASCADE,
@@ -89,7 +89,7 @@ CREATE TABLE tasks (
     user_id INTEGER
 );
 
-CREATE TABLE worker_tasks (
+CREATE TABLE IF NOT EXISTS worker_tasks (
     id SERIAL NOT NULL PRIMARY KEY,
     worker_name VARCHAR(300) NOT NULL,
     task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
@@ -110,7 +110,7 @@ CREATE TABLE worker_tasks (
     createdAt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE iib_tasks (
+CREATE TABLE IF NOT EXISTS iib_tasks (
     id SERIAL NOT NULL PRIMARY KEY,
     battalionname VARCHAR(200) NOT NULL,
     contract_id INTEGER REFERENCES contracts(id) ON DELETE CASCADE,
@@ -133,50 +133,50 @@ CREATE TABLE iib_tasks (
     user_id INTEGER
 );
 
-CREATE TABLE accountNumber(
+CREATE TABLE IF NOT EXISTS accountNumber(
     id SERIAL NOT NULL PRIMARY KEY,
     accountnumber VARCHAR(50) NOT NULL,
     createdAt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     user_id INTEGER
 );
 
-CREATE TABLE executors (
+CREATE TABLE IF NOT EXISTS executors (
     id SERIAL PRIMARY KEY,
     executor VARCHAR(500) NOT NULL,
     user_id INTEGER
 );
 
-CREATE TABLE leaders (
+CREATE TABLE IF NOT EXISTS leaders (
     id SERIAL PRIMARY KEY,
     leader VARCHAR(100) NOT NULL,
     user_id INTEGER
 );
 
-CREATE TABLE addresses (
+CREATE TABLE IF NOT EXISTS addresses (
     id SERIAL PRIMARY KEY,
     address VARCHAR(100) NOT NULL,
     user_id INTEGER
 );
 
-CREATE TABLE banks (
+CREATE TABLE IF NOT EXISTS banks (
     id SERIAL PRIMARY KEY,
     bank VARCHAR(100) NOT NULL,
     user_id INTEGER
 );
 
-CREATE TABLE mfos (
+CREATE TABLE IF NOT EXISTS mfos (
     id SERIAL PRIMARY KEY,
     mfo VARCHAR(100) NOT NULL,
     user_id INTEGER
 );
 
-CREATE TABLE strs (
+CREATE TABLE IF NOT EXISTS strs (
     id SERIAL PRIMARY KEY,
     str VARCHAR(100) NOT NULL,
     user_id INTEGER
 );
 
-CREATE TABLE files (
+CREATE TABLE IF NOT EXISTS files (
     id SERIAL PRIMARY KEY,
     filename VARCHAR(255) NOT NULL,
     file_data BYTEA NOT NULL,
@@ -185,10 +185,50 @@ CREATE TABLE files (
 
 CREATE EXTENSION unaccent;
 
-CREATE TABLE infos (
+CREATE TABLE IF NOT EXISTS infos (
     id SERIAL PRIMARY KEY,
     url VARCHAR(1000) NOT NULL,
     title VARCHAR(100) NOT NULL,
     descr VARCHAR(300) NOT NULl,
     admin_status BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS contract (
+    id SERIAL PRIMARY KEY,
+    doc_num VARCHAR(255),
+    doc_date DATE,
+    period DATE,
+    adress VARCHAR(255),
+    start_date DATE,
+    end_date DATE,
+    start_time VARCHAR,
+    end_time VARCHAR,
+    discount FLOAT,
+    summa DECIMAL,
+    discount_money DECIMAL,
+    result_summa DECIMAL,
+    organization_id INT REFERENCES organization(id),
+    account_number_id INT REFERENCES account_number(id),
+    all_worker_number INTEGER,
+    all_task_time FLOAT,
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS organization (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(400),
+    address VARCHAR(500),
+    str VARCHAR(100),
+    bank_name VARCHAR(200),
+    mfo VARCHAR(10),
+    account_number VARCHAR(40),
+    treasury1 VARCHAR(50),
+    treasury2 VARCHAR(50),
+    user_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
 );

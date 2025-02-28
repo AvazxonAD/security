@@ -5,7 +5,7 @@
     "templateUpdateError": "Shablon yangilanishi mumkin emas!",
     "templateExists": "Shablon allaqachon mavjud!",
     "deductionExists": "Ushlanma allaqachon kiritilgan!",
-    "accountNumbernotFound": "Hisob raqami topilmadi!",
+    "accountNumberNotFound": "Hisob raqami topilmadi!",
     "success": "{{data}} muvaffaqiyatli",
     "kolError": "Tovar soni notog'ri kiritildi !",
     "productIdError": "Tovar id lari notog'ri !",

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+            "@db/*": [
+                "db/*"
+            ],
+            "@public/*": [
+                "public/*"
+            ],
+            "@account_number/*": [
+                "src/domain/user/storage/account.number/*"
+            ]
+        }
+    },
+    "include": [
+        "./"
+    ]
+}

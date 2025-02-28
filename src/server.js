@@ -1,3 +1,5 @@
+require('module-alias/register');
+
 const dotenv = require("dotenv");
 dotenv.config();
 require('colors')
@@ -6,7 +8,10 @@ const app = express()
 const cors = require('cors')
 const path = require('path')
 const { Db } = require('./db/index');
-const i18next  = require('./i18next');
+const i18next = require('./i18next');
+
+
+require('./domain/user/contract/controller')
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
