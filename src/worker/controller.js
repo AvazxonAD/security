@@ -162,7 +162,7 @@ exports.Controller = class {
             const { Batalon, Karta_raqam, FIO, Xisob_raqam } = worker;
 
             if (Batalon) {
-                batalon = await BatalonService.getByName({ user_id, name: Batalon });
+                batalon = await BatalonService.getByName({ user_id, name: Batalon?.trim() });
                 if (!batalon) {
                     return res.error("Batalon not found", 404);
                 }
@@ -189,7 +189,7 @@ exports.Controller = class {
             //     }
             // }
 
-            if (FIO.toLowerCase() === 'вакант') {
+            if ((FIO.toLowerCase() === 'вакант') || (!Karta_raqam && !Xisob_raqam)) {
                 continue
             }
 
