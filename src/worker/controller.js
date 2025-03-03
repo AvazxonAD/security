@@ -16,14 +16,18 @@ exports.Controller = class {
                 return res.error('Batalon not found', 404);
             }
         }
-        const check1 = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
-        if (check1) {
-            return res.error('This data already exists', 409);
+        if (account_number) {
+            const check1 = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
+            if (check1) {
+                return res.error('This data already exists', 409);
+            }
         }
 
-        const check2 = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
-        if (check2) {
-            return res.error('This data already exists', 409);
+        if (xisob_raqam) {
+            const check2 = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
+            if (check2) {
+                return res.error('This data already exists', 409);
+            }
         }
 
         const check = await WorkerService.workerGetByFio({ user_id, fio });
@@ -86,17 +90,21 @@ exports.Controller = class {
             }
         }
 
-        if (oldData.account_number !== account_number) {
-            const check = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
-            if (check) {
-                return res.error('This data already exists', 409);
+        if (account_number) {
+            if (oldData.account_number !== account_number) {
+                const check = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
+                if (check) {
+                    return res.error('This data already exists', 409);
+                }
             }
         }
 
-        if (oldData.xisob_raqam !== xisob_raqam) {
-            const check = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
-            if (check) {
-                return res.error('This data already exists', 409);
+        if (xisob_raqam) {
+            if (oldData.xisob_raqam !== xisob_raqam) {
+                const check = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
+                if (check) {
+                    return res.error('This data already exists', 409);
+                }
             }
         }
 

@@ -7,8 +7,8 @@ exports.Schema = class {
             body: Joi.object({
                 fio: Joi.string().trim().required(),
                 batalon_id: Joi.number().min(1).integer().allow(null),
-                account_number: Joi.string().trim().required(),
-                xisob_raqam: Joi.string().trim().required()
+                account_number: Joi.string().trim().allow('', null),
+                xisob_raqam: Joi.string().trim().allow('', null)
             })
         }).options({ stripUnknown: true });;
     }
@@ -27,8 +27,8 @@ exports.Schema = class {
             body: Joi.object({
                 fio: Joi.string().trim().required(),
                 batalon_id: Joi.number().min(1).integer().allow(null),
-                account_number: Joi.string().trim().required(),
-                xisob_raqam: Joi.string().trim().required()
+                account_number: Joi.string().trim().allow('', null),
+                xisob_raqam: Joi.string().trim().allow('', null)
             }),
             params: Joi.object({
                 id: Joi.number().required().min(1).integer(),
