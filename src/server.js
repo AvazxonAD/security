@@ -7,8 +7,17 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const path = require('path')
-const { Db } = require('./db/index');
+const { Db, db } = require('./db/index');
 const i18next = require('./i18next');
+
+const { Pool } = require('pg');
+const pool = new Pool({
+    host: 'localhost',
+    user: 'postgres',
+    port: 5432,
+    database: 'milliy_gvardiya',
+    password: 'avazbek+1201'
+});
 
 
 require('./domain/user/contract/controller')
@@ -44,6 +53,25 @@ const PORT = process.env.PORT || 3002;
     try {
         await Db.connectDB();
         console.log('Connect DB'.blue);
+
+        const olds = await pool.query(`
+            SELECT * FROM contracts    
+        `)
+
+        const news = await db.query(`
+            SELECT * FROM contract WHERE EXTRACT(YEAR FROM doc_date) = 2024   
+        `)
+
+        // console.log(news)
+        // console.log(olds.rows)
+
+        for (let n of news) {
+            const _n = olds.rows.find(item => String(item.contractnumber) === n.doc_num);
+            if (_n?.contractdate) {
+                await db.query(`UPDATE contract SET doc_date = $1 WHERE id = $2`, [_n.contractdate, n.id])
+            }
+        }
+
         app.listen(PORT, () => {
             console.log(`server runing on port: ${PORT}`.bgBlue)
         });
