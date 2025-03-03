@@ -1,4 +1,4 @@
-const { db } = require('../db/index');
+const { db } = require('@db/index');
 
 
 exports.BatalonDB = class {
@@ -36,8 +36,8 @@ exports.BatalonDB = class {
 
 
 
-const pool = require('../config/db')
-const ErrorResponse = require('../utils/errorResponse')
+// const pool = require('../config/db')
+// const ErrorResponse = require('../utils/errorResponse')
 
 
 exports.batalonCreateService = async (data) => {

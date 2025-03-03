@@ -9,7 +9,7 @@ const {
     getById,
     batalonUpdate,
     batalonDelete
-} = require('./batalon.controller')
+} = require('./controller')
 
 router.post('/',  protect, batalonCreate)
     .put('/:id', protect, batalonUpdate)

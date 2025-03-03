@@ -2,6 +2,7 @@
     "notFound": "{{data}} topilmadi !",
     "bxmNotFound": "Bxm topilmadi !",
     "templateNotFound": "Shablon topilmadi !",
+    "gaznaNotFound": "Gazna raqami topilmadi !",
     "templateUpdateError": "Shablon yangilanishi mumkin emas!",
     "templateExists": "Shablon allaqachon mavjud!",
     "deductionExists": "Ushlanma allaqachon kiritilgan!",

@@ -1,11 +1,14 @@
 const { AccountNumberService } = require('@account_number/service');
+const { OrganizationService } = require('@organization/service');
+const { BatalonService } = require('@batalon/service');
+const { BxmService } = require('@bxm/service');
 
 exports.Controller = class {
     static async create(req, res) {
         const user_id = req.user.id;
         const { account_number_id } = req.query;
+        const { organization_id, organ_account_number_id, organ_gazna_id } = req.body;
 
-        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const account_number = await AccountNumberService.getById({ user_id, id: account_number_id });
         if (!account_number) {
             return res.error(req.i18n.t('accountNumberNotFound'), 404);
@@ -16,16 +19,42 @@ exports.Controller = class {
             return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
         }
 
-        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+        const organization = await OrganizationService.getById({ user_id, id: organization_id });
+        if (!organization) {
+            return res.error(req.i18n.t('organizationNotFound'), 404);
+        }
+
+        if (organ_account_number_id) {
+            const account_number = organization.account_numbers.find(item => item.id = organ_account_number_id);
+            if (!account_number) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (organ_gazna_id) {
+            const ganza = organization.ganzas.find(item => item.id = organ_gazna_id);
+            if (!ganza) {
+                return res.error(req.i18n.t('gaznaNotFound'), 404);
+            }
+        }
 
         for (let task of data.tasks) {
-            await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
-            const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
+            const batalon = await BatalonService.getById({ user_id, id: task.batalon_id });
+            if (!batalon) {
+                return res.error(req.i18n.t('batalonNotFound'), 404);
+            }
+
+            const bxm = await BxmService.getById({ user_id, id: task.bxm_id });
+            if (!bxm) {
+                return res.error(req.i18n.t('bxmNotFound'), 404);
+            }
+
             task.bxm_summa = bxm.bxm_07;
         }
 
         const result = await contractCreateService({ ...data, user_id, account_number_id })
-        resFunc(res, 201, result)
+
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     }
 }
 

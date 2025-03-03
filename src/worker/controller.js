@@ -11,7 +11,7 @@ exports.Controller = class {
         const { fio, batalon_id, account_number, xisob_raqam } = req.body;
 
         if (batalon_id) {
-            const batalon = await BatalonService.batalonGetById({ user_id, id: batalon_id })
+            const batalon = await BatalonService.getById({ user_id, id: batalon_id })
             if (!batalon) {
                 return res.error('Batalon not found', 404);
             }
@@ -80,7 +80,7 @@ exports.Controller = class {
         }
 
         if (batalon_id) {
-            const batalon = await BatalonService.batalonGetById({ user_id, id: batalon_id })
+            const batalon = await BatalonService.getById({ user_id, id: batalon_id })
             if (!batalon) {
                 return res.error('Batalon not found', 404);
             }
@@ -133,7 +133,7 @@ exports.Controller = class {
         const { search, batalon_id } = req.query;
 
         if (batalon_id) {
-            const batalon = await BatalonService.batalonGetById({ user_id, id: batalon_id });
+            const batalon = await BatalonService.getById({ user_id, id: batalon_id });
             if (!batalon) {
                 return res.error('Batalon not found', 404);
             }
@@ -162,7 +162,7 @@ exports.Controller = class {
             const { Batalon, Karta_raqam, FIO, Xisob_raqam } = worker;
 
             if (Batalon) {
-                batalon = await BatalonService.batalonGetByName({ user_id, name: Batalon });
+                batalon = await BatalonService.getByName({ user_id, name: Batalon });
                 if (!batalon) {
                     return res.error("Batalon not found", 404);
                 }

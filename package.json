@@ -38,6 +38,9 @@
   "_moduleAliases": {
     "@contract": "./src/domain/user/contract",
     "@db": "./src/db",
-    "@account_number": "./src/domain/user/storage/account.number"
+    "@account_number": "./src/domain/user/storage/account.number",
+    "@batalon": "./src/domain/user/batalon",
+    "@bxm": "./src/domain/user/storage/bxm",
+    "@organization": "./src/domain/user/organization"
   }
 }
