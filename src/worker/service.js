@@ -3,6 +3,7 @@ const { access, constants, mkdir } = require('fs').promises;
 const xlsx = require('xlsx');
 const ExcelJS = require('exceljs');
 const path = require('path');
+const db = require('@db/index');
 
 exports.WorkerService = class {
     static async workerCreate(data) {
