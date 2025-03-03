@@ -57,7 +57,7 @@ const workerTaskUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
         const task_id = req.query.task_id;
-        const task = await getByIdTaskService(user_id, task_id, null, null, req,i18n)
+        const task = await getByIdTaskService(user_id, task_id, null, null, req.i18n)
         const { workers } = validationResponse(workerTaskValidation, req.body);
         let all_task_time = 0
         for (let worker of workers) {
@@ -70,6 +70,7 @@ const workerTaskUpdate = async (req, res) => {
         if (all_task_time > task.real_task_time) {
             throw new ErrorResponse(req.i18n.t('taskTimeError'), 400)
         }
+        
         await deleteByTaskIDWorkerTaskService(task_id)
         const result = await workerTaskCreateService(task, workers, all_task_time);
         resFunc(res, 200, result);
