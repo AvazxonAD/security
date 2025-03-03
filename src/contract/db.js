@@ -199,7 +199,7 @@ const contractUpdateService = async (data) => {
                 task.bxm_summa,
                 task.address
             ]);
-            
+
         });
         const tasks = await Promise.all(taskPromises);
         contract.tasks = tasks.map(task => task.rows[0]);
@@ -236,22 +236,43 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
         let serach_filter = ``;
         let batalion_filter = ``
         const params = [user_id, offset, limit, from, to, account_number_id];
+        let tasks_search_filter = ``;
+        let tasks_filter = ``;
+
         if (search) {
             serach_filter = `AND (
                     c.doc_num = $${params.length + 1} 
                     OR o.name ILIKE  '%' || $${params.length + 1} || '%'
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM task t 
+                        JOIN batalon b ON t.batalon_id = b.id 
+                        WHERE t.isdeleted = false 
+                            AND b.name = $${params.length + 1} 
+                            AND c.id = t.contract_id 
+                    )
                 )
-            `
+            `;
+
+            tasks_search_filter = `AND b.name = $${params.length + 1}`;
+
             params.push(search)
         }
+
         if (organization_id) {
             organization_filter = `AND c.organization_id = $${params.length + 1}`
             params.push(organization_id)
         }
+
         if (batalion_id) {
+            tasks_filter = `AND t.batalon_id = $${params.length + 1}`;
+
             batalion_filter = `AND EXISTS (SELECT * FROM task AS t WHERE t.isdeleted = false AND t.batalon_id = $${params.length + 1} AND c.id = t.contract_id )`
-            params.push(batalion_id)
+
+            params.push(batalion_id);
+
         }
+
         const query = `
             WITH data AS (
                 SELECT 
@@ -292,12 +313,24 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                                 WHERE c_inner.id = c.id AND r_fio.isdeleted = false
                             )   
                         )
-                    )::FLOAT AS remaining_summa
+                    )::FLOAT AS remaining_summa,
+                    (
+                        SELECT 
+                            JSON_AGG(row_to_json(t))
+                        FROM task t 
+                        JOIN batalon b ON t.batalon_id = b.id 
+                        WHERE t.isdeleted = false 
+                            AND c.id = t.contract_id 
+                            ${tasks_search_filter}
+                            ${tasks_filter}
+                    ) AS tasks
                 FROM contract  AS c 
                 JOIN organization AS o ON o.id = c.organization_id
                 WHERE c.isdeleted = false 
                     AND c.user_id = $1 
-                    ${serach_filter} ${organization_filter} ${batalion_filter}
+                    ${serach_filter} 
+                    ${organization_filter} 
+                    ${batalion_filter}
                     AND c.doc_date BETWEEN $4 AND $5 
                     AND c.account_number_id = $6
                 ORDER BY CAST(c.doc_num AS FLOAT)
@@ -345,7 +378,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
         `;
 
         const { rows } = await pool.query(query, params);
-        
+
         return { data: rows[0]?.data || [], total: rows[0].total_count, from_balance: rows[0].from_balance, to_balance: rows[0].to_balance }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode);
