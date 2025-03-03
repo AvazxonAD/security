@@ -16,9 +16,13 @@ const path = require('path')
 const deductionCreate = async (req, res) => {
     try {
         const user_id = req.user.id
-        const data = validationResponse(deductionValidation, req.body)
-        await getBynamedeductionService(data.name, user_id, req.i18n)
-        const result = await deductionCreateService({ ...data, user_id })
+        const { error, value } = deductionValidation.validate(req.body);
+        if (error) {
+            return res.error(req.i18n.t('validationError'), 400);
+        }
+
+        await getBynamedeductionService(value.name, user_id, req.i18n)
+        const result = await deductionCreateService({ ...value, user_id })
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -60,12 +64,19 @@ const deductionUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
-        const data = validationResponse(deductionValidation, req.body)
-        const oldData = await getByIddeductionService(user_id, id, null, req.i18n)
-        if (oldData.name !== data.name) {
-            await getBynamedeductionService(data.name, user_id, req.i18n)
+
+        const { error, value } = deductionValidation.validate(req.body);
+        if (error) {
+            return res.error(req.i18n.t('validationError'), 400);
         }
-        const result = await deductionUpdateService({...data, id})
+
+        const oldData = await getByIddeductionService(user_id, id, null, req.i18n)
+        if (oldData.name !== value.name) {
+            await getBynamedeductionService(value.name, user_id, req.i18n)
+        }
+
+        const result = await deductionUpdateService({ ...value, id });
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

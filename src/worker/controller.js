@@ -13,31 +13,31 @@ exports.Controller = class {
         if (batalon_id) {
             const batalon = await BatalonService.getById({ user_id, id: batalon_id })
             if (!batalon) {
-                return res.error('Batalon not found', 404);
+                return res.error(req.i18n.t('batalonNotFound'), 404);
             }
         }
         if (account_number) {
             const check1 = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
             if (check1) {
-                return res.error('This data already exists', 409);
+                return res.error(req.i18n.t('accountNumberAlreadyExists'), 409);
             }
         }
 
         if (xisob_raqam) {
             const check2 = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
             if (check2) {
-                return res.error('This data already exists', 409);
+                return res.error(req.i18n.t('xisobNumberAlreadyExists'), 409);
             }
         }
 
         const check = await WorkerService.workerGetByFio({ user_id, fio });
         if (check) {
-            return res.error('This data already exists', 409);
+            return res.error(req.i18n.t('fioAlreadyExists'), 409);
         }
 
         await WorkerService.workerCreate({ fio, batalon_id, account_number, xisob_raqam, user_id });
 
-        return res.success('Create succesfully', 201);
+        return res.success(req.i18n.t('createSuccess'), 201);
     }
 
     static async workerGet(req, res) {
@@ -57,7 +57,7 @@ exports.Controller = class {
             backPage: page === 1 ? null : page - 1
         }
 
-        res.success('Get successfully', 200, meta, data);
+        return res.success(req.i18n.t('getSuccess'), 200, meta, data);
     }
 
     static async getById(req, res) {
@@ -67,10 +67,10 @@ exports.Controller = class {
         const result = await WorkerService.getById({ user_id, id, isdeleted: true });
 
         if (!result) {
-            return res.error('Worker not found', 404);
+            return res.error(req.i18n.t('workerNotFound'), 404);
         }
 
-        return res.success('Get successfully', 200, null, result);
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     }
 
     static async workerUpdate(req, res) {
@@ -80,30 +80,30 @@ exports.Controller = class {
 
         const oldData = await WorkerService.getById({ user_id, id });
         if (!oldData) {
-            return res.error('Worker not found', 404);
+            return res.error(req.i18n.t('workerNotFound'), 404);
         }
 
         if (batalon_id) {
             const batalon = await BatalonService.getById({ user_id, id: batalon_id })
             if (!batalon) {
-                return res.error('Batalon not found', 404);
+                return res.error(req.i18n.t('batalonNotFound'), 404);
             }
         }
 
         if (account_number) {
             if (oldData.account_number !== account_number) {
-                const check = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
-                if (check) {
-                    return res.error('This data already exists', 409);
+                const check1 = await WorkerService.workerGetByAccountNumber({ user_id, account_number });
+                if (check1) {
+                    return res.error(req.i18n.t('accountNumberAlreadyExists'), 409);
                 }
             }
         }
 
         if (xisob_raqam) {
             if (oldData.xisob_raqam !== xisob_raqam) {
-                const check = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
-                if (check) {
-                    return res.error('This data already exists', 409);
+                const check2 = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam });
+                if (check2) {
+                    return res.error(req.i18n.t('xisobNumberAlreadyExists'), 409);
                 }
             }
         }
@@ -111,28 +111,28 @@ exports.Controller = class {
         if (oldData.fio !== fio) {
             const check = await WorkerService.workerGetByFio({ user_id, fio });
             if (check) {
-                return res.error('This data already exists', 409);
+                return res.error(req.i18n.t('fioAlreadyExists'), 409);
             }
         }
 
 
         await WorkerService.workerUpdate({ fio, batalon_id, account_number, xisob_raqam, id });
 
-        return res.success('Update successfully', 200);
+        return res.success(req.i18n.t('updateSuccess'), 200);
     }
 
     static async workerDelete(req, res) {
         const user_id = req.user.id
         const id = req.params.id
 
-        const worker = await WorkerService.getById({ user_id, id });
-        if (!worker) {
-            return res.error('Worker not found', 404);
+        const oldData = await WorkerService.getById({ user_id, id });
+        if (!oldData) {
+            return res.error(req.i18n.t('workerNotFound'), 404);
         }
 
         await WorkerService.workerDelete({ id });
 
-        return res.success('Delete successfully', 200);
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     }
 
     static async exportExcel(req, res) {
@@ -141,9 +141,9 @@ exports.Controller = class {
         const { search, batalon_id } = req.query;
 
         if (batalon_id) {
-            const batalon = await BatalonService.getById({ user_id, id: batalon_id });
+            const batalon = await BatalonService.getById({ user_id, id: batalon_id })
             if (!batalon) {
-                return res.error('Batalon not found', 404);
+                return res.error(req.i18n.t('batalonNotFound'), 404);
             }
         }
 
@@ -160,7 +160,7 @@ exports.Controller = class {
     static async importData(req, res) {
         const user_id = req.user.id
         if (!req.file) {
-            return res.error('File not found', 404);
+            return res.error(req.i18n.t('fileError'), 404);
         }
 
         const data = await WorkerService.readFile({ filePath: req.file.path });
@@ -170,9 +170,9 @@ exports.Controller = class {
             const { Batalon, Karta_raqam, FIO, Xisob_raqam } = worker;
 
             if (Batalon) {
-                batalon = await BatalonService.getByName({ user_id, name: Batalon?.trim() });
+                batalon = await BatalonService.getById({ user_id, id: batalon_id })
                 if (!batalon) {
-                    return res.error("Batalon not found", 404);
+                    return res.error(req.i18n.t('batalonNotFound'), 404);
                 }
             }
 
@@ -203,7 +203,7 @@ exports.Controller = class {
 
             await WorkerService.workerCreate({ batalon_id: batalon?.id, account_number: Karta_raqam, fio: FIO, xisob_raqam: Xisob_raqam, user_id });
         }
-        return res.success('Import data successfully', 201);
+        return res.success(req.i18n.t('importSuccess'), 201);
     }
 
     static async WorkerTemplate(req, res) {
