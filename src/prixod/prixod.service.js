@@ -115,7 +115,14 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
                 p.summa::FLOAT AS prixod_summa, 
                 p.opisanie,
                 p.doc_num AS prixod_doc_num,
-                TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date
+                TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date,
+                ( 
+                    SELECT 
+                        (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                    FROM prixod 
+                    WHERE isdeleted = false 
+                        AND contract_id = c.id
+                ) AS remaining_balance
             FROM prixod AS p 
             JOIN contract AS c ON c.id = p.contract_id 
             JOIN organization AS o ON c.organization_id = o.id 

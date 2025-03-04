@@ -291,7 +291,13 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
                     o.account_number AS organization_account_number,
                     o.treasury1 AS organization_treasury1,
                     o.treasury2 AS organization_treasury2,
-                    ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS remaining_balance,
+                    ( 
+                        SELECT 
+                            (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                            FROM prixod 
+                            WHERE isdeleted = false 
+                                AND contract_id = c.id
+                    ) AS remaining_balance,
                     (
                         (
                             COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = c.id),0)
