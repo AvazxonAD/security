@@ -149,7 +149,7 @@ const organizationValidation = Joi.object({
 const allQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
   limit: Joi.number().min(1).default(10),
-  search: Joi.string().trim()
+  search: Joi.string()
 })
 const workerQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
