@@ -52,6 +52,7 @@ exports.WorkerDB = class {
                 WHERE w.isdeleted = false AND u.id = $1 
                 ${filter} 
                 ${batalon_filter} 
+                ORDER BY w.fio
                 OFFSET $2 LIMIT $3
             )
             SELECT 
@@ -101,7 +102,8 @@ exports.WorkerDB = class {
     }
 
     static async workerDelete(params) {
-        await db.query(`UPDATE worker SET isdeleted = true WHERE id = $1 AND isdeleted = false RETURNING *`, params);
+        const query = `UPDATE worker SET isdeleted = true WHERE id = $1`;
+        await db.query(query, params);
     }
 
     static async workerGetByAccountNumber(params) {
