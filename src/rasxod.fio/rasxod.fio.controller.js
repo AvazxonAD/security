@@ -18,8 +18,21 @@ const getPaymentRequest = async (req, res) => {
         const { account_number_id, batalon_id, to, from } = validationResponse(paymentRequestValidation, req.query)
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         await getByIdBatalonService(user_id, batalon_id, false, true, req.i18n)
-        const data = await paymentRequestService(account_number_id, batalon_id, from, to)
-        return resFunc(res, 200, data)
+        const data = await paymentRequestService(account_number_id, batalon_id, from, to);
+        let summa = 0;
+        for (let item of data) {
+            summa += item.summa;
+        }
+        const meta = {
+            pageCount: 1,
+            count: data.length,
+            currentPage: 1,
+            nextPage: null,
+            backPage: null,
+            summa
+        }
+
+        return req.success(req.i18n.t('getSuccess'), 200, meta, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -377,8 +390,8 @@ const exportRasxodByIdExcelData = async (req, res) => {
             let size = 8
             let horizontal = 'center'
             if (index == 0) fill = {}, border = {}, size = 10;
-            if(index > 18) horizontal = 'right';
-            if(index === 17) horizontal = 'left';
+            if (index > 18) horizontal = 'right';
+            if (index === 17) horizontal = 'left';
             Object.assign(item, {
                 numFmt: '#,##,0.00',
                 fill, border,

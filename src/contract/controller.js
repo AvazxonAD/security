@@ -1,8 +1,8 @@
 exports.Controller = class {
     static async create(req, res) {
-        const user_id = req.user.id       
+        const user_id = req.user.id
         const { account_number_id } = req.query;
-        
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const { error, value: data } = contractValidation.validate(req.body);
         if (error) {
