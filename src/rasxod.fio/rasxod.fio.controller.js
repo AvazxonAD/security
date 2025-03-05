@@ -44,7 +44,11 @@ const createRasxod = async (req, res) => {
         const from = req.query.from
         const to = req.query.to
         const account_number_id = req.query.account_number_id
-        const data = validationResponse(rasxodFioValidation, { ...req.body, from, to })
+        const { error, value: data } = rasxodFioValidation.validate({ ...req.body, from, to });
+        if (error) {
+            return res.error(req.i18n.t('validationError'), 400);
+        }
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         await getByIdBatalonService(user_id, data.batalon_id, false, true, req.i18n)
         data.deductions = await Promise.all(data.deductions.map(async item => {
