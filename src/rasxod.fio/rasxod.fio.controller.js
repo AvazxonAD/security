@@ -32,7 +32,7 @@ const getPaymentRequest = async (req, res) => {
             summa
         }
 
-        return req.success(req.i18n.t('getSuccess'), 200, meta, data);
+        return res.success(req.i18n.t('getSuccess'), 200, meta, data);
     } catch (error) {
         errorCatch(error, res)
     }
