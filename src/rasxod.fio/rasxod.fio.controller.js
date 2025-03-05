@@ -125,7 +125,12 @@ const updateRasxod = async (req, res) => {
         const from = req.query.from
         const to = req.query.to
         const oldData = await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n)
-        const data = validationResponse(rasxodFioValidation, { ...req.body, from, to })
+
+        const { error, value: data } = rasxodFioValidation.validate({ ...req.body, from, to });
+        if (error) {
+            return res.error(req.i18n.t('validationError'), 400);
+        }
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         await getByIdBatalonService(user_id, data.batalon_id, false, true, req.i18n)
         for (let task of data.worker_tasks) {
