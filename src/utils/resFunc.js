@@ -1,9 +1,5 @@
 const resFunc = (res, status, data, meta) => {
-    return res.status(status).send({
-        success: true,
-        meta: meta,
-        data: data
-    })
+    return res.success("success", status, meta, data);
 }
 
 module.exports = {

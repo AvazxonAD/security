@@ -110,6 +110,7 @@ const deeleteRasxod = async (req, res) => {
         const account_number_id = req.query.account_number_id
         const id = req.params.id
         await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n)
+
         await deeleteRasxodService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
