@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const ErrorResponse = require('../utils/errorResponse');
+const { textCyrlToLatin, textLatinToCyrl } = require('../helper/functions')
 
 const workerTaskCreateService = async (task, workers) => {
     const client = await pool.connect();
@@ -23,8 +24,27 @@ const workerTaskCreateService = async (task, workers) => {
     }
 };
 
-const getByTaskIdWorkerTaskService = async (task_id) => {
+const getByTaskIdWorkerTaskService = async (task_id, search) => {
     try {
+        const params = [task_id];
+
+        let filter = ``;
+
+        if (search) {
+            let translate;
+            if (/^[a-zA-Z\s]+$/.test(search)) {
+                translate = textLatinToCyrl(search);
+            } else {
+                translate = textCyrlToLatin(search);
+            }
+
+            filter = `AND (
+                        w.fio ILIKE  '%' || $${params.length + 1} || '%' 
+                        OR w.fio ILIKE '%' || $${params.length + 2} || '%'
+                    )`;
+            params.push(search, translate);
+        }
+
         const workers = await pool.query(`
             SELECT 
                 w_t.worker_id, 
@@ -33,9 +53,12 @@ const getByTaskIdWorkerTaskService = async (task_id) => {
                 SUM(w_t.task_time) AS task_time
             FROM worker_task AS w_t
             JOIN worker AS w ON w.id = w_t.worker_id 
-            WHERE w_t.task_id = $1 AND w_t.isdeleted = false
+            WHERE w_t.task_id = $1 
+                AND w_t.isdeleted = false
+                ${filter}
             GROUP BY w.fio, w_t.worker_id
-        `, [task_id]);
+        `, params);
+        
         return workers.rows;
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

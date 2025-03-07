@@ -37,6 +37,7 @@ const workerTaskCreate = async (req, res) => {
             all_task_time += worker.task_time
         }
 
+        console.log(task.remaining_task_time, all_task_time)
         if (all_task_time > task.remaining_task_time) {
             throw new ErrorResponse(req.i18n.t('taskTimeError'), 400)
         }
@@ -54,9 +55,10 @@ const workerTaskCreate = async (req, res) => {
 const getBYTaskIdWorkerTask = async (req, res) => {
     try {
         const user_id = req.user.id
-        const task_id = req.query.task_id
+        const task_id = req.query.task_id;
+        const search = req.query.search;
         await getByIdTaskService(user_id, task_id, null, null, req.i18n)
-        const workers = await getByTaskIdWorkerTaskService(task_id)
+        const workers = await getByTaskIdWorkerTaskService(task_id, search)
         resFunc(res, 200, workers)
     } catch (error) {
         errorCatch(error, res)
