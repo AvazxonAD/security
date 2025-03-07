@@ -1,7 +1,53 @@
+const { db } = require('@db/index');
+
+exports.ContractDB = class {
+    static async checkDoc(params) {
+        const query = `
+            SELECT 
+                id,
+                doc_num,
+                doc_date,
+                'prixod' AS type
+            FROM prixod
+            WHERE contract_id = $1
+                AND isdeleted = false
+            
+            UNION ALL
+            
+            SELECT 
+                d.id,
+                d.doc_num,
+                d.doc_date,
+                'prixod' AS type 
+            FROM rasxod_fio d
+            JOIN worker_task AS w_t ON w_t.id = d.worker_task_id 
+            JOIN task AS t ON t.id = w_t.task_id
+            WHERE t.contract_id = $1 
+                AND d.isdeleted = false 
+            
+            UNION ALL 
+        
+            SELECT 
+                d.id,
+                d.doc_num,
+                d.doc_date,
+                'prixod' AS type
+            FROM rasxod d
+            JOIN task AS t ON t.id = d.task_id
+            WHERE t.contract_id = $1 
+                AND d.isdeleted = false
+        `;
+
+        const result = await db.query(query, params);
+
+        return result;
+    }
+}
+
 const pool = require('../config/db')
 const ErrorResponse = require('../utils/errorResponse')
 
-const contractCreateService = async (data) => {
+exports.contractCreateService = async (data) => {
     const client = await pool.connect();
     try {
         let all_worker_number = 0;
@@ -109,7 +155,7 @@ const contractCreateService = async (data) => {
     }
 };
 
-const contractUpdateService = async (data) => {
+exports.contractUpdateService = async (data) => {
     const client = await pool.connect();
     try {
         let all_worker_number = 0;
@@ -118,17 +164,20 @@ const contractUpdateService = async (data) => {
         let summa = 0;
         let result_summa = 0;
         await client.query('BEGIN');
+
         data.tasks.forEach(element => {
             all_task_time += element.task_time;
             all_worker_number += element.worker_number;
             summa += element.task_time * element.worker_number * element.bxm_summa;
         });
+
         if (data.discount) {
             discount_money = summa * (data.discount / 100);
             result_summa = summa - discount_money;
         } else {
             result_summa = summa;
         }
+
         const { rows } = await client.query(`
             UPDATE contract SET 
                 doc_num = $1, 
@@ -168,7 +217,15 @@ const contractUpdateService = async (data) => {
             data.id
         ]);
         const contract = rows[0];
+        const create_tasks = [];
+
+        for (let task of data.tasks) {
+
+        }
+
+
         await client.query(`UPDATE task SET isdeleted = true WHERE contract_id = $1`, [data.id]);
+
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
@@ -213,7 +270,7 @@ const contractUpdateService = async (data) => {
     }
 };
 
-const checkRaxodContract = async (contract_id) => {
+exports.checkRaxodContract = async (contract_id) => {
     const query = `--sql
         SELECT t.contract_id, d.rasxod_fio_doc_id AS d 
         FROM rasxod_fio d
@@ -230,7 +287,7 @@ const checkRaxodContract = async (contract_id) => {
     return result.rows[0];
 }
 
-const getcontractService = async (user_id, offset, limit, search, from, to, account_number_id, organization_id = null, batalion_id = null) => {
+exports.getcontractService = async (user_id, offset, limit, search, from, to, account_number_id, organization_id = null, batalion_id = null) => {
     try {
         let organization_filter = ``
         let serach_filter = ``;
@@ -376,7 +433,7 @@ const getcontractService = async (user_id, offset, limit, search, from, to, acco
     }
 };
 
-const getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id, organization_id = null, lang) => {
+exports.getByIdcontractService = async (user_id, id, isdeleted = false, account_number_id, organization_id = null, lang) => {
     try {
         const params = [user_id, id, account_number_id]
         let organization = ``
@@ -452,7 +509,7 @@ const getByIdcontractService = async (user_id, id, isdeleted = false, account_nu
     }
 };
 
-const dataForExcelService = async (user_id, account_number_id, from, to) => {
+exports.dataForExcelService = async (user_id, account_number_id, from, to) => {
     try {
         const data = await pool.query(`--sql
             WITH data AS (
@@ -517,7 +574,7 @@ const dataForExcelService = async (user_id, account_number_id, from, to) => {
     }
 }
 
-const deleteContractService = async (id) => {
+exports.deleteContractService = async (id) => {
     try {
         await pool.query(`UPDATE task SET isdeleted = true WHERE contract_id = $1 AND isdeleted = false`, [id])
         await pool.query(`UPDATE contract SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
@@ -526,7 +583,7 @@ const deleteContractService = async (id) => {
     }
 }
 
-const contractViewService = async (user_id, account_number_id, id) => {
+exports.contractViewService = async (user_id, account_number_id, id) => {
     try {
         const data = await pool.query(`--sql
             SELECT 
@@ -632,17 +689,4 @@ const contractViewService = async (user_id, account_number_id, id) => {
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
-}
-
-
-
-module.exports = {
-    contractCreateService,
-    getcontractService,
-    getByIdcontractService,
-    contractUpdateService,
-    deleteContractService,
-    dataForExcelService,
-    contractViewService,
-    checkRaxodContract
 }

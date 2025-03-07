@@ -43,9 +43,23 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
             JOIN worker AS w ON w_t.worker_id = w.id
             JOIN contract AS c ON c.id = t.contract_id
             JOIN organization AS o ON o.id = c.organization_id
-            WHERE c.account_number_id = $1  AND c.doc_date BETWEEN $2 AND $3 AND t.batalon_id = $4 AND c.isdeleted = false
-                AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
-                AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
+            WHERE c.account_number_id = $1  
+                AND c.doc_date BETWEEN $2 AND $3 
+                AND t.batalon_id = $4 
+                AND c.isdeleted = false
+                AND  0 = (
+                        SELECT 
+                            (c.result_summa - COALESCE(SUM(p.summa), 0))::FLOAT 
+                        FROM prixod p
+                        WHERE p.isdeleted = false 
+                            AND p.contract_id = c.id
+                    )
+                AND  NOT EXISTS (
+                        SELECT 1 
+                        FROM rasxod_fio rf 
+                        WHERE rf.isdeleted = false 
+                            AND rf.worker_task_id = w_t.id
+                    )
                 AND w_t.isdeleted = false
         `, [account_number, from, to, batalon_id])
         return result.rows

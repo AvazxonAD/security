@@ -1,3 +1,5 @@
+const { ContractService } = require('./service');
+
 exports.Controller = class {
     static async create(req, res) {
         const user_id = req.user.id
@@ -21,9 +23,6 @@ exports.Controller = class {
         resFunc(res, 201, result)
     }
 }
-
-
-
 
 const {
     contractCreateService,
@@ -145,12 +144,12 @@ exports.contractUpdate = async (req, res) => {
         const account_number_id = req.query.account_number_id;
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
-        const checkRasxodDoc = await checkRaxodContract(id);
-        if (checkRasxodDoc) {
-            return res.status(400).json({
-                message: "This document is linked to other documents. Please open them first"
-            })
+
+        const check_doc = await ContractService.checkDoc({ id });
+        if (check_doc) {
+            return res.error(req.i18n.t('docExists'), 400, { docs: check_doc });
         }
+
         const data = validationResponse(contractUpdateValidation, req.body)
         await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
 
@@ -173,12 +172,12 @@ exports.contractDelete = async (req, res) => {
         const id = req.params.id
         const account_number_id = req.query.account_number_id
         await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
-        const checkRasxodDoc = await checkRaxodContract(id);
-        if (checkRasxodDoc) {
-            return res.status(400).json({
-                message: "This document is linked to other documents. Please open them first"
-            })
+
+        const check_doc = await ContractService.checkDoc({ id });
+        if (check_doc) {
+            return res.error(req.i18n.t('docExists'), 400, { docs: check_doc });
         }
+
         await deleteContractService(id)
         resFunc(res, 200, 'delete success true')
     } catch (error) {
