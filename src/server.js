@@ -10,8 +10,6 @@ const path = require('path')
 const { Db, db } = require('./db/index');
 const i18next = require('./i18next');
 
-require('./domain/user/contract/controller')
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
