@@ -14,6 +14,7 @@ const { getByIdTaskService } = require('../task/task.service');
 const ErrorResponse = require("../utils/errorResponse");
 const { WorkerService } = require('../worker/service')
 const { getByIdcontractService } = require('../contract/db')
+const { WorkerTaskService } = require('./service');
 
 const workerTaskCreate = async (req, res) => {
     try {
@@ -80,7 +81,13 @@ const workerTaskUpdate = async (req, res) => {
             throw new ErrorResponse(req.i18n.t('taskTimeError'), 400)
         }
 
-        await deleteByTaskIDWorkerTaskService(task_id)
+        const check = await WorkerTaskService.checkDoc({ task_id });
+        if (check.length) {
+            return res.error(req.i18n.t('docExists'), 400, { docs: check });
+        }
+
+        await deleteByTaskIDWorkerTaskService(task_id);
+
         const result = await workerTaskCreateService(task, workers, all_task_time);
         resFunc(res, 200, result);
     } catch (error) {
@@ -101,6 +108,12 @@ const workerTaskDelete = async (req, res) => {
         }
 
         await getByTaskIdANDWorkerIdWorkerTaskService(task_id, worker_id, req.i18n)
+
+        const check = await WorkerTaskService.checkDoc({ task_id });
+        if (check.length) {
+            return res.error(req.i18n.t('docExists'), 400, { docs: check });
+        }
+
         await deleteWorkerTaskService(worker_id, task_id);
         resFunc(res, 200, 'delete success true');
     } catch (error) {

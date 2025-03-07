@@ -5,6 +5,7 @@
     "gaznaNotFound": "Gazna raqami topilmadi !",
     "templateUpdateError": "Shablon yangilanishi mumkin emas!",
     "fileError": "File yuklashda xatolik!",
+    "docExists": "Hujjat bilan bogliq hujjatlar mavjud ushbu amalni bajarish mumkin emas! Avval ushbu hujjatlar bilan bogliq joylarini yoq qiling",
     "templateExists": "Shablon allaqachon mavjud!",
     "deductionExists": "Ushlanma allaqachon kiritilgan!",
     "accountNumberNotFound": "Hisob raqami topilmadi!",
