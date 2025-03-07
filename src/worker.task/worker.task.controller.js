@@ -20,7 +20,7 @@ const workerTaskCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const task_id = req.query.task_id
-        const { value: workers, error } = workerTaskValidation.validate(req.body);
+        const { value, error } = workerTaskValidation.validate(req.body);
         if (error) {
             return res.error(req.i18n.t('validationError'), 400);
         }
@@ -28,7 +28,7 @@ const workerTaskCreate = async (req, res) => {
         const task = await getByIdTaskService(user_id, task_id, false, true, req.i18n)
         let all_task_time = 0
 
-        for (let worker of workers) {
+        for (let worker of value.workers) {
             const checkWorker = await WorkerService.getById({ batalon_id: task.batalon_id, id: worker.worker_id, user_id });
             if (!checkWorker) {
                 return res.error(req.i18n.t('workerNotFound'), 404);
@@ -43,7 +43,7 @@ const workerTaskCreate = async (req, res) => {
 
         await deleteWorkerTaskService(task_id)
 
-        const result = await workerTaskCreateService(task, workers);
+        const result = await workerTaskCreateService(task, value.workers);
 
         resFunc(res, 200, result);
     } catch (error) {
