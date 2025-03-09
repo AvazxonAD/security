@@ -84,8 +84,12 @@ exports.WorkerDB = class {
 
         const query = `
             SELECT 
-                w.id, w.fio, w.account_number, w.user_id, 
-                b.name AS batalon_name, w.xisob_raqam,
+                w.id, 
+                w.fio, 
+                w.account_number, 
+                w.user_id, 
+                b.name AS batalon_name, 
+                w.xisob_raqam,
                 row_to_json(b) AS batalon
             FROM worker w 
             LEFT JOIN batalon AS b ON b.id = w.batalon_id

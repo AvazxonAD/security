@@ -17,19 +17,45 @@ const {
     updatePrixodService,
     deletePrixodService
 } = require('./prixod.service')
+const { OrganizationService } = require('@organization/service')
 
 const prixodCreate = async (req, res) => {
     try {
         const user_id = req.user.id;
         const account_number_id = req.query.account_number_id;
+        const { organization_id, organ_account_number_id, organ_gazna_number_id } = req.body;
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
+
         const data = validationResponse(prixodValidation, req.body);
-        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n);
+
+        const organization = await OrganizationService.getById({ user_id, id: organization_id });
+        if (!organization) {
+            return res.error(req.i18n.t('organizationNotFound'), 404);
+        }
+
+        if (organ_account_number_id) {
+            const check = organization.account_numbers.find(item => item.id === organ_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (organ_gazna_number_id) {
+            const check = organization.gazna_numbers.find(item => item.id === organ_gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
+
         const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id, req.i18n)
+
         if (contract.remaining_balance < data.summa) {
             throw new ErrorResponse(req.i18n.t('prixodSummaError'), 400);
         }
+
         const prixod = await prixodCreateService({ ...data, account_number_id, user_id })
+
         resFunc(res, 201, prixod);
     } catch (error) {
         errorCatch(error, res);
@@ -80,15 +106,40 @@ const updatePrixod = async (req, res) => {
         const user_id = req.user.id;
         const id = req.params.id;
         const account_number_id = req.query.account_number_id;
+        const { organization_id, organ_account_number_id, organ_gazna_number_id } = req.body;
+
         const data = validationResponse(prixodValidation, req.body);
         const oldData = await getByIdPrixodService(user_id, id, account_number_id, null, req.i18n)
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
-        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n);
+
+        const organization = await OrganizationService.getById({ user_id, id: organization_id });
+        if (!organization) {
+            return res.error(req.i18n.t('organizationNotFound'), 404);
+        }
+
+        if (organ_account_number_id) {
+            const check = organization.account_numbers.find(item => item.id === organ_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (organ_gazna_number_id) {
+            const check = organization.gazna_numbers.find(item => item.id === organ_gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
+
         const contract = await getByIdcontractService(user_id, data.contract_id, false, account_number_id, data.organization_id, req.i18n)
+
         if (contract.remaining_balance + oldData.prixod_summa < data.summa) {
             throw new ErrorResponse(req.i18n.t('prixodSummaError'), 400);
         }
+
         const result = await updatePrixodService({ ...data, id })
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -152,7 +203,7 @@ const exportExcelData = async (req, res) => {
             const prixod_sumCell = worksheet.getCell(`E${row_number}`)
             const prixod_dateCell = worksheet.getCell(`F${row_number}`)
             doc_numCell.value = prixod.contract_doc_num
-            doc_dateCell.value = returnStringDate( new Date(prixod.contract_doc_date))
+            doc_dateCell.value = returnStringDate(new Date(prixod.contract_doc_date))
             clientCell.value = prixod.organization_name
             innCell.value = prixod.organization_str
             prixod_sumCell.value = prixod.prixod_summa
@@ -200,8 +251,8 @@ const exportExcelData = async (req, res) => {
                 right: { style: 'thin' }
             }
             if (index === 1 || index === 2 || index === 9 || index === 11) horizontal = 'left'
-            if(index === 10 ) size = 8, horizontal = 'right'
-            if(index === 9 || index === 10 || index === 0 || index === 1 || index === 2 || index === 11 ) fill = {}, border = {} 
+            if (index === 10) size = 8, horizontal = 'right'
+            if (index === 9 || index === 10 || index === 0 || index === 1 || index === 2 || index === 11) fill = {}, border = {}
             Object.assign(element, {
                 numFmt: '#,#00.00',
                 font: { size, name: 'Times New Roman', bold },
@@ -220,8 +271,8 @@ const exportExcelData = async (req, res) => {
         worksheet.getColumn(5).width = 15
         worksheet.getColumn(6).width = 15
         worksheet.getColumn(7).width = 13
-        worksheet.getRow(itogoCell.row).height = 30 
-        worksheet.getRow(summa_toCell.row).height = 30 
+        worksheet.getRow(itogoCell.row).height = 30
+        worksheet.getRow(summa_toCell.row).height = 30
         const filePath = path.join(__dirname, '../../public/exports/' + file_name)
         await workbook.xlsx.writeFile(filePath)
         return res.download(filePath, (err) => {

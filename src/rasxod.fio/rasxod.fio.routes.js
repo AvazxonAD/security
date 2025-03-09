@@ -17,9 +17,9 @@ const {
 
 router.get('/request', protect, getPaymentRequest)
     .get('/pdf', protect, forPdfData)
+    .get('/:id', protect, getByIdRasxod)
     .get('/export', protect, exportExcelData)
     .get('/export/:id', protect, exportRasxodByIdExcelData)
-    .get('/:id', protect, getByIdRasxod)
     .get('/', protect, getRasxod)
     .post('/', protect, createRasxod)
     .put('/:id', protect, updateRasxod)

@@ -9,7 +9,9 @@ exports.RasxodOrganService = class {
             data.doc_num,
             data.doc_date,
             data.summa,
-            data.account_number_id
+            data.account_number_id,
+            data.organ_account_number_id,
+            data.gazna_number_id
         ]);
 
         return result;
@@ -22,10 +24,12 @@ exports.RasxodOrganService = class {
             data.doc_num,
             data.doc_date,
             data.summa,
+            data.organ_account_number_id,
+            data.gazna_number_id,
             data.id
         ]);
 
-        return result[0];
+        return result;
     }
 
     static async get(data) {
@@ -44,7 +48,7 @@ exports.RasxodOrganService = class {
     static async getById(data) {
         const result = await RasxodOrganDB.getById([data.user_id, data.id, data.account_number_id], data.isdeleted);
 
-        return result[0];
+        return result;
     }
 
     static async delete(data) {

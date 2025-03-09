@@ -1,4 +1,4 @@
-const { db } = require('../db/index');
+const { db } = require('@db/index');
 
 exports.AccountNumberDB = class {
     static async getById(params, isdeleted) {
@@ -11,7 +11,7 @@ exports.AccountNumberDB = class {
         `;
 
         const result = db.query(query, params);
-        
+
         return result[0];
     }
 }

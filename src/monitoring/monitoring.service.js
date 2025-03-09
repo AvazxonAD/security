@@ -95,13 +95,16 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
                 JOIN batalon AS t ON t.id = t_k.batalon_id
                 WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) AS total_count
         `, [user_id, account_number_id, from, to])
+
         const prixod_from = await pool.query(`
             SELECT COALESCE(SUM(p.summa), 0)::FLOAT AS summa 
             FROM prixod AS p 
             JOIN contract AS c ON c.id = p.contract_id
             WHERE p.user_id = $1 AND p.account_number_id = $2 AND p.doc_date < $3 AND c.isdeleted = false AND p.isdeleted = false
         `, [user_id, account_number_id, from])
+
         const prixod_summa_from = prixod_from.rows.length > 0 ? prixod_from.rows[0].summa : 0
+
         const rasxod_from = await pool.query(`
             SELECT 
                 COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS summa
@@ -116,6 +119,7 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
             AND c.isdeleted = false
         `, [user_id, account_number_id, from]);
         const rasxod_summa_from = rasxod_from.rows.length > 0 ? rasxod_from.rows[0].summa : 0
+
         const rasxod_fio_from = await pool.query(`
             SELECT 
             COALESCE(SUM(r.summa), 0)::FLOAT AS summa 
@@ -128,14 +132,18 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
             WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
         `, [user_id, account_number_id, from])
         const rasxod_fio_summa_from = rasxod_fio_from.rows.length > 0 ? rasxod_fio_from.rows[0].summa : 0
+
         const summa_from = prixod_summa_from - (rasxod_fio_summa_from + rasxod_summa_from)
+
         const prixod_to = await pool.query(`
             SELECT COALESCE(SUM(p.summa), 0)::FLOAT AS summa 
             FROM prixod AS p 
             JOIN contract AS c ON c.id = p.contract_id
             WHERE p.user_id = $1 AND p.account_number_id = $2 AND p.doc_date < $3 AND c.isdeleted = false AND p.isdeleted = false
         `, [user_id, account_number_id, to])
+
         const prixod_summa_to = prixod_to.rows.length > 0 ? prixod_to.rows[0].summa : 0
+
         const rasxod_to = await pool.query(`
             SELECT 
             COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS summa
@@ -149,7 +157,9 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
             AND r_d.doc_date < $3 
             AND c.isdeleted = false
         `, [user_id, account_number_id, to]);
+
         const rasxod_summa_to = rasxod_to.rows.length > 0 ? rasxod_to.rows[0].summa : 0
+
         const rasxod_fio_to = await pool.query(`
             SELECT 
             COALESCE(SUM(r.summa), 0)::FLOAT AS summa
@@ -161,10 +171,14 @@ const prixodRasxodService = async (user_id, account_number_id, from, to, offset,
             WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
         `, [user_id, account_number_id, to])
         const rasxod_fio_summa_to = rasxod_fio_to.rows.length > 0 ? rasxod_fio_to.rows[0].summa : 0
+
         const summa_to = prixod_summa_to - (rasxod_fio_summa_to + rasxod_summa_to)
+
         let prixod = 0;
         let rasxod = 0;
+
         rows.forEach(item => { prixod += item.prixod_sum, rasxod += item.rasxod_sum })
+
         return { rows, total: total.rows[0].total_count, summa_from, summa_to, prixod, rasxod }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)

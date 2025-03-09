@@ -1,28 +1,30 @@
 const { ContractService } = require('./service');
 
-exports.Controller = class {
-    static async create(req, res) {
-        const user_id = req.user.id
-        const { account_number_id } = req.query;
+// exports.Controller = class {
+//     static async create(req, res) {
+//         const user_id = req.user.id
+//         const { account_number_id } = req.query;
+//         const { organization_id, organ_account_number_id, gazna_number_id } = req.body;
 
-        await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        const { error, value: data } = contractValidation.validate(req.body);
-        if (error) {
-            return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
-        }
+//         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+//         const { error, value: data } = contractValidation.validate(req.body);
+//         if (error) {
+//             return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
+//         }
 
-        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+//         const organization = await getByIdorganizationService(user_id, data.organization_id, null, req.i18n);
 
-        for (let task of data.tasks) {
-            await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
-            const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
-            task.bxm_summa = bxm.bxm_07;
-        }
 
-        const result = await contractCreateService({ ...data, user_id, account_number_id })
-        resFunc(res, 201, result)
-    }
-}
+//         for (let task of data.tasks) {
+//             await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
+//             const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
+//             task.bxm_summa = bxm.bxm_07;
+//         }
+
+//         const result = await contractCreateService({ ...data, user_id, account_number_id })
+//         resFunc(res, 201, result)
+//     }
+// }
 
 const {
     contractCreateService,
@@ -56,13 +58,30 @@ exports.contractCreate = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
+        const { organ_account_number_id, gazna_number_id } = req.body;
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
+
         const { error, value: data } = contractValidation.validate(req.body);
         if (error) {
             return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
         }
 
-        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+        const organization = await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+
+        if (organ_account_number_id) {
+            const check = organization.account_numbers.find(item => item.id === organ_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (gazna_number_id) {
+            const check = organization.gazna_numbers.find(item => item.id === gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
 
         for (let task of data.tasks) {
             await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
@@ -142,24 +161,47 @@ exports.contractUpdate = async (req, res) => {
         const id = req.params.id
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id;
+        const { organ_account_number_id, gazna_number_id } = req.body;
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
+        const oldData = await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
 
         const check_doc = await ContractService.checkDoc({ id });
-        if (check_doc) {
+        if (check_doc.length) {
             return res.error(req.i18n.t('docExists'), 400, { docs: check_doc });
         }
 
         const data = validationResponse(contractUpdateValidation, req.body)
-        await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+        const organization = await getByIdorganizationService(user_id, data.organization_id, null, req.i18n)
+
+        if (organ_account_number_id) {
+            const check = organization.account_numbers.find(item => item.id === organ_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (gazna_number_id) {
+            const check = organization.gazna_numbers.find(item => item.id === gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
 
         for (let task of data.tasks) {
             await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
             const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
             task.bxm_summa = bxm.bxm_07;
+
+            if (task.id) {
+                const check = oldData.tasks.find(item => item.id === task.id);
+                if (!check) {
+                    return res.error(req.i18n.t('taskNotFound'), 404);
+                }
+            }
         }
 
-        const result = await contractUpdateService({ ...data, user_id, id })
+        const result = await contractUpdateService({ ...data, user_id, id, oldData })
         resFunc(res, 201, result)
     } catch (error) {
         errorCatch(error, res)
@@ -174,7 +216,7 @@ exports.contractDelete = async (req, res) => {
         await getByIdcontractService(user_id, id, false, account_number_id, null, req.i18n)
 
         const check_doc = await ContractService.checkDoc({ id });
-        if (check_doc) {
+        if (check_doc.length) {
             return res.error(req.i18n.t('docExists'), 400, { docs: check_doc });
         }
 

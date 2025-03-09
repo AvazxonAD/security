@@ -26,10 +26,10 @@ class Db {
 
         if (!Db.instance) {
             if (
-                !options.user || 
-                !options.password || 
-                !options.port || 
-                !options.host || 
+                !options.user ||
+                !options.password ||
+                !options.port ||
+                !options.host ||
                 !options.database
             ) {
                 console.log(options)

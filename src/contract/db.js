@@ -19,8 +19,9 @@ exports.ContractDB = class {
                 d.doc_num,
                 d.doc_date,
                 'prixod' AS type 
-            FROM rasxod_fio d
-            JOIN worker_task AS w_t ON w_t.id = d.worker_task_id 
+            FROM rasxod_fio_doc d
+            JOIN rasxod_fio ch ON ch.rasxod_fio_doc_id = d.id
+            JOIN worker_task AS w_t ON w_t.id = ch.worker_task_id 
             JOIN task AS t ON t.id = w_t.task_id
             WHERE t.contract_id = $1 
                 AND d.isdeleted = false 
@@ -32,8 +33,9 @@ exports.ContractDB = class {
                 d.doc_num,
                 d.doc_date,
                 'prixod' AS type
-            FROM rasxod d
-            JOIN task AS t ON t.id = d.task_id
+            FROM rasxod_doc d
+            JOIN rasxod ch ON ch.rasxod_doc_id = d.id
+            JOIN task AS t ON t.id = ch.task_id
             WHERE t.contract_id = $1 
                 AND d.isdeleted = false
         `;
@@ -41,6 +43,33 @@ exports.ContractDB = class {
         const result = await db.query(query, params);
 
         return result;
+    }
+
+    static async deleteTask(params, client) {
+        const query = `UPDATE task SET isdeleted = true WHERE id = $1`;
+
+        await client.query(query, params);
+    }
+
+    static async updateTask(params, client) {
+        const query = `
+            UPDATE task 
+            SET 
+                batalon_id = $1, 
+                task_time = $2, 
+                worker_number = $3, 
+                summa = $4, 
+                task_date = $5, 
+                discount_money = $6, 
+                result_summa = $7, 
+                bxm_id = $8, 
+                time_money = $9, 
+                address = $10,
+                comment = $11
+            WHERE id = $12
+        `;
+
+        await client.query(query, params);
     }
 }
 
@@ -87,9 +116,12 @@ exports.contractCreateService = async (data) => {
                 all_task_time,
                 discount_money,
                 result_summa,
-                dist
+                dist,
+                date,
+                organ_account_number_id,
+                gazna_number_id
             ) 
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -108,9 +140,14 @@ exports.contractCreateService = async (data) => {
             all_task_time,
             discount_money,
             result_summa,
-            data.dist
+            data.dist,
+            data.date,
+            data.organ_account_number_id,
+            data.gazna_number_id
         ]);
+
         const contract = rows[0];
+
         const taskPromises = data.tasks.map(task => {
             let task_discount_money = 0;
             let task_result_summa = 0;
@@ -125,8 +162,8 @@ exports.contractCreateService = async (data) => {
 
             return client.query(`
                 INSERT INTO 
-                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address) 
-                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address, comment) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *
             `, [
                 contract.id,
                 task.batalon_id,
@@ -139,7 +176,8 @@ exports.contractCreateService = async (data) => {
                 task_result_summa,
                 task.bxm_id,
                 task.bxm_summa,
-                task.address
+                task.address,
+                task.comment
             ]);
         });
 
@@ -195,8 +233,11 @@ exports.contractUpdateService = async (data) => {
                 all_task_time = $13,
                 discount_money = $14,
                 result_summa = $15,
-                dist = $16
-            WHERE id = $17 AND isdeleted = false RETURNING *
+                dist = $16,
+                date = $17,
+                organ_account_number_id = $18,
+                gazna_number_id = $19
+            WHERE id = $20 AND isdeleted = false RETURNING *
         `, [
             data.doc_num,
             data.doc_date,
@@ -214,53 +255,92 @@ exports.contractUpdateService = async (data) => {
             discount_money,
             result_summa,
             data.dist,
+            data.date,
+            data.organ_account_number_id,
+            data.gazna_number_id,
             data.id
         ]);
         const contract = rows[0];
         const create_tasks = [];
 
-        for (let task of data.tasks) {
-
+        for (let task of data.oldData.tasks) {
+            const check = data.tasks.find(item => item.id === task.id);
+            if (!check) {
+                await this.ContractDB.deleteTask([task.id], client);
+            }
         }
 
-
-        await client.query(`UPDATE task SET isdeleted = true WHERE contract_id = $1`, [data.id]);
-
-        const taskPromises = data.tasks.map(task => {
-            let task_discount_money = 0;
-            let task_result_summa = 0;
-            let task_summa = task.task_time * task.worker_number * task.bxm_summa;
+        for (let task of data.tasks) {
+            task.task_discount_money = 0;
+            task.task_result_summa = 0;
+            task.task_summa = task.task_time * task.worker_number * task.bxm_summa;
 
             if (data.discount) {
-                task_discount_money = task_summa * (data.discount / 100);
-                task_result_summa = task_summa - task_discount_money;
+                task.task_discount_money = task.task_summa * (data.discount / 100);
+                task.task_result_summa = task.task_summa - task.task_discount_money;
             } else {
-                task_result_summa = task_summa;
+                task.task_result_summa = task.task_summa;
             }
 
+            if (task.id) {
+                await this.ContractDB.updateTask([
+                    task.batalon_id,
+                    task.task_time,
+                    task.worker_number,
+                    task.task_summa,
+                    task.task_date ? task.task_date : null,
+                    task.task_discount_money,
+                    task.task_result_summa,
+                    task.bxm_id,
+                    task.bxm_summa,
+                    task.address,
+                    task.id
+                ], client);
+            } else {
+                create_tasks.push(task);
+            }
+        }
+
+        const taskPromises = create_tasks.map(task => {
             return client.query(`
                 INSERT INTO 
-                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address) 
-                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
+                task(
+                    contract_id, 
+                    batalon_id, 
+                    task_time, 
+                    worker_number, 
+                    summa, 
+                    user_id, 
+                    task_date, 
+                    discount_money, 
+                    result_summa, 
+                    bxm_id, 
+                    time_money, 
+                    address,
+                    comment
+                ) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             `, [
                 contract.id,
                 task.batalon_id,
                 task.task_time,
                 task.worker_number,
-                task_summa,
+                task.task_summa,
                 data.user_id,
                 task.task_date ? task.task_date : null,
-                task_discount_money,
-                task_result_summa,
+                task.task_discount_money,
+                task.task_result_summa,
                 task.bxm_id,
                 task.bxm_summa,
-                task.address
+                task.address,
+                task.comment
             ]);
-
         });
-        const tasks = await Promise.all(taskPromises);
-        contract.tasks = tasks.map(task => task.rows[0]);
+
+        await Promise.all(taskPromises);
+
         await client.query('COMMIT');
+
         return contract;
     } catch (error) {
         await client.query('ROLLBACK');
@@ -298,7 +378,7 @@ exports.getcontractService = async (user_id, offset, limit, search, from, to, ac
 
         if (search) {
             serach_filter = `AND (
-                    c.doc_num = $${params.length + 1} 
+                    d.doc_num = $${params.length + 1} 
                     OR o.name ILIKE  '%' || $${params.length + 1} || '%'
                     OR EXISTS (
                         SELECT 1 
@@ -306,7 +386,7 @@ exports.getcontractService = async (user_id, offset, limit, search, from, to, ac
                         JOIN batalon b ON t.batalon_id = b.id 
                         WHERE t.isdeleted = false 
                             AND b.name = $${params.length + 1} 
-                            AND c.id = t.contract_id 
+                            AND d.id = t.contract_id 
                     )
                 )
             `;
@@ -317,14 +397,14 @@ exports.getcontractService = async (user_id, offset, limit, search, from, to, ac
         }
 
         if (organization_id) {
-            organization_filter = `AND c.organization_id = $${params.length + 1}`
+            organization_filter = `AND d.organization_id = $${params.length + 1}`
             params.push(organization_id)
         }
 
         if (batalion_id) {
             tasks_filter = `AND t.batalon_id = $${params.length + 1}`;
 
-            batalion_filter = `AND EXISTS (SELECT * FROM task AS t WHERE t.isdeleted = false AND t.batalon_id = $${params.length + 1} AND c.id = t.contract_id )`
+            batalion_filter = `AND EXISTS (SELECT * FROM task AS t WHERE t.isdeleted = false AND t.batalon_id = $${params.length + 1} AND d.id = t.contract_id )`
 
             params.push(batalion_id);
 
@@ -333,34 +413,35 @@ exports.getcontractService = async (user_id, offset, limit, search, from, to, ac
         const query = `
             WITH data AS (
                 SELECT 
-                    c.id,
-                    c.doc_num, 
-                    TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
-                    c.result_summa,
-                    c.adress, 
-                    c.dist,
+                    d.id,
+                    d.doc_num, 
+                    TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                    d.result_summa,
+                    d.adress, 
+                    d.dist,
                     o.id AS organization_id,
                     o.name AS organization_name,
                     o.address AS organization_address,
                     o.str AS organization_str,
                     o.bank_name AS organization_bank_name,
                     o.mfo AS organization_mfo,
-                    o.account_number AS organization_account_number,
-                    o.treasury1 AS organization_treasury1,
-                    o.treasury2 AS organization_treasury2,
+                    g.gazna_number,
+                    d.gazna_number_id::INTEGER ,
+                    a.account_number,
+                    d.organ_account_number_id::INTEGER,
                     ( 
                         SELECT 
-                            (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
+                            (d.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
                             FROM prixod 
                             WHERE isdeleted = false 
-                                AND contract_id = c.id
+                                AND contract_id = d.id
                     ) AS remaining_balance,
                     (
                         SELECT 
                             COALESCE(SUM(summa), 0) 
                         FROM prixod 
                         WHERE isdeleted = false 
-                            AND contract_id = c.id 
+                            AND contract_id = d.id 
                     )::FLOAT AS remaining_summa,
                     (
                         SELECT 
@@ -368,56 +449,58 @@ exports.getcontractService = async (user_id, offset, limit, search, from, to, ac
                         FROM task t 
                         JOIN batalon b ON t.batalon_id = b.id 
                         WHERE t.isdeleted = false 
-                            AND c.id = t.contract_id 
+                            AND d.id = t.contract_id 
                             ${tasks_search_filter}
                             ${tasks_filter}
                     ) AS tasks
-                FROM contract  AS c 
-                JOIN organization AS o ON o.id = c.organization_id
-                WHERE c.isdeleted = false 
-                    AND c.user_id = $1 
+                FROM contract  AS d 
+                JOIN organization AS o ON o.id = d.organization_id
+                LEFT JOIN gazna_numbers g ON g.id = d.gazna_number_id
+                LEFT JOIN organ_account_numbers a ON a.id = d.organ_account_number_id
+                WHERE d.isdeleted = false 
+                    AND d.user_id = $1 
                     ${serach_filter} 
                     ${organization_filter} 
                     ${batalion_filter}
-                    AND c.doc_date BETWEEN $4 AND $5 
-                    AND c.account_number_id = $6
-                ORDER BY CAST(c.doc_num AS FLOAT)
+                    AND d.doc_date BETWEEN $4 AND $5 
+                    AND d.account_number_id = $6
+                ORDER BY CAST(d.doc_num AS FLOAT)
                 OFFSET $2 LIMIT $3
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
                 (
-                    SELECT COALESCE(COUNT(c.id), 0) 
-                    FROM contract AS c 
-                    JOIN organization AS o ON o.id = c.organization_id 
-                    WHERE c.isdeleted = false 
-                        AND c.user_id = $1 
-                        AND c.doc_date BETWEEN $4 AND $5 
-                        AND c.account_number_id = $6 
+                    SELECT COALESCE(COUNT(d.id), 0) 
+                    FROM contract AS d 
+                    JOIN organization AS o ON o.id = d.organization_id 
+                    WHERE d.isdeleted = false 
+                        AND d.user_id = $1 
+                        AND d.doc_date BETWEEN $4 AND $5 
+                        AND d.account_number_id = $6 
                         ${serach_filter} 
                         ${organization_filter} 
                         ${batalion_filter}
                 )::INTEGER AS total_count,
                 (
-                    SELECT COALESCE(SUM(c.result_summa), 0) 
-                    FROM contract AS c 
-                    JOIN organization AS o ON o.id = c.organization_id 
-                    WHERE c.isdeleted = false 
-                        AND c.user_id = $1 
-                        AND c.doc_date <= $4 
-                        AND c.account_number_id = $6 
+                    SELECT COALESCE(SUM(d.result_summa), 0) 
+                    FROM contract AS d 
+                    JOIN organization AS o ON o.id = d.organization_id 
+                    WHERE d.isdeleted = false 
+                        AND d.user_id = $1 
+                        AND d.doc_date <= $4 
+                        AND d.account_number_id = $6 
                         ${serach_filter} 
                         ${organization_filter} 
                         ${batalion_filter}
                 )::FLOAT AS from_balance,
                 (
-                    SELECT COALESCE(SUM(c.result_summa), 0) 
-                    FROM contract AS c 
-                    LEFT JOIN organization AS o ON o.id = c.organization_id 
-                    WHERE c.isdeleted = false 
-                        AND c.user_id = $1 
-                        AND c.doc_date <= $5 
-                        AND c.account_number_id = $6 
+                    SELECT COALESCE(SUM(d.result_summa), 0) 
+                    FROM contract AS d 
+                    LEFT JOIN organization AS o ON o.id = d.organization_id 
+                    WHERE d.isdeleted = false 
+                        AND d.user_id = $1 
+                        AND d.doc_date <= $5 
+                        AND d.account_number_id = $6 
                         ${serach_filter} 
                         ${organization_filter} 
                         ${batalion_filter}
@@ -440,69 +523,95 @@ exports.getByIdcontractService = async (user_id, id, isdeleted = false, account_
         let filter = ``
         let filter_task = ``
         if (!isdeleted) {
-            filter = `AND c.isdeleted = false`
+            filter = `AND d.isdeleted = false`
             filter_task = ` AND t.isdeleted = false`
         }
         if (organization_id) {
-            organization = ` AND c.organization_id = $${params.length + 1}`
+            organization = ` AND d.organization_id = $${params.length + 1}`
             params.push(organization_id)
         }
-        const result = await pool.query(`--sql
+
+        const query = `
             SELECT 
-                c.id,
-                c.doc_num, 
-                TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
-                TO_CHAR(c.period, 'YYYY-MM-DD') AS period, 
-                c.adress, 
-                TO_CHAR(c.start_date, 'YYYY-MM-DD') AS start_date, 
-                TO_CHAR(c.end_date, 'YYYY-MM-DD') AS end_date, 
-                c.discount, 
-                c.discount_money::FLOAT, 
-                c.summa::FLOAT, 
-                c.result_summa::FLOAT, 
-                c.organization_id, 
-                c.account_number_id,
-                c.start_time,
-                c.end_time,
-                c.all_worker_number,
-                c.all_task_time,
-                c.dist,
-                ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = $2) AS remaining_balance,
-                (SELECT ARRAY_AGG(row_to_json(tasks))
+                d.id,
+                d.doc_num, 
+                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                TO_CHAR(d.period, 'YYYY-MM-DD') AS period, 
+                d.adress, 
+                TO_CHAR(d.start_date, 'YYYY-MM-DD') AS start_date, 
+                TO_CHAR(d.end_date, 'YYYY-MM-DD') AS end_date, 
+                d.discount, 
+                d.discount_money::FLOAT, 
+                d.summa::FLOAT, 
+                d.result_summa::FLOAT, 
+                d.organization_id, 
+                d.account_number_id::INTEGER,
+                d.organ_account_number_id::INTEGER,
+                d.gazna_number_id::INTEGER,
+                d.start_time,
+                d.end_time,
+                d.all_worker_number,
+                d.all_task_time,
+                d.dist,
+                d.date,
+                o.id AS organization_id,
+                o.name AS organization_name,
+                o.address AS organization_address,
+                o.str AS organization_str,
+                o.bank_name AS organization_bank_name,
+                o.mfo AS organization_mfo,
+                g.gazna_number,
+                a.account_number,
+                ( SELECT (d.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS remaining_balance,
+                (
+                    SELECT COALESCE(JSON_AGG(row_to_json(subtasks)), '[]'::JSON)
                     FROM (
-                    SELECT 
-                        t.id,
-                        t.batalon_id, 
-                        t.task_time, 
-                        t.worker_number,
-                        t.summa, 
-                        COALESCE(t.time_money, 0) AS timemoney, 
-                        t.discount_money,
-                        t.result_summa,
-                        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
-                        b.name AS batalon_name,
-                        t.address,
-                        (   
-                            (t.task_time * t.worker_number) - (
-                                SELECT COALESCE(SUM(task_time), 0)
-                                FROM worker_task 
-                                WHERE task_id = t.id AND isdeleted = false
-                            ) 
-                        ) AS remaining_task_time,
-                        t.bxm_id
-                    FROM task AS t
-                    JOIN batalon AS b ON b.id = t.batalon_id
-                    WHERE  t.user_id = $1 ${filter_task} AND t.contract_id = c.id AND t.isdeleted = false
-                    ORDER BY task_date
-                    ) AS tasks
+                        SELECT 
+                            t.id,
+                            t.batalon_id, 
+                            t.task_time, 
+                            t.worker_number,
+                            t.summa, 
+                            COALESCE(t.time_money, 0) AS timemoney, 
+                            t.discount_money,
+                            t.result_summa,
+                            TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
+                            b.name AS batalon_name,
+                            t.address,
+                            (   
+                                (t.task_time * t.worker_number) - (
+                                    SELECT COALESCE(SUM(task_time), 0)
+                                    FROM worker_task 
+                                    WHERE task_id = t.id AND isdeleted = false
+                                ) 
+                            ) AS remaining_task_time,
+                            t.bxm_id
+                        FROM task AS t
+                        JOIN batalon AS b ON b.id = t.batalon_id
+                        WHERE  t.user_id = $1 
+                            ${filter_task} 
+                            AND t.contract_id = d.id 
+                            AND t.isdeleted = false
+                        ORDER BY task_date
+                    ) AS subtasks
                 ) AS tasks 
-            FROM contract  AS c 
-            JOIN organization AS o ON o.id = c.organization_id
-            WHERE c.user_id = $1 ${filter} AND c.id = $2 AND c.account_number_id = $3 ${organization} 
-        `, params)
+            FROM contract  AS d 
+            JOIN organization AS o ON o.id = d.organization_id
+            LEFT JOIN gazna_numbers g ON g.id = d.gazna_number_id
+            LEFT JOIN organ_account_numbers a ON a.id = d.organ_account_number_id
+            WHERE d.user_id = $1
+                ${filter} 
+                AND d.id = $2 
+                AND d.account_number_id = $3 
+                ${organization}
+        `;
+
+        const result = await pool.query(query, params)
+
         if (!result.rows[0]) {
             throw new ErrorResponse(lang.t('contractNotFound'), 404)
         }
+
         return result.rows[0]
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
@@ -514,30 +623,30 @@ exports.dataForExcelService = async (user_id, account_number_id, from, to) => {
         const data = await pool.query(`--sql
             WITH data AS (
                 SELECT 
-                    c.id,
-                    c.doc_num, 
+                    d.id,
+                    d.doc_num, 
                     o.name AS organization_name,
-                    TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
-                    TO_CHAR(c.period, 'YYYY-MM-DD') AS period, 
-                    c.adress, 
-                    TO_CHAR(c.start_date, 'YYYY-MM-DD') AS start_date, 
-                    TO_CHAR(c.end_date, 'YYYY-MM-DD') AS end_date, 
-                    c.discount, 
-                    c.discount_money::FLOAT, 
-                    c.summa::FLOAT, 
-                    c.result_summa::FLOAT, 
-                    c.organization_id, 
-                    c.account_number_id,
+                    TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                    TO_CHAR(d.period, 'YYYY-MM-DD') AS period, 
+                    d.adress, 
+                    TO_CHAR(d.start_date, 'YYYY-MM-DD') AS start_date, 
+                    TO_CHAR(d.end_date, 'YYYY-MM-DD') AS end_date, 
+                    d.discount, 
+                    d.discount_money::FLOAT, 
+                    d.summa::FLOAT, 
+                    d.result_summa::FLOAT, 
+                    d.organization_id, 
+                    d.account_number_id,
                     a_n.account_number,
-                    c.start_time,
-                    c.end_time,
-                    c.all_worker_number,
-                    c.all_task_time,
-                    ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS kridit,
-                    ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS debit,
+                    d.start_time,
+                    d.end_time,
+                    d.all_worker_number,
+                    d.all_task_time,
+                    ( SELECT (d.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS kridit,
+                    ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS debit,
                     (
                         (
-                            COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = c.id),0)
+                            COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = d.id),0)
                         ) - 
                         (
                             (
@@ -545,7 +654,7 @@ exports.dataForExcelService = async (user_id, account_number_id, from, to) => {
                                 FROM rasxod AS r
                                 JOIN task AS t ON t.id = r.task_id
                                 JOIN contract AS c_inner ON t.contract_id = c_inner.id 
-                                WHERE c_inner.id = c.id AND r.isdeleted = false
+                                WHERE c_inner.id = d.id AND r.isdeleted = false
                             ) + 
                             (
                                 SELECT COALESCE(SUM(r_fio.summa), 0) 
@@ -553,15 +662,15 @@ exports.dataForExcelService = async (user_id, account_number_id, from, to) => {
                                 JOIN worker_task AS w_t ON w_t.id = r_fio.worker_task_id
                                 JOIN task AS t ON t.id = w_t.task_id 
                                 JOIN contract AS c_inner ON c_inner.id = t.contract_id
-                                WHERE c_inner.id = c.id AND r_fio.isdeleted = false
+                                WHERE c_inner.id = d.id AND r_fio.isdeleted = false
                             )   
                         )
                     )::FLOAT AS remaining_summa
-                FROM contract c   
-                JOIN organization AS o ON o.id = c.organization_id
-                JOIN account_number AS a_n ON a_n.id = c.account_number_id
-                WHERE c.user_id = $1 AND c.isdeleted = false AND c.account_number_id = $2  AND c.doc_date BETWEEN $3 AND $4
-                ORDER BY CAST(c.doc_num AS FLOAT)
+                FROM contract d   
+                JOIN organization AS o ON o.id = d.organization_id
+                JOIN account_number AS a_n ON a_n.id = d.account_number_id
+                WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2  AND d.doc_date BETWEEN $3 AND $4
+                ORDER BY CAST(d.doc_num AS FLOAT)
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
@@ -587,16 +696,16 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
     try {
         const data = await pool.query(`--sql
             SELECT 
-                c.id,
-                c.doc_num, 
-                TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date,  
-                c.discount, 
-                c.discount_money::FLOAT, 
-                c.summa::FLOAT, 
-                c.result_summa::FLOAT, 
-                c.all_worker_number,
-                c.all_task_time,
-                c.organization_id, 
+                d.id,
+                d.doc_num, 
+                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,  
+                d.discount, 
+                d.discount_money::FLOAT, 
+                d.summa::FLOAT, 
+                d.result_summa::FLOAT, 
+                d.all_worker_number,
+                d.all_task_time,
+                d.organization_id, 
                 o.name AS organization_name,
                 o.str AS organization_str,
                 o.account_number AS organization_account_number,  
@@ -607,8 +716,8 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                 a_c.account_number,
                 b_k.bank,
                 b_k.mfo,
-                ( SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS kridit,
-                ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id) AS debit,
+                ( SELECT (d.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS kridit,
+                ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS debit,
                 (
                     (
                         COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = $3),0)
@@ -631,13 +740,13 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                         )
                     )
                 )::FLOAT AS remaining_summa
-            FROM contract c   
-            JOIN organization AS o ON o.id = c.organization_id
+            FROM contract d   
+            JOIN organization AS o ON o.id = d.organization_id
             JOIN account_number AS a_c ON a_c.user_id = $1
             JOIN str ON str.user_id = $1 
             JOIN doer AS d ON d.user_id = $1
             JOIN bank AS b_k ON b_k.user_id = $1
-            WHERE c.user_id = $1 AND c.isdeleted = false AND c.account_number_id = $2  AND c.id = $3
+            WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2  AND d.id = $3
         `, [user_id, account_number_id, id])
         const prixods = await pool.query(`--sql
             SELECT 
@@ -663,7 +772,7 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                 b.account_number AS batalon_name
             FROM  rasxod AS r 
             JOIN  task AS t ON t.id = r.task_id  
-            JOIN contract AS c ON c.id = t.contract_id
+            JOIN contract AS d ON d.id = t.contract_id
             JOIN  batalon AS b ON b.id = t.batalon_id
             JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id 
             WHERE t.contract_id = $1 AND r.isdeleted = false

@@ -79,9 +79,31 @@ const createRasxodDocService = async (data) => {
     const client = await pool.connect()
     try {
         await client.query(`BEGIN`)
-        const rasxod_doc = await client.query(`INSERT INTO rasxod_doc(doc_num, doc_date, batalon_id, user_id, opisanie, account_number_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING * 
-        `, [data.doc_num, data.doc_date, data.batalon_id, data.user_id, data.opisanie, data.account_number_id])
+        const rasxod_doc = await client.query(`
+            INSERT INTO rasxod_doc(
+                doc_num, 
+                doc_date, 
+                batalon_id, 
+                user_id, 
+                opisanie, 
+                account_number_id,
+                batalon_gazna_number_id,
+                batalon_account_number_id
+            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+            RETURNING * 
+        `, [
+            data.doc_num,
+            data.doc_date,
+            data.batalon_id,
+            data.user_id,
+            data.opisanie,
+            data.account_number_id,
+            data.batalon_gazna_number_id,
+            data.batalon_account_number_id
+        ])
+
         const rasxod = rasxod_doc.rows[0]
+
         const queryArray = []
         for (let task of data.tasks) {
             queryArray.push(client.query(`INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
@@ -105,74 +127,79 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
         let batalon_filter = ``
         let offset_limit = ``
         if (batalon_id) {
-            batalon_filter = ` AND r_d.batalon_id = $${params.length + 1}`
+            batalon_filter = ` AND d.batalon_id = $${params.length + 1}`
             params.push(batalon_id)
         }
-        if(offset !== null && limit !== null){
+        if (offset !== null && limit !== null) {
             offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
             params.push(offset, limit)
         }
         const result = await pool.query(`
             WITH data AS (
                 SELECT 
-                    r_d.id,
-                    r_d.doc_num,
-                    TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
-                    r_d.opisanie,
+                    d.id,
+                    d.doc_num,
+                    TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,
+                    d.opisanie,
                     b.id AS batalon_id,
                     b.name AS batalon_name,
                     b.address AS batalon_address,
                     b.str AS batalon_str,
                     b.bank_name AS batalon_bank_name,
                     b.mfo AS batalon_mfo,
-                    b.account_number AS batalon_account_number,
+                    d.batalon_gazna_number_id,
+                    d.batalon_account_number_id,
+                    g.gazna_number,
+                    a.account_number,
                     (
                         SELECT COALESCE(SUM(t.result_summa), 0) AS summa
                         FROM rasxod AS r
                         JOIN task AS t ON t.id = r.task_id
-                        WHERE r.rasxod_doc_id = r_d.id AND r.isdeleted = false
+                        WHERE r.rasxod_doc_id = d.id AND r.isdeleted = false
                     ) AS summa
-                FROM rasxod_doc AS r_d
-                JOIN batalon AS b ON b.id = r_d.batalon_id 
-                WHERE r_d.account_number_id = $1
-                    AND r_d.doc_date BETWEEN $2 AND $3
-                    AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false 
+                FROM rasxod_doc AS d
+                JOIN batalon AS b ON b.id = d.batalon_id 
+                LEFT JOIN gazna_numbers g ON g.id = d.batalon_gazna_number_id
+                LEFT JOIN account_number a ON a.id = d.batalon_account_number_id 
+                WHERE d.account_number_id = $1
+                    AND d.doc_date BETWEEN $2 AND $3
+                    AND d.user_id = $4 ${batalon_filter} AND d.isdeleted = false 
                 ${offset_limit}
             )
             SELECT 
                 ARRAY_AGG(ROW_TO_JSON(data)) AS data,
                 (
                     SELECT COALESCE(COUNT(id), 0)::INTEGER  
-                    FROM rasxod_doc AS r_d 
-                    WHERE r_d.account_number_id = $1 
-                    AND r_d.doc_date BETWEEN $2 AND $3 
-                    AND r_d.user_id = $4 ${batalon_filter} AND r_d.isdeleted = false
+                    FROM rasxod_doc AS d 
+                    WHERE d.account_number_id = $1 
+                    AND d.doc_date BETWEEN $2 AND $3 
+                    AND d.user_id = $4 ${batalon_filter} AND d.isdeleted = false
                 ) AS total_count,
                 (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
-                    JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
-                    WHERE r.isdeleted = false AND r_d.doc_date < $2  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
+                    JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
+                    WHERE r.isdeleted = false AND d.doc_date < $2  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_from,
                 (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
-                    JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
-                    WHERE r.isdeleted = false AND r_d.doc_date < $3  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
+                    JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
+                    WHERE r.isdeleted = false AND d.doc_date < $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_to,
                  (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
-                    JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
-                    WHERE r.isdeleted = false AND r_d.doc_date BETWEEN $2 AND $3  AND r_d.isdeleted = false ${batalon_filter} AND r_d.isdeleted = false
+                    JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
+                    WHERE r.isdeleted = false AND d.doc_date BETWEEN $2 AND $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa
             FROM data
         `, params)
         const data = result.rows[0];
-        return { data: data?.data || [], total: data.total_count, summa_from: data.summa_from, summa_to: data.summa_to, summa: data.summa}
+        return { data: data?.data || [], total: data.total_count, summa_from: data.summa_from, summa_to: data.summa_to, summa: data.summa }
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
     }
@@ -182,26 +209,28 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
     try {
         let ignore_filter = ``
         if (!ignore) {
-            ignore_filter = `AND r_d.isdeleted = false`
+            ignore_filter = `AND d.isdeleted = false`
         }
         const data = await pool.query(`
             SELECT 
-                r_d.id,
-                r_d.doc_num,
-                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
-                r_d.opisanie,
+                d.id,
+                d.doc_num,
+                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+                d.opisanie,
                 b.id AS batalon_id,
                 b.name AS batalon_name,
                 b.address AS batalon_address,
                 b.str AS batalon_str,
                 b.bank_name AS batalon_bank_name,
                 b.mfo AS batalon_mfo,
+                d.batalon_gazna_number_id,
+                d.batalon_account_number_id,
                 b.account_number AS batalon_account_number,
                 (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
-                    WHERE r.rasxod_doc_id = r_d.id AND r.isdeleted = false
+                    WHERE r.rasxod_doc_id = d.id AND r.isdeleted = false
                 ) AS summa,
                 (
                     SELECT 
@@ -230,9 +259,9 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                         WHERE r.rasxod_doc_id = $3
                     ) AS task
                 ) AS tasks 
-            FROM rasxod_doc AS r_d
-            JOIN batalon AS b ON b.id = r_d.batalon_id
-            WHERE r_d.account_number_id = $1 AND r_d.user_id = $2 AND r_d.id = $3  ${ignore_filter}
+            FROM rasxod_doc AS d
+            JOIN batalon AS b ON b.id = d.batalon_id
+            WHERE d.account_number_id = $1 AND d.user_id = $2 AND d.id = $3  ${ignore_filter}
         `, [account_number_id, user_id, id])
         if (!data.rows[0]) {
             throw new ErrorResponse(lang.t('docNotFound'), 404)
@@ -260,10 +289,12 @@ const updateRasxodService = async (data) => {
             doc_num = $1, 
             doc_date = $2, 
             batalon_id = $3, 
-            opisanie = $4
-            WHERE id = $5
+            opisanie = $4,
+            batalon_account_number_id = $5,
+            batalon_gazna_number_id = $6
+            WHERE id = $7
             RETURNING * 
-        `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.id])
+        `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.batalon_account_number_id, data.batalon_gazna_number_id, data.id])
         const rasxod = rasxod_doc.rows[0]
         await client.query(`DELETE FROM rasxod WHERE rasxod_doc_id = $1`, [data.id])
         const queryArray = []

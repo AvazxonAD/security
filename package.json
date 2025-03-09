@@ -36,11 +36,13 @@
     "zxcvbn": "^4.4.2"
   },
   "_moduleAliases": {
-    "@contract": "./src/domain/user/contract",
+    "@contract": "./src/contract",
+    "@helper": "./src/helper",
+    "@rasxod_organ": "./src/rasxod.organ",
     "@db": "./src/db",
-    "@account_number": "./src/domain/user/storage/account.number",
-    "@batalon": "./src/domain/user/batalon",
-    "@bxm": "./src/domain/user/storage/bxm",
-    "@organization": "./src/domain/user/organization"
+    "@account_number": "./src/spravochnik/account.number",
+    "@batalon": "./src/batalon",
+    "@bxm": "./src/spravochnik/bxm",
+    "@organization": "./src/organization"
   }
 }

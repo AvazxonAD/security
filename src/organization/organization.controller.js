@@ -19,12 +19,14 @@ const xlsx = require('xlsx')
 
 const organizationCreate = async (req, res) => {
     try {
-        const user_id = req.user.id
+        const user_id = req.user.id;
         const data = validationResponse(organizationValidation, req.body)
-        if(data.str){
+        if (data.str) {
             await getByStrOrganizationService(data.str, user_id, req.i18n)
         }
+
         const result = await organizationCreateService({ ...data, user_id })
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -66,12 +68,35 @@ const organizationUpdate = async (req, res) => {
     try {
         const user_id = req.user.id
         const id = req.params.id
+        const { gazna_numbers, account_numbers } = req.body;
+
         const data = validationResponse(organizationValidation, req.body)
-        const oldData = await getByIdorganizationService(user_id, id, null, req.i18n)
-        if (oldData.str !== data.str) {
+        const old_data = await getByIdorganizationService(user_id, id, null, req.i18n)
+
+
+        if (old_data.str !== data.str) {
             await getByStrOrganizationService(data.str, user_id, req.i18n)
         }
-        const result = await organizationUpdateService({ ...data, id })
+
+        for (let gazna of gazna_numbers) {
+            if (gazna.id) {
+                const check = old_data.gazna_numbers.find(item => item.id === gazna.id);
+                if (!check) {
+                    return res.error(req.i18n.t('gazna_not_found'), 404);
+                }
+            }
+        }
+
+        for (let acccount_number of account_numbers) {
+            if (acccount_number.id) {
+                const check = old_data.account_numbers.find(item => item.id === acccount_number.id);
+                if (!check) {
+                    return res.error(req.i18n.t('account_number_not_found'), 404);
+                }
+            }
+        }
+
+        const result = await organizationUpdateService({ ...data, id, old_data })
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

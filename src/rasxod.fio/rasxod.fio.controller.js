@@ -44,21 +44,43 @@ const createRasxod = async (req, res) => {
         const from = req.query.from
         const to = req.query.to
         const account_number_id = req.query.account_number_id
+        const { batalon_account_number_id, batalon_gazna_number_id } = req.body;
+
         const { error, value: data } = rasxodFioValidation.validate({ ...req.body, from, to });
+
         if (error) {
             return res.error(req.i18n.t('validationError'), 400);
         }
 
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        await getByIdBatalonService(user_id, data.batalon_id, false, true, req.i18n)
+
+        const batalon = await getByIdBatalonService(user_id, data.batalon_id, false, true, req.i18n)
+
+        if (batalon_account_number_id) {
+            const check = batalon.account_numbers.find(item => item.id === batalon_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (batalon_gazna_number_id) {
+            const check = batalon.gazna_numbers.find(item => item.id === batalon_gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
+
         data.deductions = await Promise.all(data.deductions.map(async item => {
             const deduction = await getByIddeductionService(user_id, item.deduction_id, null, req.i18n)
             return deduction;
         }))
+
         for (let task of data.worker_tasks) {
             await getByIdWorkerTaskService(data.batalon_id, task.worker_task_id, user_id, req.i18n)
         }
+
         const result = await createRasxodDocService({ ...data, user_id, account_number_id, from, to })
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

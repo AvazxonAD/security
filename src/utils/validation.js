@@ -10,6 +10,7 @@ const prixodRasxodQueryValidation = Joi.object({
   limit: Joi.number().min(1).default(10),
   account_number_id: Joi.number().required().min(1),
   to: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required(),
+  excel: Joi.string().trim(),
   from: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).required()
 })
 
@@ -42,7 +43,9 @@ const rasxodValidation = Joi.object({
     Joi.object({
       task_id: Joi.number().integer().min(1).required()
     })
-  ).required().min(1)
+  ).required().min(1),
+  batalon_gazna_number_id: Joi.number().integer().min(1).allow(null),
+  batalon_account_number_id: Joi.number().integer().min(1).allow(null)
 })
 
 const rasxodFioValidation = Joi.object({
@@ -88,9 +91,18 @@ const batalionValidation = Joi.object({
   str: Joi.string().trim().required(),
   bank_name: Joi.string().trim().required(),
   mfo: Joi.string().trim().required(),
-  account_number: Joi.string().trim().required(),
-  treasury1: Joi.string().trim(),
-  treasury2: Joi.string().trim()
+  gazna_numbers: Joi.array().items(
+    Joi.object({
+      id: Joi.number().min(1).integer(),
+      gazna_number: Joi.string().trim().required()
+    })
+  ).empty(),
+  account_numbers: Joi.array().items(
+    Joi.object({
+      id: Joi.number().min(1).integer(),
+      account_number: Joi.string().trim().required()
+    })
+  )
 }).options({ stripUnknown: true });
 
 const userValidation = Joi.object({
@@ -135,17 +147,28 @@ const workerValidation = Joi.object({
   batalon_id: Joi.number().required(),
   account_number: Joi.string().trim().required(),
   xisob_raqam: Joi.string().trim().required()
-})
+});
+
 const organizationValidation = Joi.object({
   name: Joi.string().trim().required(),
   address: Joi.string().trim().allow(null, ''),
   str: Joi.string().trim().allow('', null),
   bank_name: Joi.string().trim().allow('', null),
   mfo: Joi.string().trim().pattern(/^\d+$/).allow('', null),
-  account_number: Joi.string().trim().pattern(/^\d+$/).allow('', null),
-  treasury1: Joi.string().trim().pattern(/^\d+$/).allow('', null),
-  treasury2: Joi.string().trim().pattern(/^\d+$/).allow(''),
+  gazna_numbers: Joi.array().items(
+    Joi.object({
+      id: Joi.number().min(1).integer(),
+      gazna_number: Joi.string().trim().required()
+    })
+  ).empty(),
+  account_numbers: Joi.array().items(
+    Joi.object({
+      id: Joi.number().min(1).integer(),
+      account_number: Joi.string().trim().required()
+    })
+  ).empty()
 });
+
 const allQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
   limit: Joi.number().min(1).default(10),
@@ -168,7 +191,10 @@ const contractValidation = Joi.object({
   end_time: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).allow('', null),
   discount: Joi.number().min(0).default(0).max(100).allow(null, 0),
   organization_id: Joi.number().integer().required(),
+  gazna_number_id: Joi.number().integer().min(1).allow(null),
+  organ_account_number_id: Joi.number().integer().min(1).allow(null),
   dist: Joi.boolean().default(false),
+  date: Joi.boolean().default(false),
   tasks: Joi.array().items(
     Joi.object({
       batalon_id: Joi.number().integer().min(1).required(),
@@ -176,6 +202,7 @@ const contractValidation = Joi.object({
       worker_number: Joi.number().integer().min(1).required(),
       task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).allow('', null),
       address: Joi.string().trim().required(),
+      comment: Joi.string().trim(),
       bxm_id: Joi.number().integer().min(1).required()
     })
   ).required().min(1)
@@ -193,17 +220,22 @@ const contractUpdateValidation = Joi.object({
   discount: Joi.number().min(0).default(0).max(100).allow(null, 0),
   organization_id: Joi.number().integer().required(),
   dist: Joi.boolean().default(false),
+  date: Joi.boolean().default(false),
+  gazna_number_id: Joi.number().integer().min(1).allow(null),
+  organ_account_number_id: Joi.number().integer().min(1).allow(null),
   tasks: Joi.array().items(
     Joi.object({
+      id: Joi.number().integer().min(1),
       batalon_id: Joi.number().integer().min(1).required(),
       task_time: Joi.number().min(1).required(),
       worker_number: Joi.number().integer().min(1).required(),
       task_date: Joi.string().trim().pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/).allow('', null),
       address: Joi.string().trim().required(),
+      comment: Joi.string().trim(),
       bxm_id: Joi.number().integer().min(1).required()
     })
   ).required().min(1)
-});
+}).options({ stripUnknown: true });
 
 const prixodExcelValidation = Joi.object({
   data: Joi.array().items(
@@ -225,7 +257,9 @@ const prixodValidation = Joi.object({
   opisanie: Joi.string().allow(null, '').optional(),
   doc_num: Joi.string().required().pattern(/^\d+(\.\d+)?$/),
   doc_date: Joi.date().required(),
-  summa: Joi.number().precision(2).min(1).required()
+  summa: Joi.number().precision(2).min(1).required(),
+  organ_gazna_number_id: Joi.number().integer().min(1).allow(null),
+  organ_account_number_id: Joi.number().integer().min(1).allow(null)
 });
 
 const workerTaskValidation = Joi.object({

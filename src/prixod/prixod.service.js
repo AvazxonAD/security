@@ -12,8 +12,10 @@ const prixodCreateService = async (data) => {
             doc_num,
             doc_date,
             summa,
-            account_number_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *  
+            account_number_id,
+            organ_account_number_id, 
+            organ_gazna_number_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *  
             `, [
             data.user_id,
             data.organization_id,
@@ -22,8 +24,11 @@ const prixodCreateService = async (data) => {
             data.doc_num,
             data.doc_date,
             data.summa,
-            data.account_number_id
+            data.account_number_id,
+            data.organ_account_number_id,
+            data.organ_gazna_number_id
         ])
+
         return prixod.rows[0]
     } catch (error) {
         throw new ErrorResponse(error, error.statusCode)
@@ -35,14 +40,14 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
     try {
         const params = [user_id, from, to, account_number_id]
         let offset_limit = ``
-        if(offset !== null && limit !== null){
+        if (offset !== null && limit !== null) {
             offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
             params.push(offset, limit)
         }
         const prixods = await pool.query(`
             WITH data AS (
                 SELECT 
-                    p.id, 
+                    d.id, 
                     c.id AS contract_id,
                     c.doc_num AS contract_doc_num,
                     TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS contract_doc_date, 
@@ -53,18 +58,19 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
                     o.str AS organization_str,
                     o.bank_name AS organization_bank_name,
                     o.mfo AS organization_mfo,
-                    o.account_number AS organization_account_number,
-                    o.treasury1 AS organization_treasury1,
-                    o.treasury2 AS organization_treasury2,
-                    p.summa::FLOAT AS prixod_summa, 
-                    p.doc_num AS prixod_doc_num,
-                    p.opisanie,
-                    TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date
-                FROM prixod AS p
-                JOIN contract AS c ON c.id = p.contract_id 
+                    g.gazna_number,
+                    a.account_number,
+                    d.summa::FLOAT AS prixod_summa, 
+                    d.doc_num AS prixod_doc_num,
+                    d.opisanie,
+                    TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS prixod_date
+                FROM prixod AS d
+                LEFT JOIN gazna_numbers g ON g.id = d.organ_gazna_number_id
+                LEFT JOIN account_number a ON a.id = d.organ_account_number_id 
+                JOIN contract AS c ON c.id = d.contract_id 
                 JOIN organization AS o ON c.organization_id = o.id 
-                WHERE p.isdeleted = false AND p.user_id = $1 AND p.doc_date BETWEEN $2 AND $3 AND p.account_number_id = $4 
-                ORDER BY p.id DESC
+                WHERE d.isdeleted = false AND d.user_id = $1 AND d.doc_date BETWEEN $2 AND $3 AND d.account_number_id = $4 
+                ORDER BY d.id DESC
                 ${offset_limit}
             )
             SELECT 
@@ -94,11 +100,11 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
     try {
         let filter = ``
         if (!isdeleted) {
-            filter = `AND p.isdeleted = false`
+            filter = `AND d.isdeleted = false`
         }
         const data = await pool.query(`
             SELECT 
-                p.id, 
+                d.id, 
                 c.id AS contract_id,
                 c.doc_num AS contract_doc_num,
                 TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS contract_doc_date, 
@@ -109,13 +115,14 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
                 o.str AS organization_str,
                 o.bank_name AS organization_bank_name,
                 o.mfo AS organization_mfo,
-                o.account_number AS organization_account_number,
-                o.treasury1 AS organization_treasury1,
-                o.treasury2 AS organization_treasury2,
-                p.summa::FLOAT AS prixod_summa, 
-                p.opisanie,
-                p.doc_num AS prixod_doc_num,
-                TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS prixod_date,
+                g.gazna_number,
+                a.account_number,
+                d.organ_gazna_number_id,
+                d.organ_account_number_id,
+                d.summa::FLOAT AS prixod_summa, 
+                d.opisanie,
+                d.doc_num AS prixod_doc_num,
+                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS prixod_date,
                 ( 
                     SELECT 
                         (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
@@ -123,12 +130,14 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
                     WHERE isdeleted = false 
                         AND contract_id = c.id
                 ) AS remaining_balance
-            FROM prixod AS p 
-            JOIN contract AS c ON c.id = p.contract_id 
+            FROM prixod AS d 
+            LEFT JOIN gazna_numbers g ON g.id = d.organ_gazna_number_id
+            LEFT JOIN account_number a ON a.id = d.organ_account_number_id 
+            JOIN contract AS c ON c.id = d.contract_id 
             JOIN organization AS o ON c.organization_id = o.id 
-            WHERE p.isdeleted = false AND p.user_id = $1 AND p.account_number_id = $3 AND p.id = $2 ${filter}
+            WHERE d.isdeleted = false AND d.user_id = $1 AND d.account_number_id = $3 AND d.id = $2 ${filter}
         `, [user_id, id, account_number_id])
-        if(!data.rows[0]){
+        if (!data.rows[0]) {
             throw new ErrorResponse(lang.t('docNotFound'), 404)
         }
         return data.rows[0]

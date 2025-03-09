@@ -28,13 +28,34 @@ const createRasxod = async (req, res) => {
     try {
         const user_id = req.user.id
         const account_number_id = req.query.account_number_id
-        const data = validationResponse(rasxodValidation, req.body)
+        const { batalon_account_number_id, batalon_gazna_number_id } = req.body;
+
+        const data = validationResponse(rasxodValidation, req.body); data
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        await getByIdBatalonService(user_id, data.batalon_id, true, null, req.i18n)
+
+        const batalon = await getByIdBatalonService(user_id, data.batalon_id, true, null, req.i18n)
+
+        if (batalon_account_number_id) {
+            const check = batalon.account_numbers.find(item => item.id === batalon_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (batalon_gazna_number_id) {
+            const check = batalon.gazna_numbers.find(item => item.id === batalon_gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
+
         for (let task of data.tasks) {
             await getByIdTaskService(data.batalon_id, task.task_id, user_id, req.i18n)
         }
+
         const result = await createRasxodDocService({ ...data, user_id, account_number_id })
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)
@@ -96,20 +117,42 @@ const deeleteRasxod = async (req, res) => {
 
 const updateRasxod = async (req, res) => {
     try {
-        const user_id = req.user.id
+        const user_id = req.user.id;
         const account_number_id = req.query.account_number_id
         const id = req.params.id
+        const { batalon_account_number_id, batalon_gazna_number_id } = req.body;
+
         const oldData = await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n)
+
         const data = validationResponse(rasxodValidation, req.body)
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        await getByIdBatalonService(user_id, data.batalon_id, true, null, req.i18n)
+
+        const batalon = await getByIdBatalonService(user_id, data.batalon_id, true, null, req.i18n)
+
+        if (batalon_account_number_id) {
+            const check = batalon.account_numbers.find(item => item.id === batalon_account_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('accountNumberNotFound'), 404);
+            }
+        }
+
+        if (batalon_gazna_number_id) {
+            const check = batalon.gazna_numbers.find(item => item.id === batalon_gazna_number_id);
+            if (!check) {
+                return res.error(req.i18n.t('gaznaNumberNotFound'), 404);
+            }
+        }
+
         for (let task of data.tasks) {
             const test = oldData.tasks.find(item => item.task_id === task.task_id)
             if (!test || oldData.batalon_id !== data.batalon_id) {
                 await getByIdTaskService(data.batalon_id, task.task_id, user_id, req.i18n)
             }
         }
+
         const result = await updateRasxodService({ ...data, id })
+
         resFunc(res, 200, result)
     } catch (error) {
         errorCatch(error, res)

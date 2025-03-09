@@ -6,7 +6,7 @@ const protect = require("../middleware/auth");
 const {
     prixodRasxod,
     monitoring
-} = require('./monitoring.controller')
+} = require('./controller')
 
 router.get('/', protect, monitoring)
 router.get('/prixod/rasxod', protect, prixodRasxod)

@@ -1,3 +1,5 @@
+const { MonitoringService } = require('./service');
+
 const {
     prixodRasxodService,
     monitoringService
@@ -13,23 +15,30 @@ const { getByIdBatalonService } = require('../batalon/db')
 const prixodRasxod = async (req, res) => {
     try {
         const user_id = req.user.id;
-        const { account_number_id, from, to, page, limit } = validationResponse(prixodRasxodQueryValidation, req.query)
+        const { account_number_id, from, to, page, limit, excel } = validationResponse(prixodRasxodQueryValidation, req.query)
+
         const offset = (page - 1) * limit;
+
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-        const { rows, total, summa_from, summa_to, prixod, rasxod } = await prixodRasxodService(user_id, account_number_id, from, to, offset, limit)
-        const pageCount = Math.ceil(total / limit);
+
+        const { docs, from_summa, to_summa, internal_summa } = await MonitoringService.get({ user_id, account_number_id, from, to, offset, limit })
+
+        const pageCount = Math.ceil(docs.total / limit);
+
         const meta = {
             pageCount: pageCount,
-            count: total,
+            count: docs.total,
             currentPage: page,
             nextPage: page >= pageCount ? null : page + 1,
             backPage: page === 1 ? null : page - 1,
-            from_balance: returnStringSumma(summa_from) || 0,
-            to_balance: returnStringSumma(summa_to) || 0,
-            prixod: returnStringSumma(prixod) || 0,
-            rasxod: returnStringSumma(rasxod) || 0
+            from_balance: returnStringSumma(from_summa.summa) || 0,
+            to_balance: returnStringSumma(to_summa.summa) || 0,
+            prixod: returnStringSumma(internal_summa.prixod) || 0,
+            rasxod: returnStringSumma(internal_summa.rasxod) || 0
         }
-        resFunc(res, 200, rows, meta)
+
+        resFunc(res, 200, docs.data, meta)
+
     } catch (error) {
         errorCatch(error, res)
     }
