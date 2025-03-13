@@ -284,7 +284,7 @@ const contractValidation = Joi.object({
           .pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)
           .allow("", null),
         address: Joi.string().trim().required(),
-        comment: Joi.string().trim(),
+        comment: Joi.string().trim().allow(null, ""),
         bxm_id: Joi.number().integer().min(1).required(),
       })
     )
@@ -338,7 +338,7 @@ const contractUpdateValidation = Joi.object({
           .pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)
           .allow("", null),
         address: Joi.string().trim().required(),
-        comment: Joi.string().trim(),
+        comment: Joi.string().trim().allow(null, ""),
         bxm_id: Joi.number().integer().min(1).required(),
       })
     )
