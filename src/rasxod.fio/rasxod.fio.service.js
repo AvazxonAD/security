@@ -1,9 +1,15 @@
-const ErrorResponse = require('../utils/errorResponse')
-const pool = require('../config/db')
+const ErrorResponse = require("../utils/errorResponse");
+const pool = require("../config/db");
 
-const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id, lang) => {
-    try {
-        const result = await pool.query(`--sql
+const getByIdWorkerTaskService = async (
+  batalon_id,
+  worker_task_id,
+  user_id,
+  lang
+) => {
+  try {
+    const result = await pool.query(
+      `--sql
             SELECT w_t.id 
             FROM worker_task AS w_t
             JOIN task AS t ON t.id = w_t.task_id
@@ -11,20 +17,22 @@ const getByIdWorkerTaskService = async (batalon_id, worker_task_id, user_id, lan
             WHERE t.batalon_id = $1 AND w_t.id = $2 AND t.user_id = $3 AND w_t.isdeleted = false AND t.isdeleted = false
                 AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                 AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
-        `, [batalon_id, worker_task_id, user_id])
-        if (!result.rows[0]) {
-            console.log(worker_task_id)
-            throw new ErrorResponse(lang.t('docNotFound'), 404)
-        }
-        return result.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        `,
+      [batalon_id, worker_task_id, user_id]
+    );
+    if (!result.rows[0]) {
+      throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
-}
+    return result.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const paymentRequestService = async (account_number, batalon_id, from, to) => {
-    try {
-        const result = await pool.query(`
+  try {
+    const result = await pool.query(
+      `
             SELECT 
                 w_t.id AS worker_task_id,
                 c.doc_num AS contract_doc_num,
@@ -61,18 +69,21 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                             AND rf.worker_task_id = w_t.id
                     )
                 AND w_t.isdeleted = false
-        `, [account_number, from, to, batalon_id])
-        return result.rows
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      [account_number, from, to, batalon_id]
+    );
+    return result.rows;
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const createRasxodDocService = async (data) => {
-    const client = await pool.connect()
-    try {
-        await client.query(`BEGIN`)
-        const rasxod_fio_doc = await client.query(`
+  const client = await pool.connect();
+  try {
+    await client.query(`BEGIN`);
+    const rasxod_fio_doc = await client.query(
+      `
             INSERT INTO rasxod_fio_doc(
                 doc_num, 
                 doc_date, 
@@ -87,66 +98,88 @@ const createRasxodDocService = async (data) => {
             ) 
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
             RETURNING * 
-        `, [
-            data.doc_num,
-            data.doc_date,
-            data.batalon_id,
-            data.user_id,
-            data.opisanie,
-            data.account_number_id,
-            data.from,
-            data.to,
-            data.batalon_account_number_id,
-            data.batalon_gazna_number_id
-        ])
+        `,
+      [
+        data.doc_num,
+        data.doc_date,
+        data.batalon_id,
+        data.user_id,
+        data.opisanie,
+        data.account_number_id,
+        data.from,
+        data.to,
+        data.batalon_account_number_id,
+        data.batalon_gazna_number_id,
+      ]
+    );
 
-        const rasxod_fio = rasxod_fio_doc.rows[0]
+    const rasxod_fio = rasxod_fio_doc.rows[0];
 
-        const queryArray = []
+    const queryArray = [];
 
-        const deductionQueryArray = []
+    const deductionQueryArray = [];
 
-        for (let worker_task of data.worker_tasks) {
-            let worker_task_summa = await client.query(`SELECT summa FROM worker_task WHERE id = $1`, [worker_task.worker_task_id]);
-            worker_task_summa = worker_task_summa.rows[0].summa;
-            let summa = worker_task_summa;
-            for (let element of data.deductions) {
-                let percent = element.percent / 100;
-                summa = summa - (summa * percent);
-            }
-            summa = Math.round(summa * 100) / 100;
-            queryArray.push(client.query(`
+    for (let worker_task of data.worker_tasks) {
+      let worker_task_summa = await client.query(
+        `SELECT summa FROM worker_task WHERE id = $1`,
+        [worker_task.worker_task_id]
+      );
+      worker_task_summa = worker_task_summa.rows[0].summa;
+      let summa = worker_task_summa;
+      for (let element of data.deductions) {
+        let percent = element.percent / 100;
+        summa = summa - summa * percent;
+      }
+      summa = Math.round(summa * 100) / 100;
+      queryArray.push(
+        client.query(
+          `
                 INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id, summa)
                 VALUES($1, $2, $3) RETURNING *`,
-                [worker_task.worker_task_id, rasxod_fio.id, summa]
-            ));
-        }
-        for (let deduction of data.deductions) {
-            deductionQueryArray.push(client.query(`INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`, [deduction.id, rasxod_fio.id]))
-        }
-        const rasxods = await Promise.all(queryArray)
-        const deductions = await Promise.all(deductionQueryArray)
-        rasxod_fio.tasks = rasxods.map(item => item.rows[0])
-        rasxod_fio.deductions = deductions.map(item => item.rows[0])
-        await client.query(`COMMIT`)
-        return rasxod_fio;
-    } catch (error) {
-        await client.query(`ROLLBACK`)
-        throw new ErrorResponse(error, error.statusCode)
-    } finally {
-        client.release()
+          [worker_task.worker_task_id, rasxod_fio.id, summa]
+        )
+      );
     }
-}
+    for (let deduction of data.deductions) {
+      deductionQueryArray.push(
+        client.query(
+          `INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`,
+          [deduction.id, rasxod_fio.id]
+        )
+      );
+    }
+    const rasxods = await Promise.all(queryArray);
+    const deductions = await Promise.all(deductionQueryArray);
+    rasxod_fio.tasks = rasxods.map((item) => item.rows[0]);
+    rasxod_fio.deductions = deductions.map((item) => item.rows[0]);
+    await client.query(`COMMIT`);
+    return rasxod_fio;
+  } catch (error) {
+    await client.query(`ROLLBACK`);
+    throw new ErrorResponse(error, error.statusCode);
+  } finally {
+    client.release();
+  }
+};
 
-const getRasxodService = async (user_id, account_number_id, from, to, offset, limit, batalon_id) => {
-    try {
-        const params = [account_number_id, from, to, user_id, offset, limit]
-        let batalon_filter = ``
-        if (batalon_id) {
-            batalon_filter = ` AND d.batalon_id = $${params.length + 1}`
-            params.push(batalon_id)
-        }
-        const result = await pool.query(`
+const getRasxodService = async (
+  user_id,
+  account_number_id,
+  from,
+  to,
+  offset,
+  limit,
+  batalon_id
+) => {
+  try {
+    const params = [account_number_id, from, to, user_id, offset, limit];
+    let batalon_filter = ``;
+    if (batalon_id) {
+      batalon_filter = ` AND d.batalon_id = $${params.length + 1}`;
+      params.push(batalon_id);
+    }
+    const result = await pool.query(
+      `
             WITH data AS (
                 SELECT 
                     d.id,
@@ -201,21 +234,35 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     WHERE r.isdeleted = false AND d.doc_date < $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_to
             FROM data
-        `, params)
-        return { data: result.rows[0]?.data || [], total: result.rows[0].total_count, summa_from: result.rows[0].summa_from, summa_to: result.rows[0].summa_to }
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        `,
+      params
+    );
+    return {
+      data: result.rows[0]?.data || [],
+      total: result.rows[0].total_count,
+      summa_from: result.rows[0].summa_from,
+      summa_to: result.rows[0].summa_to,
+    };
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
+
+const getByIdRasxodService = async (
+  user_id,
+  account_number_id,
+  id,
+  ignore = false,
+  lang
+) => {
+  try {
+    let ignore_filter = ``;
+    if (!ignore) {
+      ignore_filter = `AND d.isdeleted = false`;
     }
-}
 
-const getByIdRasxodService = async (user_id, account_number_id, id, ignore = false, lang) => {
-    try {
-        let ignore_filter = ``
-        if (!ignore) {
-            ignore_filter = `AND d.isdeleted = false`
-        }
-
-        const data = await pool.query(`
+    const data = await pool.query(
+      `
             SELECT 
                 d.id,
                 d.doc_num,
@@ -239,10 +286,10 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                     WHERE r.rasxod_fio_doc_id = d.id 
                 ) AS summa,
                 COALESCE((   SELECT 
-                        ARRAY_AGG(JSON_BUILD_OBJECT('deduction_id', d.id, 'deduction_name', d.name, 'percent', d.percent) ORDER BY r_d_d.id)
-                    FROM deduction AS d
-                    JOIN rasxod_fio_deduction AS r_d_d ON r_d_d.deduction_id = d.id
-                    WHERE r_d_d.rasxod_fio_doc_id = d.id
+                        ARRAY_AGG(JSON_BUILD_OBJECT('deduction_id', deduction.id, 'deduction_name', deduction.name, 'percent', deduction.percent))
+                    FROM rasxod_fio_deduction ch 
+                    JOIN deduction ON deduction.id = ch.deduction_id 
+                    WHERE ch.rasxod_fio_doc_id = d.id
                 ), ARRAY[]::JSON[]) AS deductions,
                 (
                     SELECT 
@@ -282,34 +329,45 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
                 AND d.user_id = $2 
                 AND d.id = $3  
                 ${ignore_filter}
-        `, [account_number_id, user_id, id]);
+        `,
+      [account_number_id, user_id, id]
+    );
 
-
-        if (!data.rows[0]) {
-            throw new ErrorResponse(lang.t('docNotFound'), 404)
-        }
-
-        return data.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+    if (!data.rows[0]) {
+      throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
-}
+
+    return data.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const deeleteRasxodService = async (id) => {
-    try {
-        await pool.query(`UPDATE rasxod_fio SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`, [id])
-        await pool.query(`UPDATE rasxod_fio_deduction SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`, [id])
-        await pool.query(`UPDATE rasxod_fio_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+  try {
+    await pool.query(
+      `UPDATE rasxod_fio SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`,
+      [id]
+    );
+    await pool.query(
+      `UPDATE rasxod_fio_deduction SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`,
+      [id]
+    );
+    await pool.query(
+      `UPDATE rasxod_fio_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`,
+      [id]
+    );
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const updateRasxodService = async (data) => {
-    const client = await pool.connect()
-    try {
-        await client.query(`BEGIN`)
-        const rasxod_fio_doc = await client.query(`UPDATE rasxod_fio_doc SET 
+  const client = await pool.connect();
+  try {
+    await client.query(`BEGIN`);
+    const rasxod_fio_doc = await client.query(
+      `UPDATE rasxod_fio_doc SET 
             doc_num = $1, 
             doc_date = $2, 
             batalon_id = $3, 
@@ -320,65 +378,89 @@ const updateRasxodService = async (data) => {
             batalon_gazna_number_id = $8
             WHERE id = $9
             RETURNING * 
-        `, [
-            data.doc_num,
-            data.doc_date,
-            data.batalon_id,
-            data.opisanie,
-            data.from,
-            data.to,
-            data.batalon_account_number_id,
-            data.batalon_gazna_number_id,
-            data.id
-        ])
+        `,
+      [
+        data.doc_num,
+        data.doc_date,
+        data.batalon_id,
+        data.opisanie,
+        data.from,
+        data.to,
+        data.batalon_account_number_id,
+        data.batalon_gazna_number_id,
+        data.id,
+      ]
+    );
 
-        const rasxod_fio = rasxod_fio_doc.rows[0]
+    const rasxod_fio = rasxod_fio_doc.rows[0];
 
-        await client.query(`DELETE FROM rasxod_fio WHERE rasxod_fio_doc_id = $1`, [data.id])
+    await client.query(`DELETE FROM rasxod_fio WHERE rasxod_fio_doc_id = $1`, [
+      data.id,
+    ]);
 
-        await client.query(`DELETE FROM rasxod_fio_deduction WHERE rasxod_fio_doc_id = $1`, [data.id])
+    await client.query(
+      `DELETE FROM rasxod_fio_deduction WHERE rasxod_fio_doc_id = $1`,
+      [data.id]
+    );
 
-        const queryArray = []
+    const queryArray = [];
 
-        const deductionQueryArray = []
-        for (let worker_task of data.worker_tasks) {
-            let worker_task_summa = await client.query(`SELECT summa FROM worker_task WHERE id = $1`, [worker_task.worker_task_id]);
-            worker_task_summa = worker_task_summa.rows[0].summa;
-            let summa = worker_task_summa;
-            for (let element of data.deductions) {
-                let percent = element.percent / 100;
-                summa = summa - (summa * percent);
-            }
-            summa = Math.round(summa * 100) / 100;
-            queryArray.push(client.query(`
+    const deductionQueryArray = [];
+    for (let worker_task of data.worker_tasks) {
+      let worker_task_summa = await client.query(
+        `SELECT summa FROM worker_task WHERE id = $1`,
+        [worker_task.worker_task_id]
+      );
+      worker_task_summa = worker_task_summa.rows[0].summa;
+      let summa = worker_task_summa;
+
+      for (let element of data.deductions) {
+        let percent = element.percent / 100;
+        summa = summa - summa * percent;
+      }
+
+      summa = Math.round(summa * 100) / 100;
+      queryArray.push(
+        client.query(
+          `
                 INSERT INTO rasxod_fio(worker_task_id, rasxod_fio_doc_id, summa)
                 VALUES($1, $2, $3) RETURNING *`,
-                [worker_task.worker_task_id, rasxod_fio.id, summa]
-            ));
-        }
-        for (let deduction of data.deductions) {
-            deductionQueryArray.push(client.query(`INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`, [deduction.id, rasxod_fio.id]))
-        }
-        const rasxods = await Promise.all(queryArray)
-        const deductions = await Promise.all(deductionQueryArray)
-        rasxod_fio.tasks = rasxods.map(item => item.rows[0])
-        rasxod_fio.deductions = deductions.map(item => item.rows[0])
-        await client.query(`COMMIT`)
-        return rasxod_fio;
-    } catch (error) {
-        await client.query(`ROLLBACK`)
-        throw new ErrorResponse(error, error.statusCode)
-    } finally {
-        client.release()
+          [worker_task.worker_task_id, rasxod_fio.id, summa]
+        )
+      );
     }
-}
+    for (let deduction of data.deductions) {
+      deductionQueryArray.push(
+        client.query(
+          `INSERT INTO rasxod_fio_deduction(deduction_id, rasxod_fio_doc_id) VALUES($1, $2) RETURNING *`,
+          [deduction.id, rasxod_fio.id]
+        )
+      );
+    }
+
+    console.log(rasxod_fio.id);
+
+    const rasxods = await Promise.all(queryArray);
+    const deductions = await Promise.all(deductionQueryArray);
+    rasxod_fio.tasks = rasxods.map((item) => item.rows[0]);
+    rasxod_fio.deductions = deductions.map((item) => item.rows[0]);
+
+    await client.query(`COMMIT`);
+    return rasxod_fio;
+  } catch (error) {
+    await client.query(`ROLLBACK`);
+    throw new ErrorResponse(error, error.statusCode);
+  } finally {
+    client.release();
+  }
+};
 
 module.exports = {
-    paymentRequestService,
-    createRasxodDocService,
-    getByIdWorkerTaskService,
-    getRasxodService,
-    getByIdRasxodService,
-    deeleteRasxodService,
-    updateRasxodService
-}
+  paymentRequestService,
+  createRasxodDocService,
+  getByIdWorkerTaskService,
+  getRasxodService,
+  getByIdRasxodService,
+  deeleteRasxodService,
+  updateRasxodService,
+};

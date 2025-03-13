@@ -1,3 +1,6 @@
+const { db } = require("@db/index");
+const xlsx = require("xlsx");
+
 const {
   prixodValidation,
   prixodQueryValidation,
@@ -23,7 +26,76 @@ const {
 } = require("./service");
 const { OrganizationService } = require("@organization/service");
 
-const prixodCreate = async (req, res) => {
+exports.Controler = class {
+  static async import(req, res) {
+    const workbook = xlsx.readFile(req.file.path);
+
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const excel_data = xlsx.utils.sheet_to_json(sheet).map((row, index) => {
+      const newRow = {};
+      for (const key in row) {
+        if (Object.prototype.hasOwnProperty.call(row, key)) {
+          newRow[key] = row[key];
+        }
+      }
+
+      return newRow;
+    });
+
+    for (let contract of excel_data) {
+      const db_data = await db.query(
+        `
+        SELECT * 
+        FROM contract 
+        WHERE doc_num = $1
+      `,
+        [String(contract.doc_num)]
+      );
+
+      contract.contract = db_data[0];
+
+      if (!contract.contract) {
+        console.log(contract);
+      }
+
+      if (contract.contract && contract.remaining_summa === 0) {
+        await db.query(
+          `
+            INSERT INTO prixod (
+            user_id,
+            organization_id,
+            contract_id,
+            opisanie,
+            doc_num,
+            doc_date,
+            summa,
+            account_number_id,
+            organ_account_number_id, 
+            organ_gazna_number_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *  
+            `,
+          [
+            contract.contract.user_id,
+            contract.contract.organization_id,
+            contract.contract.id,
+            "",
+            contract.contract.doc_num,
+            contract.contract.doc_date,
+            contract.contract.result_summa,
+            contract.contract.account_number_id,
+            null,
+            null,
+          ]
+        );
+      }
+    }
+
+    return res.send(excel_data);
+  }
+};
+
+exports.prixodCreate = async (req, res) => {
   try {
     const user_id = req.user.id;
     const account_number_id = req.query.account_number_id;
@@ -90,7 +162,7 @@ const prixodCreate = async (req, res) => {
   }
 };
 
-const getByIdPrixod = async (req, res) => {
+exports.getByIdPrixod = async (req, res) => {
   try {
     const user_id = req.user.id;
     const id = req.params.id;
@@ -116,7 +188,7 @@ const getByIdPrixod = async (req, res) => {
   }
 };
 
-const getPrixod = async (req, res) => {
+exports.getPrixod = async (req, res) => {
   try {
     const {
       page,
@@ -164,7 +236,7 @@ const getPrixod = async (req, res) => {
   }
 };
 
-const updatePrixod = async (req, res) => {
+exports.updatePrixod = async (req, res) => {
   try {
     const user_id = req.user.id;
     const id = req.params.id;
@@ -243,7 +315,7 @@ const updatePrixod = async (req, res) => {
   }
 };
 
-const deletePrixod = async (req, res) => {
+exports.deletePrixod = async (req, res) => {
   try {
     const user_id = req.user.id;
     const id = req.params.id;
@@ -280,7 +352,7 @@ const deletePrixod = async (req, res) => {
   }
 };
 
-const exportExcelData = async (req, res) => {
+exports.exportExcelData = async (req, res) => {
   try {
     const { search, from, to, account_number_id, organization_id } =
       validationResponse(prixodQueryValidation, req.query);
@@ -466,7 +538,7 @@ const exportExcelData = async (req, res) => {
   }
 };
 
-const forPdfData = async (req, res) => {
+exports.forPdfData = async (req, res) => {
   try {
     const { search, from, to, account_number_id, organization_id } =
       validationResponse(prixodQueryValidation, req.query);
@@ -492,14 +564,4 @@ const forPdfData = async (req, res) => {
   } catch (error) {
     errorCatch(error, res);
   }
-};
-
-module.exports = {
-  prixodCreate,
-  getPrixod,
-  getByIdPrixod,
-  updatePrixod,
-  deletePrixod,
-  exportExcelData,
-  forPdfData,
 };

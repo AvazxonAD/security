@@ -1,11 +1,14 @@
-const ErrorResponse = require('../utils/errorResponse');
+const ErrorResponse = require("../utils/errorResponse");
 
 const validationResponse = (func, data) => {
-    const { error, value } = func.validate(data);
-    if (error) {
-        throw new ErrorResponse('Malumot notog\'ri kiritildi !', 400);
-    }
-    return value;
-}
+  const { error, value } = func.validate(data);
+  if (error) {
+    throw new ErrorResponse(
+      `Malumot notog\'ri kiritildi ! code : ${error.details[0].message}`,
+      400
+    );
+  }
+  return value;
+};
 
 module.exports = { validationResponse };

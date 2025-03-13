@@ -1,8 +1,8 @@
-const { db } = require('../db/index');
+const { db } = require("../db/index");
 
 exports.OrganizationDB = class {
-    static async getById(params, isdeleted) {
-        const query = `
+  static async getById(params, isdeleted) {
+    const query = `
             SELECT 
                 o.id, 
                 o.name, 
@@ -37,11 +37,11 @@ exports.OrganizationDB = class {
             FROM organization o
             WHERE o.user_id = $1 
                 AND o.id = $2
-                ${!isdeleted ? 'AND o.isdeleted = false' : ''}        
+                ${!isdeleted ? "AND o.isdeleted = false" : ""}        
         `;
 
-        const result = await db.query(query, params);
+    const result = await db.query(query, params);
 
-        return result[0];
-    }
-}
+    return result[0];
+  }
+};
