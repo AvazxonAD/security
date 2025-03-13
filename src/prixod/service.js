@@ -1,9 +1,20 @@
-const ErrorResponse = require('../utils/errorResponse')
-const pool = require('../config/db')
+const { PrixodDB } = require("./db");
 
-const prixodCreateService = async (data) => {
-    try {
-        const prixod = await pool.query(`
+exports.PrixodService = class {
+  static async checkDocs(data) {
+    const result = await PrixodDB.checkDocs([data.contract_id]);
+
+    return result;
+  }
+};
+
+const ErrorResponse = require("../utils/errorResponse");
+const pool = require("../config/db");
+
+exports.prixodCreateService = async (data) => {
+  try {
+    const prixod = await pool.query(
+      `
             INSERT INTO prixod (
             user_id,
             organization_id,
@@ -16,35 +27,46 @@ const prixodCreateService = async (data) => {
             organ_account_number_id, 
             organ_gazna_number_id
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *  
-            `, [
-            data.user_id,
-            data.organization_id,
-            data.contract_id,
-            data.opisanie,
-            data.doc_num,
-            data.doc_date,
-            data.summa,
-            data.account_number_id,
-            data.organ_account_number_id,
-            data.organ_gazna_number_id
-        ])
+            `,
+      [
+        data.user_id,
+        data.organization_id,
+        data.contract_id,
+        data.opisanie,
+        data.doc_num,
+        data.doc_date,
+        data.summa,
+        data.account_number_id,
+        data.organ_account_number_id,
+        data.organ_gazna_number_id,
+      ]
+    );
 
-        return prixod.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+    return prixod.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
+
+exports.getPrixodService = async (
+  user_id,
+  from,
+  to,
+  offset,
+  limit,
+  account_number_id,
+  search,
+  organization_id
+) => {
+  try {
+    const params = [user_id, from, to, account_number_id];
+    let offset_limit = ``;
+    if (offset !== null && limit !== null) {
+      offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
+      params.push(offset, limit);
     }
-}
-
-
-const getPrixodService = async (user_id, from, to, offset, limit, account_number_id, search, organization_id) => {
-    try {
-        const params = [user_id, from, to, account_number_id]
-        let offset_limit = ``
-        if (offset !== null && limit !== null) {
-            offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
-            params.push(offset, limit)
-        }
-        const prixods = await pool.query(`
+    const prixods = await pool.query(
+      `
             WITH data AS (
                 SELECT 
                     d.id, 
@@ -88,21 +110,36 @@ const getPrixodService = async (user_id, from, to, offset, limit, account_number
                     FROM prixod 
                     WHERE isdeleted = false AND user_id = $1 AND doc_date <= $3 AND account_number_id = $4) AS to_balance 
             FROM data
-        `, params)
-        const result = prixods.rows[0]
-        return { data: result?.data || [], total: result.total_count, from_balance: result.from_balance, to_balance: result.to_balance, summa: result.summa }
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      params
+    );
+    const result = prixods.rows[0];
+    return {
+      data: result?.data || [],
+      total: result.total_count,
+      from_balance: result.from_balance,
+      to_balance: result.to_balance,
+      summa: result.summa,
+    };
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
-const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = false, lang) => {
-    try {
-        let filter = ``
-        if (!isdeleted) {
-            filter = `AND d.isdeleted = false`
-        }
-        const data = await pool.query(`
+exports.getByIdPrixodService = async (
+  user_id,
+  id,
+  account_number_id,
+  isdeleted = false,
+  lang
+) => {
+  try {
+    let filter = ``;
+    if (!isdeleted) {
+      filter = `AND d.isdeleted = false`;
+    }
+    const data = await pool.query(
+      `
             SELECT 
                 d.id, 
                 c.id AS contract_id,
@@ -136,19 +173,22 @@ const getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = 
             JOIN contract AS c ON c.id = d.contract_id 
             JOIN organization AS o ON c.organization_id = o.id 
             WHERE d.isdeleted = false AND d.user_id = $1 AND d.account_number_id = $3 AND d.id = $2 ${filter}
-        `, [user_id, id, account_number_id])
-        if (!data.rows[0]) {
-            throw new ErrorResponse(lang.t('docNotFound'), 404)
-        }
-        return data.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        `,
+      [user_id, id, account_number_id]
+    );
+    if (!data.rows[0]) {
+      throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
-}
+    return data.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
-const updatePrixodService = async (data) => {
-    try {
-        const result = await pool.query(`
+exports.updatePrixodService = async (data) => {
+  try {
+    const result = await pool.query(
+      `
             UPDATE prixod SET 
                 organization_id = $1,
                 contract_id = $2,
@@ -157,33 +197,30 @@ const updatePrixodService = async (data) => {
                 doc_date = $5,
                 summa = $6
             WHERE id = $7 RETURNING * 
-        `, [
-            data.organization_id,
-            data.contract_id,
-            data.opisanie,
-            data.doc_num,
-            data.doc_date,
-            data.summa,
-            data.id
-        ])
-        return result.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      [
+        data.organization_id,
+        data.contract_id,
+        data.opisanie,
+        data.doc_num,
+        data.doc_date,
+        data.summa,
+        data.id,
+      ]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
-const deletePrixodService = async (id) => {
-    try {
-        await pool.query(`UPDATE prixod SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
-
-module.exports = {
-    prixodCreateService,
-    getPrixodService,
-    getByIdPrixodService,
-    updatePrixodService,
-    deletePrixodService
-}
+exports.deletePrixodService = async (id) => {
+  try {
+    await pool.query(
+      `UPDATE prixod SET isdeleted = true WHERE id = $1 AND isdeleted = false`,
+      [id]
+    );
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};

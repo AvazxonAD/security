@@ -11,7 +11,8 @@ const strGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getstrService(user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -22,7 +23,8 @@ const strUpdate = async (req, res) => {
         const user_id = req.user.id
         const { str } = validationResponse(strValidation, req.body)
         const result = await strUpdateService(str, user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }

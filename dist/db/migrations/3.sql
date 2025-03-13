@@ -1,0 +1,1 @@
+ALTER TABLE task ALTER COLUMN time_money TYPE DECIMAL;

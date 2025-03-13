@@ -17,7 +17,8 @@ const account_numberCreate = async (req, res) => {
         const { account_number } = validationResponse(accountNumberValidation, req.body)
         await getByaccount_numberaccount_numberService(user_id, account_number, req.i18n)
         const result = await account_numberCreateService(account_number, user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -27,7 +28,8 @@ const account_numberGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getaccount_numberService(user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -38,7 +40,8 @@ const account_numberGetById = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const result = await getByIdaccount_numberService(user_id, id, true, req.i18n)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -54,7 +57,8 @@ const account_numberUpdate = async (req, res) => {
             await getByaccount_numberaccount_numberService(user_id, account_number, req.i18n)
         }
         const result = await account_numberUpdateService(account_number, id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -66,7 +70,8 @@ const account_numberDelete = async (req, res) => {
         const id = req.params.id
         await getByIdaccount_numberService(user_id, id)
         await deleteaccount_numberService(id)
-        resFunc(res, 200, 'delete success true')
+        
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     } catch (error) {
         errorCatch(error, res)
     }

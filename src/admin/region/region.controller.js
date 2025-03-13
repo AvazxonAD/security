@@ -7,7 +7,8 @@ const { errorCatch } = require('../../utils/errorCatch');
 const getRegion = async (req, res) => {
     try {
         const data = await getRegionService()
-        resFunc(res, 200, data)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, data);
     } catch (error) {
         errorCatch(error, res)
     }

@@ -81,7 +81,7 @@ const createRasxod = async (req, res) => {
 
         const result = await createRasxodDocService({ ...data, user_id, account_number_id, from, to })
 
-        resFunc(res, 200, result)
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -107,7 +107,8 @@ const getRasxod = async (req, res) => {
             from_balance: returnStringSumma(summa_from),
             to_balance: returnStringSumma(summa_to)
         }
-        resFunc(res, 200, data, meta)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, meta, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -120,7 +121,8 @@ const getByIdRasxod = async (req, res) => {
         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
         const id = req.params.id
         const data = await getByIdRasxodService(user_id, account_number_id, id, true, req.i18n)
-        resFunc(res, 200, data)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -134,7 +136,8 @@ const deeleteRasxod = async (req, res) => {
         await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n)
 
         await deeleteRasxodService(id)
-        resFunc(res, 200, 'delete success true')
+        
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -167,7 +170,8 @@ const updateRasxod = async (req, res) => {
             return deduction;
         }))
         const result = await updateRasxodService({ ...data, id, from, to })
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -460,7 +464,8 @@ const forPdfData = async (req, res) => {
             await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n)
         }
         const data = await getRasxodService(user_id, account_number_id, from, to, null, null, batalon_id)
-        resFunc(res, 200, data)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, data);
     } catch (error) {
         errorCatch(error, res)
     }

@@ -40,7 +40,8 @@ const bxmGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getbxmService(user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -52,7 +53,8 @@ const bxmUpdate = async (req, res) => {
         const id = req.params.id
         const { summa } = validationResponse(bxmValidation, req.body)
         const result = await bxmUpdateService(summa, id, user_id, req.i18n)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -66,7 +68,7 @@ const createBxm = async (req, res) => {
 
         const result = await createBxmService(user_id, summa);
 
-        resFunc(res, 200, result)
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -80,7 +82,7 @@ const getByIdBxm = async (req, res) => {
 
         const bxm = await getByIdBxmService(user_id, params.id, req.i18n);
 
-        resFunc(res, 200, bxm);
+        return res.success(req.i18n.t('getSuccess'), 200, null, bxm);
     } catch (error) {
         errorCatch(error, res);
     }

@@ -1,0 +1,1 @@
+UPDATE worker SET isdeleted = true;

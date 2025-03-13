@@ -11,7 +11,8 @@ const adressGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getadressService(user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -22,7 +23,8 @@ const adressUpdate = async (req, res) => {
         const user_id = req.user.id
         const { adress } = validationResponse(adressValidation, req.body)
         const result = await adressUpdateService(adress, user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }

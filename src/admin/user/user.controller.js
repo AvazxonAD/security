@@ -26,7 +26,8 @@ const userCreate = async (req, res) => {
         await checkByRegionUser(data.region_id, req.i18n)
         data.password = await bcrypt.hash(data.password, 10)
         const result = await userCreateService({ ...data, url });
-        resFunc(res, 200, result);
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res);
     }
@@ -35,7 +36,8 @@ const userCreate = async (req, res) => {
 const userGet = async (req, res) => {
     try {
         const result = await getUserService()
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -45,7 +47,8 @@ const userGetById = async (req, res) => {
     try {
         const id = req.params.id
         const result = await getByIdUserService(id, req.i18n)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -68,7 +71,8 @@ const userUpdate = async (req, res) => {
         }
         data.password = await bcrypt.hash(data.password, 10)
         const result = await userUpdateService({ ...data, id, url })
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -79,10 +83,8 @@ const userDelete = async (req, res) => {
         const id = req.params.id;
         await getByIdUserService(id, req.i18n);
         const delete_value = await deleteuserService(id);
-        if (delete_value) {
-            return resFunc(res, 200, 'delete success true');
-        }
-        return resFunc(res, 500, 'delete success false');
+        
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     } catch (error) {
         errorCatch(error, res)
     }

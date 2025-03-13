@@ -213,7 +213,7 @@ const getorganizationService = async (user_id, search, offset, limit) => {
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                COALESCE((SELECT COUNT(id) FROM organization WHERE isdeleted = false AND user_id = $1 ${filter}), 0)::INTEGER AS total_count
+                COALESCE((SELECT COUNT(o.id) FROM organization o WHERE o.isdeleted = false AND o.user_id = $1 ${filter}), 0)::INTEGER AS total_count
             FROM data
         `, params);
         return { data: rows[0]?.data || [], total: rows[0].total_count }

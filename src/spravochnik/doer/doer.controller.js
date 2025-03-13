@@ -11,7 +11,8 @@ const doerGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getdoerService(user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -24,7 +25,7 @@ const doerUpdate = async (req, res) => {
         const { doer, title } = validationResponse(doerValidation, req.body)
         const result = await doerUpdateService(doer, title, user_id)
 
-        resFunc(res, 200, result)
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }

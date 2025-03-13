@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS organ_account_numbers(
+    id BIGSERIAL PRIMARY KEY,
+    account_number VARCHAR NOT NULL,
+    organ_id BIGINT REFERENCES organization(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS gazna_numbers(
+    id BIGSERIAL PRIMARY KEY,
+    gazna_number VARCHAR NOT NULL,
+    organ_id BIGINT REFERENCES organization(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isdeleted BOOLEAN DEFAULT FALSE
+)

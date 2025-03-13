@@ -18,8 +18,9 @@ const login = async (req, res) => {
         }
         delete user.password
         const token = generateToken(user);
-        const data = { user, token }
-        resFunc(res, 200, data);
+        const data = { user, token };
+
+        return res.success(req.i18n.t('login'), 200, null, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -52,7 +53,8 @@ const update = async (req, res) => {
             user.fio = fio;
         }
         const result = await updateAuthService(user.login, user.password, user.fio, user.image, id);
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }

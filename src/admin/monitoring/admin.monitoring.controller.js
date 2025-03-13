@@ -30,7 +30,8 @@ const prixodRasxod = async (req, res) => {
             prixod: returnStringSumma(prixod) || 0,
             rasxod: returnStringSumma(rasxod) || 0
         }
-        resFunc(res, 200, rows, meta)
+
+        return res.success(req.i18n.t('getSuccess'), 200, meta, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -44,7 +45,8 @@ const monitoring = async (req, res) => {
             await getByIdRegionService(user_id)
         }
         const data = await monitoringService(year, month, user_id)
-        resFunc(res, 200, data)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, data);
     } catch (error) {
         errorCatch(error, res)
     }

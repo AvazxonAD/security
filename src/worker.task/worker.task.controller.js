@@ -46,7 +46,7 @@ const workerTaskCreate = async (req, res) => {
 
         const result = await workerTaskCreateService(task, value.workers);
 
-        resFunc(res, 200, result);
+        return res.success(req.i18n.t('createSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res);
     }
@@ -59,7 +59,8 @@ const getBYTaskIdWorkerTask = async (req, res) => {
         const search = req.query.search;
         await getByIdTaskService(user_id, task_id, null, null, req.i18n)
         const workers = await getByTaskIdWorkerTaskService(task_id, search)
-        resFunc(res, 200, workers)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, workers);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -91,7 +92,8 @@ const workerTaskUpdate = async (req, res) => {
         await deleteByTaskIDWorkerTaskService(task_id);
 
         const result = await workerTaskCreateService(task, workers, all_task_time);
-        resFunc(res, 200, result);
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res);
     }
@@ -117,7 +119,8 @@ const workerTaskDelete = async (req, res) => {
         }
 
         await deleteWorkerTaskService(worker_id, task_id);
-        resFunc(res, 200, 'delete success true');
+        
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     } catch (error) {
         errorCatch(error, res);
     }
@@ -130,7 +133,8 @@ const getByContractIdWorkerTask = async (req, res) => {
         const account_number_id = req.query.account_number_id;
         await getByIdcontractService(user_id, contract_id, false, account_number_id, null, req.i18n);
         const result = await getByContractIdWorkerTaskService(contract_id);
-        resFunc(res, 200, result);
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res);
     }

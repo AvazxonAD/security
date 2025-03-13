@@ -11,7 +11,8 @@ const bankGet = async (req, res) => {
     try {
         const user_id = req.user.id
         const result = await getbankService(user_id)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -22,7 +23,8 @@ const bankUpdate = async (req, res) => {
         const user_id = req.user.id
         const { bank, mfo } = validationResponse(bankValidation, req.body)
         const result = await bankUpdateService(bank, user_id, mfo)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }

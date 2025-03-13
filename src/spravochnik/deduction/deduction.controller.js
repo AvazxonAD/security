@@ -23,7 +23,8 @@ const deductionCreate = async (req, res) => {
 
         await getBynamedeductionService(value.name, user_id, req.i18n)
         const result = await deductionCreateService({ ...value, user_id })
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -43,7 +44,8 @@ const deductionGet = async (req, res) => {
             nextPage: page >= pageCount ? null : page + 1,
             backPage: page === 1 ? null : page - 1
         }
-        resFunc(res, 200, data, meta)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, meta, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -54,7 +56,8 @@ const deductionGetById = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const result = await getByIddeductionService(user_id, id, true, req.i18n)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -77,7 +80,7 @@ const deductionUpdate = async (req, res) => {
 
         const result = await deductionUpdateService({ ...value, id });
 
-        resFunc(res, 200, result)
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -89,7 +92,8 @@ const deductionDelete = async (req, res) => {
         const id = req.params.id
         await getByIddeductionService(user_id, id, null, req.i18n)
         await deletedeductionService(id)
-        resFunc(res, 200, 'delete success true')
+        
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     } catch (error) {
         errorCatch(error, res)
     }

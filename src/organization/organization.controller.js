@@ -9,7 +9,6 @@ const {
 } = require("./organization.service");
 const ErrorResponse = require('../utils/errorResponse')
 const { organizationValidation, allQueryValidation } = require("../utils/validation");
-const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require('../utils/errorCatch')
 const ExcelJS = require('exceljs')
@@ -20,6 +19,8 @@ const xlsx = require('xlsx')
 const organizationCreate = async (req, res) => {
     try {
         const user_id = req.user.id;
+        data.str = data.str.replace(/\s+/g, '');
+        
         const data = validationResponse(organizationValidation, req.body)
         if (data.str) {
             await getByStrOrganizationService(data.str, user_id, req.i18n)
@@ -27,7 +28,7 @@ const organizationCreate = async (req, res) => {
 
         const result = await organizationCreateService({ ...data, user_id })
 
-        resFunc(res, 200, result)
+        return res.success(req.i18n.t('createSuccess'), 201, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -47,7 +48,8 @@ const organizationGet = async (req, res) => {
             nextPage: page >= pageCount ? null : page + 1,
             backPage: page === 1 ? null : page - 1
         }
-        resFunc(res, 200, data, meta)
+
+        return res.success(req.i18n.t('getSuccess'), 201, meta, data);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -58,7 +60,8 @@ const organizationGetById = async (req, res) => {
         const user_id = req.user.id
         const id = req.params.id
         const result = await getByIdorganizationService(user_id, id, true, req.i18n)
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -73,6 +76,7 @@ const organizationUpdate = async (req, res) => {
         const data = validationResponse(organizationValidation, req.body)
         const old_data = await getByIdorganizationService(user_id, id, null, req.i18n)
 
+        data.str = data.str.replace(/\s+/g, '');
 
         if (old_data.str !== data.str) {
             await getByStrOrganizationService(data.str, user_id, req.i18n)
@@ -97,7 +101,8 @@ const organizationUpdate = async (req, res) => {
         }
 
         const result = await organizationUpdateService({ ...data, id, old_data })
-        resFunc(res, 200, result)
+        
+        return res.success(req.i18n.t('updateSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -109,7 +114,8 @@ const organizationDelete = async (req, res) => {
         const id = req.params.id
         await getByIdorganizationService(user_id, id, null, req.i18n)
         await deleteorganizationService(id)
-        resFunc(res, 200, 'delete success true')
+        
+        return res.success(req.i18n.t('deleteSuccess'), 200);
     } catch (error) {
         errorCatch(error, res)
     }
@@ -178,8 +184,9 @@ const excelDataOrganization = async (req, res) => {
 const forPdfData = async (req, res) => {
     try {
         const user_id = req.user.id
-        const { data, total } = await excelDataOrganizationService(user_id);
-        resFunc(res, 200, { total, data })
+        const result = await excelDataOrganizationService(user_id);
+        
+        return res.success(req.i18n.t('getSuccess'), 200, null, result);
     } catch (error) {
         errorCatch(error, res)
     }
