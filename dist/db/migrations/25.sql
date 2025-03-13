@@ -1,4 +1,0 @@
-ALTER TABLE
-    task
-ADD
-    COLUMN comment VARCHAR(1000);

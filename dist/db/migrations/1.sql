@@ -1,1 +1,0 @@
-ALTER TABLE worker add column user_id INTEGER REFERENCES users(id);

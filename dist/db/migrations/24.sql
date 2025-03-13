@@ -1,1 +1,0 @@
-ALTER TABLE rasxod_organ ALTER COLUMN doc_num TYPE VARCHAR;
