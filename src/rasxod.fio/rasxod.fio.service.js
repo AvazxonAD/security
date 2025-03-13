@@ -44,7 +44,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                 o.mfo AS organization_mfo,
                 o.account_number AS organization_account_number,
                 w.fio,
-                w_t.task_time,
+                ROUND(w_t.task_time::numeric, 2)::FLOAT AS task_time,
                 w_t.summa::FLOAT
             FROM worker_task AS w_t
             JOIN task AS t ON t.id = w_t.task_id
@@ -72,6 +72,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
         `,
       [account_number, from, to, batalon_id]
     );
+
     return result.rows;
   } catch (error) {
     throw new ErrorResponse(error, error.statusCode);
@@ -305,7 +306,7 @@ const getByIdRasxodService = async (
                             o.mfo AS organization_mfo,
                             o.account_number AS organization_account_number,
                             w_t.id AS worker_task_id,
-                            w_t.task_time,
+                            ROUND(w_t.task_time::numeric, 2) AS task_time,
                             w_t.summa,
                             ( w_t.summa - r.summa )::FLOAT AS deduction_money ,
                             r.summa::FLOAT  AS result_summa,
@@ -437,8 +438,6 @@ const updateRasxodService = async (data) => {
         )
       );
     }
-
-    console.log(rasxod_fio.id);
 
     const rasxods = await Promise.all(queryArray);
     const deductions = await Promise.all(deductionQueryArray);
