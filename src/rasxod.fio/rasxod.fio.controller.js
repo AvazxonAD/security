@@ -628,6 +628,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
         }
 
         Object.assign(cell, {
+          numFmt: "#,##0.00",
           font: { size, name: "Times New Roman", bold },
           alignment: {
             vertical: "middle",
