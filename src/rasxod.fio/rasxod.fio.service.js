@@ -385,21 +385,28 @@ const getByIdRasxodService = async (
 };
 
 const deeleteRasxodService = async (id) => {
+  const client = await pool.connect();
   try {
-    await pool.query(
+    await client.query(`BEGIN`);
+    await client.query(
       `UPDATE rasxod_fio SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`,
       [id]
     );
-    await pool.query(
+    await client.query(
       `UPDATE rasxod_fio_deduction SET isdeleted = true WHERE rasxod_fio_doc_id = $1 AND isdeleted = false`,
       [id]
     );
-    await pool.query(
+    await client.query(
       `UPDATE rasxod_fio_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`,
       [id]
     );
+    await client.query(`COMMIT`);
+    return rasxod_fio;
   } catch (error) {
+    await client.query(`ROLLBACK`);
     throw new ErrorResponse(error, error.statusCode);
+  } finally {
+    client.release();
   }
 };
 
@@ -470,6 +477,7 @@ const updateRasxodService = async (data) => {
         )
       );
     }
+
     for (let deduction of data.deductions) {
       deductionQueryArray.push(
         client.query(

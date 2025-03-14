@@ -35,12 +35,14 @@ const getPaymentRequest = async (req, res) => {
       paymentRequestValidation,
       req.query
     );
+
     await getByIdaccount_numberService(
       user_id,
       account_number_id,
       null,
       req.i18n
     );
+
     await getByIdBatalonService(user_id, batalon_id, false, true, req.i18n);
     const data = await paymentRequestService(
       account_number_id,
@@ -48,10 +50,12 @@ const getPaymentRequest = async (req, res) => {
       from,
       to
     );
+
     let summa = 0;
     for (let item of data) {
       summa += item.summa;
     }
+
     const meta = {
       pageCount: 1,
       count: data.length,
@@ -178,6 +182,7 @@ const getRasxod = async (req, res) => {
       batalon_id
     );
     const pageCount = Math.ceil(total / limit);
+
     const meta = {
       pageCount: pageCount,
       count: total,

@@ -1,9 +1,10 @@
-const ErrorResponse = require('../utils/errorResponse')
-const pool = require('../config/db')
+const ErrorResponse = require("../utils/errorResponse");
+const pool = require("../config/db");
 
 const getByIdTaskService = async (batalon_id, task_id, user_id, lang) => {
-    try {
-        const result = await pool.query(`
+  try {
+    const result = await pool.query(
+      `
             SELECT t.id 
             FROM task AS t
             JOIN contract AS c ON c.id = t.contract_id 
@@ -12,19 +13,22 @@ const getByIdTaskService = async (batalon_id, task_id, user_id, lang) => {
                 AND t.user_id = $3
                 AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                 AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = t.id)
-        `, [batalon_id, task_id, user_id])
-        if (!result.rows[0]) {
-            throw new ErrorResponse(lang.t('docNotFound'), 404)
-        }
-        return result.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        `,
+      [batalon_id, task_id, user_id]
+    );
+    if (!result.rows[0]) {
+      throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
-}
+    return result.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const paymentRequestService = async (account_number, batalon_id, from, to) => {
-    try {
-        const result = await pool.query(`
+  try {
+    const result = await pool.query(
+      `
             WITH data AS (
                 SELECT 
                     t.id AS task_id,
@@ -68,18 +72,21 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                 ) AS itogo
             FROM data 
 
-        `, [account_number, from, to, batalon_id])
-        return { data: result.rows[0]?.data || [], itogo: result.rows[0].itogo }
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      [account_number, from, to, batalon_id]
+    );
+    return { data: result.rows[0]?.data || [], itogo: result.rows[0].itogo };
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const createRasxodDocService = async (data) => {
-    const client = await pool.connect()
-    try {
-        await client.query(`BEGIN`)
-        const rasxod_doc = await client.query(`
+  const client = await pool.connect();
+  try {
+    await client.query(`BEGIN`);
+    const rasxod_doc = await client.query(
+      `
             INSERT INTO rasxod_doc(
                 doc_num, 
                 doc_date, 
@@ -91,50 +98,66 @@ const createRasxodDocService = async (data) => {
                 batalon_account_number_id
             ) VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING * 
-        `, [
-            data.doc_num,
-            data.doc_date,
-            data.batalon_id,
-            data.user_id,
-            data.opisanie,
-            data.account_number_id,
-            data.batalon_gazna_number_id,
-            data.batalon_account_number_id
-        ])
+        `,
+      [
+        data.doc_num,
+        data.doc_date,
+        data.batalon_id,
+        data.user_id,
+        data.opisanie,
+        data.account_number_id,
+        data.batalon_gazna_number_id,
+        data.batalon_account_number_id,
+      ]
+    );
 
-        const rasxod = rasxod_doc.rows[0]
+    const rasxod = rasxod_doc.rows[0];
 
-        const queryArray = []
-        for (let task of data.tasks) {
-            queryArray.push(client.query(`INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
-            `, [task.task_id, rasxod.id]))
-        }
-        const rasxods = await Promise.all(queryArray)
-        rasxod.tasks = rasxods.map(item => item.rows[0])
-        await client.query(`COMMIT`)
-        return rasxod;
-    } catch (error) {
-        await client.query(`ROLLBACK`)
-        throw new ErrorResponse(error, error.statusCode)
-    } finally {
-        client.release()
+    const queryArray = [];
+    for (let task of data.tasks) {
+      queryArray.push(
+        client.query(
+          `INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
+            `,
+          [task.task_id, rasxod.id]
+        )
+      );
     }
-}
+    const rasxods = await Promise.all(queryArray);
+    rasxod.tasks = rasxods.map((item) => item.rows[0]);
+    await client.query(`COMMIT`);
+    return rasxod;
+  } catch (error) {
+    await client.query(`ROLLBACK`);
+    throw new ErrorResponse(error, error.statusCode);
+  } finally {
+    client.release();
+  }
+};
 
-const getRasxodService = async (user_id, account_number_id, from, to, offset, limit, batalon_id) => {
-    try {
-        const params = [account_number_id, from, to, user_id]
-        let batalon_filter = ``
-        let offset_limit = ``
-        if (batalon_id) {
-            batalon_filter = ` AND d.batalon_id = $${params.length + 1}`
-            params.push(batalon_id)
-        }
-        if (offset !== null && limit !== null) {
-            offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`
-            params.push(offset, limit)
-        }
-        const result = await pool.query(`
+const getRasxodService = async (
+  user_id,
+  account_number_id,
+  from,
+  to,
+  offset,
+  limit,
+  batalon_id
+) => {
+  try {
+    const params = [account_number_id, from, to, user_id];
+    let batalon_filter = ``;
+    let offset_limit = ``;
+    if (batalon_id) {
+      batalon_filter = ` AND d.batalon_id = $${params.length + 1}`;
+      params.push(batalon_id);
+    }
+    if (offset !== null && limit !== null) {
+      offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
+      params.push(offset, limit);
+    }
+    const result = await pool.query(
+      `
             WITH data AS (
                 SELECT 
                     d.id,
@@ -197,21 +220,36 @@ const getRasxodService = async (user_id, account_number_id, from, to, offset, li
                     WHERE r.isdeleted = false AND d.doc_date BETWEEN $2 AND $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa
             FROM data
-        `, params)
-        const data = result.rows[0];
-        return { data: data?.data || [], total: data.total_count, summa_from: data.summa_from, summa_to: data.summa_to, summa: data.summa }
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      params
+    );
+    const data = result.rows[0];
+    return {
+      data: data?.data || [],
+      total: data.total_count,
+      summa_from: data.summa_from,
+      summa_to: data.summa_to,
+      summa: data.summa,
+    };
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
-const getByIdRasxodService = async (user_id, account_number_id, id, ignore = false, lang) => {
-    try {
-        let ignore_filter = ``
-        if (!ignore) {
-            ignore_filter = `AND d.isdeleted = false`
-        }
-        const data = await pool.query(`
+const getByIdRasxodService = async (
+  user_id,
+  account_number_id,
+  id,
+  ignore = false,
+  lang
+) => {
+  try {
+    let ignore_filter = ``;
+    if (!ignore) {
+      ignore_filter = `AND d.isdeleted = false`;
+    }
+    const data = await pool.query(
+      `
             SELECT 
                 d.id,
                 d.doc_num,
@@ -262,30 +300,46 @@ const getByIdRasxodService = async (user_id, account_number_id, id, ignore = fal
             FROM rasxod_doc AS d
             JOIN batalon AS b ON b.id = d.batalon_id
             WHERE d.account_number_id = $1 AND d.user_id = $2 AND d.id = $3  ${ignore_filter}
-        `, [account_number_id, user_id, id])
-        if (!data.rows[0]) {
-            throw new ErrorResponse(lang.t('docNotFound'), 404)
-        }
-        return data.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+        `,
+      [account_number_id, user_id, id]
+    );
+    if (!data.rows[0]) {
+      throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
-}
+    return data.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const deeleteRasxodService = async (id) => {
-    try {
-        await pool.query(`UPDATE rasxod SET isdeleted = true WHERE rasxod_doc_id = $1 AND isdeleted = false`, [id])
-        await pool.query(`UPDATE rasxod_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id])
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+  const client = await pool.connect();
+  try {
+    await client.query(`BEGIN`);
+    await client.query(
+      `UPDATE rasxod SET isdeleted = true WHERE rasxod_doc_id = $1 AND isdeleted = false`,
+      [id]
+    );
+    await client.query(
+      `UPDATE rasxod_doc SET isdeleted = true WHERE id = $1 AND isdeleted = false`,
+      [id]
+    );
+    await client.query(`COMMIT`);
+    return rasxod_fio;
+  } catch (error) {
+    await client.query(`ROLLBACK`);
+    throw new ErrorResponse(error, error.statusCode);
+  } finally {
+    client.release();
+  }
+};
 
 const updateRasxodService = async (data) => {
-    const client = await pool.connect()
-    try {
-        await client.query(`BEGIN`)
-        const rasxod_doc = await client.query(`UPDATE rasxod_doc SET 
+  const client = await pool.connect();
+  try {
+    await client.query(`BEGIN`);
+    const rasxod_doc = await client.query(
+      `UPDATE rasxod_doc SET 
             doc_num = $1, 
             doc_date = $2, 
             batalon_id = $3, 
@@ -294,32 +348,49 @@ const updateRasxodService = async (data) => {
             batalon_gazna_number_id = $6
             WHERE id = $7
             RETURNING * 
-        `, [data.doc_num, data.doc_date, data.batalon_id, data.opisanie, data.batalon_account_number_id, data.batalon_gazna_number_id, data.id])
-        const rasxod = rasxod_doc.rows[0]
-        await client.query(`DELETE FROM rasxod WHERE rasxod_doc_id = $1`, [data.id])
-        const queryArray = []
-        for (let task of data.tasks) {
-            queryArray.push(client.query(`INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
-            `, [task.task_id, rasxod.id]))
-        }
-        const rasxods = await Promise.all(queryArray)
-        rasxod.tasks = rasxods.map(item => item.rows[0])
-        await client.query(`COMMIT`)
-        return rasxod;
-    } catch (error) {
-        await client.query(`ROLLBACK`)
-        throw new ErrorResponse(error, error.statusCode)
-    } finally {
-        client.release()
+        `,
+      [
+        data.doc_num,
+        data.doc_date,
+        data.batalon_id,
+        data.opisanie,
+        data.batalon_account_number_id,
+        data.batalon_gazna_number_id,
+        data.id,
+      ]
+    );
+    const rasxod = rasxod_doc.rows[0];
+    await client.query(`DELETE FROM rasxod WHERE rasxod_doc_id = $1`, [
+      data.id,
+    ]);
+    const queryArray = [];
+    for (let task of data.tasks) {
+      queryArray.push(
+        client.query(
+          `INSERT INTO rasxod(task_id, rasxod_doc_id) VALUES($1, $2) RETURNING * 
+            `,
+          [task.task_id, rasxod.id]
+        )
+      );
     }
-}
+    const rasxods = await Promise.all(queryArray);
+    rasxod.tasks = rasxods.map((item) => item.rows[0]);
+    await client.query(`COMMIT`);
+    return rasxod;
+  } catch (error) {
+    await client.query(`ROLLBACK`);
+    throw new ErrorResponse(error, error.statusCode);
+  } finally {
+    client.release();
+  }
+};
 
 module.exports = {
-    paymentRequestService,
-    createRasxodDocService,
-    getByIdTaskService,
-    getRasxodService,
-    getByIdRasxodService,
-    deeleteRasxodService,
-    updateRasxodService
-}
+  paymentRequestService,
+  createRasxodDocService,
+  getByIdTaskService,
+  getRasxodService,
+  getByIdRasxodService,
+  deeleteRasxodService,
+  updateRasxodService,
+};
