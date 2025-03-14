@@ -494,6 +494,11 @@ const exportExcelData = async (req, res) => {
 
 const exportRasxodByIdExcelData = async (req, res) => {
   try {
+    function nextExcelColumn(column) {
+      const nextCharCode = column.charCodeAt(0) + 1;
+      return String.fromCharCode(nextCharCode);
+    }
+
     const user_id = req.user.id;
     const account_number_id = req.query.account_number_id;
     await getByIdaccount_numberService(
@@ -510,107 +515,125 @@ const exportRasxodByIdExcelData = async (req, res) => {
       null,
       req.i18n
     );
+    const year = new Date(data.to).getFullYear();
+
     const workbook = new ExcelJS.Workbook();
     const file_name = `rasxod_fio_${new Date().getTime()}.xlsx`;
-    const worksheet = workbook.addWorksheet(`rasxod_docs`);
-    worksheet.pageSetup.margins.left = 0;
-    worksheet.pageSetup.margins.header = 0;
-    worksheet.pageSetup.margins.footer = 0;
-    worksheet.pageSetup.margins.right = 0;
-    const css_array = [];
-    worksheet.mergeCells(`A1`, `G1`);
-    const titleCell = worksheet.getCell(`A1`);
-    titleCell.value = `${returnStringDate(
-      new Date(data.from)
-    )}дан ${returnStringDate(
+    const worksheet = workbook.addWorksheet(`rasxod FIO`);
+
+    const columns = [
+      { key: "fio", width: 60 },
+      { key: "xisob_raqam", width: 30 },
+      { key: "karta_raqam", width: 30 },
+      { key: "summa", width: 20 },
+    ];
+
+    worksheet.mergeCells(`A1`, `I1`);
+    worksheet.getCell(`A1`).value = `ТАРҚАТУВ ВЕДМОСТИ ${data.doc_num}-№`;
+
+    worksheet.mergeCells(`A2`, `I2`);
+    worksheet.getCell(
+      `A2`
+    ).value = `Гвардиянинг Тошкент шаҳри бўйича бошқармаси бошлиғининг ${returnStringDate(
       new Date(data.to)
-    )}-гача оммавий тадбирларда қатнашган ${
-      data.batalon_name
-    } батальон  ходимларга пул ўтказиш`;
-    css_array.push(titleCell);
-    let row_number = 2;
-    if (data.deductions.length > 0) {
-      worksheet.mergeCells(`A${row_number}`, `B${row_number}`);
-      const deductionTitleCell = worksheet.getCell(`A${row_number}`);
-      deductionTitleCell.value = `Ушланмалар`;
-      css_array.push(deductionTitleCell);
-      row_number++;
-      const deductionNameCell = worksheet.getCell(`A${row_number}`);
-      deductionNameCell.value = `Ушланма номи`;
-      css_array.push(deductionNameCell);
-      const deductionPercentCell = worksheet.getCell(`B${row_number}`);
-      deductionPercentCell.value = `Ушланма фоизи %`;
-      css_array.push(deductionPercentCell);
-      row_number++;
-      data.deductions.forEach((item) => {
-        const deductionNameCell = worksheet.getCell(`A${row_number}`);
-        deductionNameCell.value = item.deduction_name;
-        css_array.push(deductionNameCell);
-        const deductionPercentCell = worksheet.getCell(`B${row_number}`);
-        deductionPercentCell.value = `${item.percent}%`;
-        css_array.push(deductionNameCell, deductionPercentCell);
-        row_number++;
+    )} sonli buyrug'i ${data.batalon_name} ga`;
+
+    worksheet.getCell(`A3`).value = "Фамиля Исми Шарифи";
+    worksheet.getCell(`B3`).value = `Хисоб рақами`;
+    worksheet.getCell(`C3`).value = `Карта рақами`;
+    worksheet.getCell(`D3`).value = `Премия`;
+
+    const itogo = { summa: 0, deduction_money: 0, result_summa: 0 };
+
+    let column = `D`;
+
+    for (let deduction of data.deductions) {
+      const nextColumn = nextExcelColumn(column);
+      worksheet.getCell(
+        `${nextColumn}3`
+      ).value = `${deduction.deduction_name} ${deduction.percent}%`;
+      column = nextColumn;
+      columns.push({ key: deduction.deduction_name, width: 20 });
+      itogo[`${deduction.deduction_name}`] = 0;
+    }
+    column = nextExcelColumn(column);
+
+    worksheet.getCell(`${column}3`).value = `Жами ушлаб қолинди`;
+    column = nextExcelColumn(column);
+    columns.push({ key: "deduction_money", width: 25 });
+
+    worksheet.getCell(`${column}3`).value = `Банк пластик карточкасига`;
+    column = nextExcelColumn(column);
+    columns.push({ key: "result_summa", width: 25 });
+
+    worksheet.getCell(`${column}3`).value = `Имзо`;
+    column = nextExcelColumn(column);
+    columns.push({ key: "podpis", width: 25 });
+
+    worksheet.columns = columns;
+
+    for (let task of data.worker_tasks) {
+      const deductions = data.deductions.map((item) => {
+        itogo[`${item.deduction_name}`] += task.summa * (item.percent / 100);
+        return {
+          key: item.deduction_name,
+          summa: task.summa * (item.percent / 100),
+        };
+      });
+
+      itogo.summa += task.summa;
+      itogo.result_summa += task.result_summa;
+      itogo.deduction_money += task.deduction_money;
+
+      worksheet.addRow({
+        fio: task.fio,
+        xisob_raqam: task.xisob_raqam || "",
+        karta_raqam: task.account_number || "",
+        summa: task.summa,
+        ...deductions.reduce(
+          (acc, curr) => ({ ...acc, [curr.key]: curr.summa }),
+          {}
+        ),
+        deduction_money: task.deduction_money,
+        result_summa: task.result_summa,
+        podpis: "",
       });
     }
-    const fioCell = worksheet.getCell(`A${row_number}`);
-    fioCell.value = "ФИО";
-    const xisobRaqamCell = worksheet.getCell(`B${row_number}`);
-    xisobRaqamCell.value = `Хисоб рақами`;
-    const accountNumberCell = worksheet.getCell(`C${row_number}`);
-    accountNumberCell.value = `Карта рақами`;
-    const task_timeCell = worksheet.getCell(`D${row_number}`);
-    task_timeCell.value = "Вақт";
-    const summaCell = worksheet.getCell(`E${row_number}`);
-    summaCell.value = `Сумма`;
-    const deductionCell = worksheet.getCell(`F${row_number}`);
-    deductionCell.value = "Ушлаб қолинган";
-    const result_summaCell = worksheet.getCell(`G${row_number}`);
-    result_summaCell.value = `Қўлга тегадиган`;
-    css_array.push(
-      fioCell,
-      xisobRaqamCell,
-      accountNumberCell,
-      task_timeCell,
-      summaCell,
-      deductionCell,
-      result_summaCell
-    );
-    let itogo_summa = 0;
-    let itogo_deduction = 0;
-    let itogo_result = 0;
-    row_number++;
-    for (let worker of data.worker_tasks) {
-      const fioCell = worksheet.getCell(`A${row_number}`);
-      fioCell.value = worker.fio;
-      const xisobRaqamCell = worksheet.getCell(`B${row_number}`);
-      xisobRaqamCell.value = worker.xisob_raqam;
-      const accountNumberCell = worksheet.getCell(`C${row_number}`);
-      accountNumberCell.value = worker.account_number;
-      const task_timeCell = worksheet.getCell(`D${row_number}`);
-      task_timeCell.value = worker.task_time;
-      const summaCell = worksheet.getCell(`E${row_number}`);
-      summaCell.value = worker.summa;
-      const deductionCell = worksheet.getCell(`F${row_number}`);
-      deductionCell.value = worker.deduction_money;
-      const result_summaCell = worksheet.getCell(`G${row_number}`);
-      result_summaCell.value = worker.result_summa;
-      const css_array = [
-        fioCell,
-        xisobRaqamCell,
-        accountNumberCell,
-        task_timeCell,
-        summaCell,
-        deductionCell,
-        result_summaCell,
-      ];
-      itogo_summa += worker.summa;
-      itogo_deduction += worker.deduction_money;
-      itogo_result += worker.result_summa;
-      css_array.forEach((item, index) => {
-        let horizontal = "center";
-        if (index === 0) horizontal = "left";
-        if (index > 3) (horizontal = "right"), (item.numFmt = "#,##0.00");
-        Object.assign(item, {
+    const rowData = {};
+
+    Object.keys(itogo).forEach((key) => {
+      rowData[key] = itogo[key];
+    });
+
+    worksheet.addRow(rowData);
+
+    worksheet.eachRow((row, rowNumber) => {
+      let bold = false;
+      let size = 14;
+      let horizontal = "center";
+
+      if (rowNumber < 3) {
+        worksheet.getRow(rowNumber).height = 40;
+        bold = true;
+      } else if (rowNumber === 3) {
+        bold = true;
+      } else {
+        size = 11;
+        worksheet.getRow(rowNumber).height = 30;
+      }
+
+      row.eachCell((cell, column) => {
+        if (column > 3 && rowNumber > 3) {
+          horizontal = "right";
+        }
+
+        Object.assign(cell, {
+          font: { size, name: "Times New Roman", bold },
+          alignment: {
+            vertical: "middle",
+            horizontal,
+            wrapText: true,
+          },
           fill: {
             type: "pattern",
             pattern: "solid",
@@ -622,63 +645,14 @@ const exportRasxodByIdExcelData = async (req, res) => {
             bottom: { style: "thin" },
             right: { style: "thin" },
           },
-          font: { size: 7, name: "Times New Roman" },
-          alignment: { vertical: "middle", horizontal, wrapText: true },
         });
       });
-      row_number++;
-    }
-    worksheet.mergeCells(`A${row_number}`, `D${row_number}`);
-    const itogoStr = worksheet.getCell(`A${row_number}`);
-    itogoStr.value = "Итого";
-    const itogo_summaCell = worksheet.getCell(`E${row_number}`);
-    itogo_summaCell.value = itogo_summa;
-    const itogo_deductionCell = worksheet.getCell(`F${row_number}`);
-    itogo_deductionCell.value = itogo_deduction;
-    const itogo_resultCell = worksheet.getCell(`G${row_number}`);
-    itogo_resultCell.value = itogo_result;
-    css_array.push(
-      itogoStr,
-      itogo_deductionCell,
-      itogo_resultCell,
-      itogo_summaCell
-    );
-
-    css_array.forEach((item, index) => {
-      let fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFFFFFFF" },
-      };
-      let border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-      };
-      let size = 8;
-      let horizontal = "center";
-      if (index == 0) (fill = {}), (border = {}), (size = 10);
-      if (index > 18) horizontal = "right";
-      if (index === 17) horizontal = "left";
-      Object.assign(item, {
-        numFmt: "#,##,0.00",
-        fill,
-        border,
-        font: { size, name: "Times New Roman", bold: true },
-        alignment: { vertical: "middle", horizontal, wrapText: true },
-      });
     });
-    worksheet.getRow(1).height = 35;
-    worksheet.getColumn(1).width = 20;
-    worksheet.getColumn(2).width = 20;
-    worksheet.getColumn(3).width = 20;
-    worksheet.getColumn(4).width = 6;
-    worksheet.getColumn(5).width = 12;
-    worksheet.getColumn(6).width = 11;
-    worksheet.getColumn(7).width = 11;
+
     const filePath = path.join(__dirname, "../../public/exports/" + file_name);
+
     await workbook.xlsx.writeFile(filePath);
+
     return res.download(filePath, (err) => {
       if (err) {
         throw new ErrorResponse(err, err.statusCode);
