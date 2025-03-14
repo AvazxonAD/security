@@ -591,9 +591,21 @@ const exportRasxodByIdExcelData = async (req, res) => {
       itogo.result_summa += task.result_summa;
       itogo.deduction_money += task.deduction_money;
 
+      let fioArray = task.fio.split(" ");
+      let fio = fioArray
+        .map((word, index) => {
+          if (fioArray.length === 4 && index === 3) {
+            return word.toLowerCase(); // 4-chi so‘zni kichik qilamiz
+          }
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // Qolganini bosh harfi katta
+        })
+        .join(" ");
+
+      console.log(fio);
+
       worksheet.addRow({
         order: index + 1,
-        fio: task.fio,
+        fio,
         summa: task.summa,
         ignore: "",
         ...deductions.reduce(
@@ -636,8 +648,15 @@ const exportRasxodByIdExcelData = async (req, res) => {
           horizontal = "right";
         }
 
+        if (column !== 1) {
+          cell.numFmt = "#,##0.00";
+        }
+
+        if (column === 2) {
+          horizontal = "left";
+        }
+
         Object.assign(cell, {
-          numFmt: "#,##0.00",
           font: { size, name: "Times New Roman", bold },
           alignment: {
             vertical: "middle",
