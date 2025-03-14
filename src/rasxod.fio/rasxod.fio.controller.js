@@ -652,7 +652,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
           cell.numFmt = "#,##0.00";
         }
 
-        if (column === 2) {
+        if (column === 2 && rowNumber > 3) {
           horizontal = "left";
         }
 
