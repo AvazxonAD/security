@@ -13,6 +13,7 @@ const {
   getByIdRasxodService,
   deeleteRasxodService,
   updateRasxodService,
+  getByGroupTasks,
 } = require("./rasxod.fio.service");
 const {
   getByIdaccount_numberService,
@@ -494,20 +495,22 @@ const exportExcelData = async (req, res) => {
 
 const exportRasxodByIdExcelData = async (req, res) => {
   try {
+    const user_id = req.user.id;
+    const account_number_id = req.query.account_number_id;
+    const id = req.params.id;
+
     function nextExcelColumn(column) {
       const nextCharCode = column.charCodeAt(0) + 1;
       return String.fromCharCode(nextCharCode);
     }
 
-    const user_id = req.user.id;
-    const account_number_id = req.query.account_number_id;
     await getByIdaccount_numberService(
       user_id,
       account_number_id,
       null,
       req.i18n
     );
-    const id = req.params.id;
+
     const data = await getByIdRasxodService(
       user_id,
       account_number_id,
@@ -515,17 +518,18 @@ const exportRasxodByIdExcelData = async (req, res) => {
       null,
       req.i18n
     );
-    const year = new Date(data.to).getFullYear();
+
+    const tasks = await getByGroupTasks([id]);
 
     const workbook = new ExcelJS.Workbook();
     const file_name = `rasxod_fio_${new Date().getTime()}.xlsx`;
     const worksheet = workbook.addWorksheet(`rasxod FIO`);
 
     const columns = [
+      { key: "order", width: 10 },
       { key: "fio", width: 60 },
-      { key: "xisob_raqam", width: 30 },
-      { key: "karta_raqam", width: 30 },
       { key: "summa", width: 20 },
+      { key: "ignore", width: 20 },
     ];
 
     worksheet.mergeCells(`A1`, `I1`);
@@ -534,14 +538,12 @@ const exportRasxodByIdExcelData = async (req, res) => {
     worksheet.mergeCells(`A2`, `I2`);
     worksheet.getCell(
       `A2`
-    ).value = `Гвардиянинг Тошкент шаҳри бўйича бошқармаси бошлиғининг ${returnStringDate(
-      new Date(data.to)
-    )} sonli buyrug'i ${data.batalon_name} ga`;
+    ).value = `Ўзбекистон Республикаси Миллий гвардияси Тошкент шаҳри бўйича бошқармаси  Оммавий тадбирларни ўтказишда фуқоролар хавфсизлигини таъминлашда иштирок этган харбий хизматчиларнинг мукофотлаш тўғрисида`;
 
-    worksheet.getCell(`A3`).value = "Фамиля Исми Шарифи";
-    worksheet.getCell(`B3`).value = `Хисоб рақами`;
-    worksheet.getCell(`C3`).value = `Карта рақами`;
-    worksheet.getCell(`D3`).value = `Премия`;
+    worksheet.getCell(`A3`).value = "№";
+    worksheet.getCell(`B3`).value = "Фамилия ва исми шарифи";
+    worksheet.getCell(`C3`).value = `Премия`;
+    worksheet.getCell(`D3`).value = `Ягона ижтимоий солиқ 25%`;
 
     const itogo = { summa: 0, deduction_money: 0, result_summa: 0 };
 
@@ -562,17 +564,21 @@ const exportRasxodByIdExcelData = async (req, res) => {
     column = nextExcelColumn(column);
     columns.push({ key: "deduction_money", width: 25 });
 
-    worksheet.getCell(`${column}3`).value = `Банк пластик карточкасига`;
+    worksheet.getCell(
+      `${column}3`
+    ).value = `Банк пластик картасига ўтказиб берилди`;
     column = nextExcelColumn(column);
     columns.push({ key: "result_summa", width: 25 });
 
-    worksheet.getCell(`${column}3`).value = `Имзо`;
+    worksheet.getCell(`${column}3`).value = `Изох`;
     column = nextExcelColumn(column);
     columns.push({ key: "podpis", width: 25 });
 
     worksheet.columns = columns;
 
-    for (let task of data.worker_tasks) {
+    for (let task of tasks) {
+    }
+    tasks.forEach((task, index) => {
       const deductions = data.deductions.map((item) => {
         itogo[`${item.deduction_name}`] += task.summa * (item.percent / 100);
         return {
@@ -586,10 +592,10 @@ const exportRasxodByIdExcelData = async (req, res) => {
       itogo.deduction_money += task.deduction_money;
 
       worksheet.addRow({
+        order: index + 1,
         fio: task.fio,
-        xisob_raqam: task.xisob_raqam || "",
-        karta_raqam: task.account_number || "",
         summa: task.summa,
+        ignore: "",
         ...deductions.reduce(
           (acc, curr) => ({ ...acc, [curr.key]: curr.summa }),
           {}
@@ -598,7 +604,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
         result_summa: task.result_summa,
         podpis: "",
       });
-    }
+    });
     const rowData = {};
 
     Object.keys(itogo).forEach((key) => {
@@ -612,8 +618,11 @@ const exportRasxodByIdExcelData = async (req, res) => {
       let size = 14;
       let horizontal = "center";
 
-      if (rowNumber < 3) {
-        worksheet.getRow(rowNumber).height = 40;
+      if (rowNumber === 1) {
+        worksheet.getRow(rowNumber).height = 20;
+        bold = true;
+      } else if (rowNumber === 2) {
+        worksheet.getRow(rowNumber).height = 60;
         bold = true;
       } else if (rowNumber === 3) {
         bold = true;

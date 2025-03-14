@@ -1,5 +1,6 @@
 const ErrorResponse = require("../utils/errorResponse");
 const pool = require("../config/db");
+const { db } = require("@db/index");
 
 const getByIdWorkerTaskService = async (
   batalon_id,
@@ -257,6 +258,37 @@ const getRasxodService = async (
   }
 };
 
+const getByGroupTasks = async (params) => {
+  const query = `
+    SELECT
+      w.id AS worker_id,
+      COALESCE(SUM(w_t.task_time), 0)::FLOAT AS task_time,
+      COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa,
+      COALESCE(SUM(w_t.summa - r.summa), 0)::FLOAT AS deduction_money,
+      COALESCE(SUM(r.summa), 0)::FLOAT  AS result_summa,
+      w.account_number,
+      w.xisob_raqam,
+      w.fio
+    FROM rasxod_fio AS r 
+    LEFT JOIN worker_task AS w_t ON r.worker_task_id = w_t.id
+    LEFT JOIN worker AS w ON w.id = w_t.worker_id
+    LEFT JOIN task AS t ON t.id = w_t.task_id 
+    LEFT JOIN contract AS c ON c.id = t.contract_id
+    LEFT JOIN organization AS o ON o.id = c.organization_id
+    WHERE r.rasxod_fio_doc_id = $1
+      AND r.isdeleted = false
+    GROUP BY 
+      w.id,
+      w.account_number,
+      w.xisob_raqam,
+      w.fio
+  `;
+
+  const result = await db.query(query, params);
+
+  return result;
+};
+
 const getByIdRasxodService = async (
   user_id,
   account_number_id,
@@ -470,4 +502,5 @@ module.exports = {
   getByIdRasxodService,
   deeleteRasxodService,
   updateRasxodService,
+  getByGroupTasks,
 };
