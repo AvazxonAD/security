@@ -47,27 +47,29 @@ exports.ContractDB = class {
 
   static async deleteTask(params, client) {
     const query = `UPDATE task SET isdeleted = true WHERE id = $1`;
+    const query2 = `UPDATE worker_task SET isdeleted = true WHERE task_id = $1`;
 
     await client.query(query, params);
+    await client.query(query2, params);
   }
 
   static async updateTask(params, client) {
     const query = `
-            UPDATE task 
-            SET 
-                batalon_id = $1, 
-                task_time = $2, 
-                worker_number = $3, 
-                summa = $4, 
-                task_date = $5, 
-                discount_money = $6, 
-                result_summa = $7, 
-                bxm_id = $8, 
-                time_money = $9, 
-                address = $10,
-                comment = $11
-            WHERE id = $12
-        `;
+        UPDATE task 
+        SET 
+            batalon_id = $1, 
+            task_time = $2, 
+            worker_number = $3, 
+            summa = $4, 
+            task_date = $5, 
+            discount_money = $6, 
+            result_summa = $7, 
+            bxm_id = $8, 
+            time_money = $9, 
+            address = $10,
+            comment = $11
+        WHERE id = $12
+    `;
 
     await client.query(query, params);
   }
