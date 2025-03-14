@@ -466,17 +466,17 @@ exports.getcontractService = async (
                     d.organ_account_number_id::INTEGER,
                     ( 
                         SELECT 
-                            (d.result_summa - COALESCE(SUM(summa), 0))::FLOAT 
-                            FROM prixod 
-                            WHERE isdeleted = false 
-                                AND contract_id = d.id
+                            (d.result_summa - COALESCE(SUM(p.summa), 0))::FLOAT 
+                            FROM prixod p 
+                            WHERE p.isdeleted = false 
+                                AND p.contract_id = d.id
                     ) AS remaining_balance,
                     (
                         SELECT 
                             COALESCE(SUM(summa), 0) 
-                        FROM prixod 
-                        WHERE isdeleted = false 
-                            AND contract_id = d.id 
+                        FROM prixod p
+                        WHERE p.isdeleted = false 
+                            AND p.contract_id = d.id 
                     )::FLOAT AS remaining_summa,
                     (
                         SELECT 
