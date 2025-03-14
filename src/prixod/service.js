@@ -65,6 +65,19 @@ exports.getPrixodService = async (
       offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
       params.push(offset, limit);
     }
+    const conditions = [];
+
+    if (search) {
+      conditions.push(`
+                    AND d.doc_num = $${params.length + 1} 
+                    OR o.name ILIKE  '%' || $${params.length + 1} || '%'
+                    OR c.doc_num = $${params.length + 1}
+                    `);
+      params.push(search);
+    }
+
+    const where_clouse = conditions.length ? `${conditions.join(" AND ")}` : "";
+
     const prixods = await pool.query(
       `
             WITH data AS (
@@ -91,24 +104,63 @@ exports.getPrixodService = async (
                 LEFT JOIN account_number a ON a.id = d.organ_account_number_id 
                 JOIN contract AS c ON c.id = d.contract_id 
                 JOIN organization AS o ON c.organization_id = o.id 
-                WHERE d.isdeleted = false AND d.user_id = $1 AND d.doc_date BETWEEN $2 AND $3 AND d.account_number_id = $4 
+                WHERE d.isdeleted = false
+                  AND d.user_id = $1
+                  AND d.doc_date BETWEEN $2 AND $3
+                  AND d.account_number_id = $4
+                  ${where_clouse}
                 ORDER BY d.id DESC
                 ${offset_limit}
             )
             SELECT 
                 ARRAY_AGG(row_to_json(data)) AS data,
-                (SELECT COALESCE(COUNT(id)::INTEGER, 0)
-                    FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $4) AS total_count,
-                (SELECT COALESCE(SUM(summa)::FLOAT, 0)
-                    FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date BETWEEN $2 AND $3 AND account_number_id = $4) AS summa,
-                (SELECT COALESCE(SUM(summa)::FLOAT, 0)
-                    FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $2 AND account_number_id = $4) AS from_balance ,
-                (SELECT COALESCE(SUM(summa)::FLOAT, 0)
-                    FROM prixod 
-                    WHERE isdeleted = false AND user_id = $1 AND doc_date <= $3 AND account_number_id = $4) AS to_balance 
+                (
+                  SELECT 
+                    COALESCE(COUNT(d.id)::INTEGER, 0)
+                  FROM prixod d
+                  JOIN contract AS c ON c.id = d.contract_id 
+                  JOIN organization AS o ON c.organization_id = o.id
+                  WHERE d.isdeleted = false 
+                    AND d.user_id = $1 
+                    AND d.doc_date BETWEEN $2 AND $3 
+                    ${where_clouse}
+                ) AS total_count,
+                (
+                  SELECT 
+                    COALESCE(SUM(d.summa)::FLOAT, 0)
+                  FROM prixod d
+                  JOIN contract AS c ON c.id = d.contract_id 
+                  JOIN organization AS o ON c.organization_id = o.id
+                  WHERE d.isdeleted = false 
+                    AND d.user_id = $1 
+                    AND d.doc_date BETWEEN $2 AND $3 
+                    AND d.account_number_id = $4
+                    ${where_clouse}
+                ) AS summa,
+                (
+                  SELECT 
+                    COALESCE(SUM(d.summa)::FLOAT, 0)
+                  FROM prixod d
+                  JOIN contract AS c ON c.id = d.contract_id 
+                  JOIN organization AS o ON c.organization_id = o.id
+                  WHERE d.isdeleted = false 
+                    AND d.user_id = $1 
+                    AND d.doc_date <= $2 
+                    AND d.account_number_id = $4
+                    ${where_clouse}
+                ) AS from_balance,
+                (
+                  SELECT 
+                    COALESCE(SUM(d.summa)::FLOAT, 0)
+                  FROM prixod d 
+                  JOIN contract AS c ON c.id = d.contract_id 
+                  JOIN organization AS o ON c.organization_id = o.id
+                  WHERE d.isdeleted = false 
+                    AND d.user_id = $1 
+                    AND d.doc_date <= $3 
+                    AND d.account_number_id = $4
+                    ${where_clouse}
+                ) AS to_balance 
             FROM data
         `,
       params

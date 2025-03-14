@@ -166,7 +166,8 @@ exports.getByIdPrixod = async (req, res) => {
   try {
     const user_id = req.user.id;
     const id = req.params.id;
-    const account_number_id = req.query.account_number_id;
+    const { account_number_id } = req.query;
+
     await getByIdaccount_numberService(
       user_id,
       account_number_id,
@@ -199,6 +200,7 @@ exports.getPrixod = async (req, res) => {
       account_number_id,
       organization_id,
     } = validationResponse(prixodQueryValidation, req.query);
+
     const user_id = req.user.id;
     await getByIdaccount_numberService(
       user_id,
@@ -219,6 +221,7 @@ exports.getPrixod = async (req, res) => {
         organization_id
       );
     const pageCount = Math.ceil(total / limit);
+
     const meta = {
       pageCount: pageCount,
       count: total,
