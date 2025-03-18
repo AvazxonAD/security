@@ -1,37 +1,17 @@
 {
-    "compilerOptions": {
-        "baseUrl": "./",
-        "paths": {
-            "@db/*": [
-                "db/*"
-            ],
-            "@public/*": [
-                "public/*"
-            ],
-            "@account_number/*": [
-                "src/spravochnik/account.number/*"
-            ],
-            "@contract/*": [
-                "src/contract/*"
-            ],
-            "@helper/*": [
-                "src/helper/*"
-            ],
-            "@rasxod_organ/*": [
-                "src/rasxod.organ/*"
-            ],
-            "@organization/*": [
-                "src/organization/*"
-            ],
-            "@batalon/*": [
-                "src/batalon/*"
-            ],
-            "@bxm/*": [
-                "src/spravochnik/bxm/*"
-            ]
-        }
-    },
-    "include": [
-        "./"
-    ]
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@db/*": ["db/*"],
+      "@public/*": ["public/*"],
+      "@account_number/*": ["src/spravochnik/account.number/*"],
+      "@contract/*": ["src/contract/*"],
+      "@helper/*": ["src/helper/*"],
+      "@rasxod_organ/*": ["src/rasxod.organ/*"],
+      "@organization/*": ["src/organization/*"],
+      "@batalon/*": ["src/batalon/*"],
+      "@bxm/*": ["src/spravochnik/bxm/*"]
+    }
+  },
+  "include": ["./"]
 }
