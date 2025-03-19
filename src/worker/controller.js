@@ -291,7 +291,7 @@ exports.Controller = class {
     });
 
     excel_data = excel_data.filter(
-      (item) => item.fio?.toLowerCase() !== "вакант" && item.fio
+      (item) => item.fio && String(item.fio).toLowerCase() !== "вакант"
     );
 
     const notFound = [];
@@ -301,16 +301,39 @@ exports.Controller = class {
         `SELECT * FROM worker WHERE fio = $1 AND isdeleted = false`,
         [textLatinToCyrl(worker.fio.trim())]
       );
+
       if (!check[0]) {
         notFound.push(worker);
+      } else {
+        await db.query(
+          `UPDATE worker SET account_number = $1, xisob_raqam = $2  WHERE fio = $3 AND isdeleted = false`,
+          [
+            worker.karta_raqam,
+            worker.xisob_raqam,
+            textLatinToCyrl(worker.fio.trim()),
+          ]
+        );
       }
     }
 
-    return res.success(
-      req.i18n.t("getSuccess"),
-      200,
-      { count: notFound.length, worker_count: excel_data.length },
-      notFound
+    // Excel jadvalini yaratish
+    const worksheet2 = xlsx.utils.json_to_sheet(notFound);
+    const workbook2 = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook2, worksheet2, "Topilmagan xodimlar");
+
+    // Bufferga yozish (fayl yaratmasdan jo'natish)
+    const excelBuffer = xlsx.write(workbook2, {
+      type: "buffer",
+      bookType: "xlsx",
+    });
+
+    // Foydalanuvchiga yuklab berish
+    res.setHeader("Content-Disposition", "attachment; filename=file.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
+
+    return res.send(excelBuffer);
   }
 };
