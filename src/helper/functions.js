@@ -35,7 +35,6 @@ exports.Functions = class {
   }
 };
 
-// old functions
 const cyrlToLatin = {
   Ғ: "G`",
   ғ: "g`",
@@ -110,9 +109,14 @@ const cyrlToLatin = {
 
 const latinToCyrl = {
   "G'": "Ғ",
+  Oʻ: "Ў",
+  "G‘": "Ғ",
+  "g‘": "ғ",
   "g'": "ғ",
-  "o'": "ў",
+  Оʻ: "Ў",
   "O'": "Ў",
+  "o'": "ў",
+  "o‘": "ў",
   "G`": "Ғ",
   "g`": "ғ",
   "o`": "ў",
@@ -190,7 +194,7 @@ const latinToCyrl = {
   U: "У",
   V: "В",
   W: "УА",
-  X: "КС",
+  X: "Х",
   Y: "Й",
   Z: "З",
 };

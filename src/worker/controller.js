@@ -1,7 +1,9 @@
 const { WorkerService } = require("./service");
 const { BatalonService } = require("../batalon/service");
 const path = require("path");
-const { Functions } = require(`@helper/functions`);
+const xlsx = require("xlsx");
+const { db } = require("@db/index");
+const { textLatinToCyrl } = require("../helper/functions");
 
 exports.Controller = class {
   static async workerCreate(req, res) {
@@ -274,8 +276,41 @@ exports.Controller = class {
       return res.error(req.i18n.t("fileError"), 400);
     }
 
-    const data = await Functions.readFile(req.file.path);
+    const workbook = xlsx.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    let excel_data = xlsx.utils.sheet_to_json(sheet).map((row, index) => {
+      const newRow = {};
+      for (const key in row) {
+        if (Object.prototype.hasOwnProperty.call(row, key)) {
+          newRow[key] = row[key];
+        }
+      }
 
-    return res.success(req.i18n.t("getSuccess"), 200, null, data);
+      return newRow;
+    });
+
+    excel_data = excel_data.filter(
+      (item) => item.fio?.toLowerCase() !== "вакант" && item.fio
+    );
+
+    const notFound = [];
+
+    for (let worker of excel_data) {
+      const check = await db.query(
+        `SELECT * FROM worker WHERE fio = $1 AND isdeleted = false`,
+        [textLatinToCyrl(worker.fio.trim())]
+      );
+      if (!check[0]) {
+        notFound.push(worker);
+      }
+    }
+
+    return res.success(
+      req.i18n.t("getSuccess"),
+      200,
+      { count: notFound.length, worker_count: excel_data.length },
+      notFound
+    );
   }
 };

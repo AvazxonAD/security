@@ -534,7 +534,6 @@ const exportRasxodByIdExcelData = async (req, res) => {
       { key: "order", width: 10 },
       { key: "fio", width: 60 },
       { key: "summa", width: 20 },
-      { key: "ignore", width: 20 },
     ];
 
     worksheet.mergeCells(`A1`, `I1`);
@@ -548,11 +547,10 @@ const exportRasxodByIdExcelData = async (req, res) => {
     worksheet.getCell(`A3`).value = "№";
     worksheet.getCell(`B3`).value = "Фамилия ва исми шарифи";
     worksheet.getCell(`C3`).value = `Премия`;
-    worksheet.getCell(`D3`).value = `Ягона ижтимоий солиқ 25%`;
 
     const itogo = { summa: 0, deduction_money: 0, result_summa: 0 };
 
-    let column = `D`;
+    let column = `C`;
 
     for (let deduction of data.deductions) {
       const nextColumn = nextExcelColumn(column);
@@ -581,8 +579,6 @@ const exportRasxodByIdExcelData = async (req, res) => {
 
     worksheet.columns = columns;
 
-    for (let task of tasks) {
-    }
     tasks.forEach((task, index) => {
       const deductions = data.deductions.map((item) => {
         itogo[`${item.deduction_name}`] += task.summa * (item.percent / 100);
@@ -600,19 +596,16 @@ const exportRasxodByIdExcelData = async (req, res) => {
       let fio = fioArray
         .map((word, index) => {
           if (fioArray.length === 4 && index === 3) {
-            return word.toLowerCase(); // 4-chi so‘zni kichik qilamiz
+            return word.toLowerCase();
           }
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // Qolganini bosh harfi katta
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
         })
         .join(" ");
-
-      console.log(fio);
 
       worksheet.addRow({
         order: index + 1,
         fio,
         summa: task.summa,
-        ignore: "",
         ...deductions.reduce(
           (acc, curr) => ({ ...acc, [curr.key]: curr.summa }),
           {}
