@@ -673,8 +673,11 @@ const exportRasxodByIdExcelData = async (req, res) => {
           horizontal = "left";
         }
 
+        if (column !== 1) {
+          cell.numFmt = "# ##0 ##0.00";
+        }
+
         Object.assign(cell, {
-          numFmt: "# ##0 ##0.00",
           font: { size, name: "Times New Roman", bold },
           alignment: {
             vertical: "middle",
