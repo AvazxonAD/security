@@ -530,8 +530,10 @@ const exportRasxodByIdExcelData = async (req, res) => {
     const file_name = `rasxod_fio_${new Date().getTime()}.xlsx`;
     const worksheet = workbook.addWorksheet(`rasxod FIO`);
 
-    worksheet.mergeCells(`A1`, `J1`);
+    worksheet.mergeCells(`A1`, `I1`);
     worksheet.getCell(`A1`).value = `ТАРҚАТУВ ВЕДМОСТИ ${data.doc_num}-№`;
+
+    worksheet.getCell(`J1`).value = data.batalon_name;
 
     worksheet.mergeCells(`A2`, `J2`);
     worksheet.getCell(
@@ -607,6 +609,8 @@ const exportRasxodByIdExcelData = async (req, res) => {
       podpis: "",
     };
 
+    let row_number = 4;
+
     tasks.forEach((task, index) => {
       const row = {
         order: index + 1,
@@ -624,6 +628,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
       };
 
       worksheet.addRow(row);
+      row_number++;
 
       total.summa += row.summa;
       total[75] += row[75];
@@ -655,6 +660,10 @@ const exportRasxodByIdExcelData = async (req, res) => {
         worksheet.getRow(rowNumber).height = 30;
       }
 
+      if (rowNumber === row_number) {
+        bold = true;
+      }
+
       row.eachCell((cell, column) => {
         if (column > 2 && rowNumber > 3) {
           horizontal = "right";
@@ -665,6 +674,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
         }
 
         Object.assign(cell, {
+          numFmt: "# ##0 ##0.00",
           font: { size, name: "Times New Roman", bold },
           alignment: {
             vertical: "middle",
