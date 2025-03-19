@@ -569,7 +569,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
     column = nextExcelColumn(column);
     columns.push({ key: "result_summa", width: 25 });
 
-    worksheet.getCell(`${column}3`).value = `Изох`;
+    worksheet.getCell(`${column}3`).value = `Имзо`;
     column = nextExcelColumn(column);
     columns.push({ key: "podpis", width: 25 });
 
