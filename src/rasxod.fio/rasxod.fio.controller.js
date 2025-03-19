@@ -566,27 +566,27 @@ const exportRasxodByIdExcelData = async (req, res) => {
       },
       {
         key: "75",
-        width: 20,
+        width: 25,
       },
       {
         key: "25",
-        width: 20,
+        width: 25,
       },
       {
         key: "1/25",
-        width: 20,
+        width: 25,
       },
       {
         key: "25/2",
-        width: 20,
+        width: 25,
       },
       {
         key: "12",
-        width: 20,
+        width: 25,
       },
       {
         key: "worker_summa",
-        width: 20,
+        width: 25,
       },
       {
         key: "podpis",
@@ -594,22 +594,47 @@ const exportRasxodByIdExcelData = async (req, res) => {
       },
     ];
 
-    data.worker_tasks.forEach((task, index) => {
-      worksheet.addRow({
-        order: index,
+    const total = {
+      order: "Итого",
+      fio: "",
+      summa: 0,
+      75: 0,
+      25: 0,
+      "1/25": 0,
+      "25/2": 0,
+      12: 0,
+      worker_summa: 0,
+      podpis: "",
+    };
+
+    tasks.forEach((task, index) => {
+      const row = {
+        order: index + 1,
         fio: task.fio,
         summa: Math.round(task.summa),
         75: Math.round(task.summa * 0.75),
         25: Math.round(task.summa * 0.25),
-        "1/25": Math.round(task.summa / 1.25),
-        "25/2": Math.round((task.summa / 1.25) * 0.25),
-        12: Math.round((task.summa / 1.25) * 0.12),
+        "1/25": Math.round((task.summa * 0.25) / 1.25),
+        "25/2": Math.round(((task.summa * 0.25) / 1.25) * 0.25),
+        12: Math.round(((task.summa * 0.25) / 1.25) * 0.12),
         worker_summa: Math.round(
-          task.summa / 1.25 - (task.summa / 1.25) * 0.12
+          (task.summa * 0.25) / 1.25 - ((task.summa * 0.25) / 1.25) * 0.12
         ),
         podpis: "",
-      });
+      };
+
+      worksheet.addRow(row);
+
+      total.summa += row.summa;
+      total[75] += row[75];
+      total[25] += row[25];
+      total["1/25"] += row["1/25"];
+      total["25/2"] += row["25/2"];
+      total[12] += row[12];
+      total.worker_summa += row.worker_summa;
     });
+
+    worksheet.addRow(total);
 
     //css
     worksheet.eachRow((row, rowNumber) => {
