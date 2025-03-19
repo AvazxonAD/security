@@ -576,11 +576,18 @@ const exportRasxodByIdExcelData = async (req, res) => {
     worksheet.columns = columns;
 
     tasks.forEach((task, index) => {
+      let first_summa = task.summa;
+
       const deductions = data.deductions.map((item) => {
-        itogo[`${item.deduction_name}`] += task.summa * (item.percent / 100);
+        const summa = task.summa * (item.percent / 100);
+
+        itogo[`${item.deduction_name}`] += summa;
+
+        first_summa -= summa;
+
         return {
           key: item.deduction_name,
-          summa: task.summa * (item.percent / 100),
+          summa,
         };
       });
 
@@ -619,6 +626,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
 
     worksheet.addRow(rowData);
 
+    //css
     worksheet.eachRow((row, rowNumber) => {
       let bold = false;
       let size = 14;
