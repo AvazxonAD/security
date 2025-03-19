@@ -326,11 +326,19 @@ const getByIdRasxodService = async (
                     FROM rasxod_fio AS r
                     WHERE r.rasxod_fio_doc_id = d.id 
                 ) AS summa,
-                COALESCE((   SELECT 
-                        ARRAY_AGG(JSON_BUILD_OBJECT('deduction_id', deduction.id, 'deduction_name', deduction.name, 'percent', deduction.percent))
-                    FROM rasxod_fio_deduction ch 
-                    JOIN deduction ON deduction.id = ch.deduction_id 
-                    WHERE ch.rasxod_fio_doc_id = d.id
+                COALESCE((
+                  SELECT
+                    ARRAY_AGG(
+                        JSON_BUILD_OBJECT(
+                            'deduction_id', deduction.id, 
+                            'deduction_name', deduction.name, 
+                            'percent', deduction.percent
+                        ) 
+                        ORDER BY deduction.percent DESC
+                    )
+                  FROM rasxod_fio_deduction ch 
+                  JOIN deduction ON deduction.id = ch.deduction_id 
+                  WHERE ch.rasxod_fio_doc_id = d.id
                 ), ARRAY[]::JSON[]) AS deductions,
                 (
                     SELECT 

@@ -552,17 +552,31 @@ const exportRasxodByIdExcelData = async (req, res) => {
 
     let column = `C`;
 
-    for (let deduction of data.deductions) {
-      const nextColumn = nextExcelColumn(column);
+    data.deductions.forEach((deduction, index) => {
+      let nextColumn = nextExcelColumn(column);
+
+      if (index === 1) {
+        worksheet.getCell(
+          `${nextColumn}3`
+        ).value = `Шахсий таркибни рағбатлантириш 25%`;
+
+        columns.push({ key: "premiya", width: 20 });
+        itogo[`premiya`] = 0;
+
+        nextColumn = nextExcelColumn(nextColumn);
+      }
+
       worksheet.getCell(
         `${nextColumn}3`
       ).value = `${deduction.deduction_name} ${deduction.percent}%`;
       column = nextColumn;
-      columns.push({ key: deduction.deduction_name, width: 20 });
-      itogo[`${deduction.deduction_name}`] = 0;
-    }
-    column = nextExcelColumn(column);
 
+      columns.push({ key: deduction.deduction_name, width: 20 });
+
+      itogo[`${deduction.deduction_name}`] = 0;
+    });
+
+    column = nextExcelColumn(column);
     worksheet.getCell(
       `${column}3`
     ).value = `Банк пластик картасига ўтказиб берилди`;
@@ -578,12 +592,11 @@ const exportRasxodByIdExcelData = async (req, res) => {
     tasks.forEach((task, index) => {
       let first_summa = task.summa;
 
-      // Har bir task uchun alohida hisoblash
       let task_deductions = {};
 
-      const deductions = data.deductions.map((item) => {
-        const summa = first_summa * (item.percent / 100); // Qolgan summadan hisoblash
-        first_summa -= summa; // Chegirma qilingan summani olib tashlash
+      const deductions = data.deductions.map((item, index) => {
+        const summa = first_summa * (item.percent / 100);
+        first_summa -= summa;
 
         task_deductions[item.deduction_name] = summa;
 
@@ -593,7 +606,19 @@ const exportRasxodByIdExcelData = async (req, res) => {
         };
       });
 
-      // Umumiy itogo obyektiga qo‘shish
+      data.deductions.forEach((item, index) => {
+        if (index === 0) {
+          const summa = task.summa - task.summa * (item.percent / 100);
+
+          task_deductions["premiya"] = summa;
+
+          deductions.push({
+            key: "premiya",
+            summa,
+          });
+        }
+      });
+
       deductions.forEach(({ key, summa }) => {
         itogo[key] = (itogo[key] || 0) + summa;
       });
@@ -616,7 +641,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
         order: index + 1,
         fio,
         summa: task.summa,
-        ...task_deductions, // Har bir task bo‘yicha chegirmalar
+        ...task_deductions,
         deduction_money: task.deduction_money,
         result_summa: task.result_summa,
         podpis: "",
