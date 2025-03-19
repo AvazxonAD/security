@@ -578,17 +578,24 @@ const exportRasxodByIdExcelData = async (req, res) => {
     tasks.forEach((task, index) => {
       let first_summa = task.summa;
 
+      // Har bir task uchun alohida hisoblash
+      let task_deductions = {};
+
       const deductions = data.deductions.map((item) => {
-        const summa = task.summa * (item.percent / 100);
+        const summa = first_summa * (item.percent / 100); // Qolgan summadan hisoblash
+        first_summa -= summa; // Chegirma qilingan summani olib tashlash
 
-        itogo[`${item.deduction_name}`] += summa;
-
-        first_summa -= summa;
+        task_deductions[item.deduction_name] = summa;
 
         return {
           key: item.deduction_name,
           summa,
         };
+      });
+
+      // Umumiy itogo obyektiga qo‘shish
+      deductions.forEach(({ key, summa }) => {
+        itogo[key] = (itogo[key] || 0) + summa;
       });
 
       itogo.summa += task.summa;
@@ -609,15 +616,13 @@ const exportRasxodByIdExcelData = async (req, res) => {
         order: index + 1,
         fio,
         summa: task.summa,
-        ...deductions.reduce(
-          (acc, curr) => ({ ...acc, [curr.key]: curr.summa }),
-          {}
-        ),
+        ...task_deductions, // Har bir task bo‘yicha chegirmalar
         deduction_money: task.deduction_money,
         result_summa: task.result_summa,
         podpis: "",
       });
     });
+
     const rowData = {};
 
     Object.keys(itogo).forEach((key) => {
