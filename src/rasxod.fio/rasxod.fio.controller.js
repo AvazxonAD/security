@@ -546,7 +546,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
 
     worksheet.getCell(`A3`).value = "№";
     worksheet.getCell(`B3`).value = "Фамилия ва исми шарифи";
-    worksheet.getCell(`C3`).value = `Премия`;
+    worksheet.getCell(`C3`).value = `Премия 100%`;
 
     const itogo = { summa: 0, deduction_money: 0, result_summa: 0 };
 
@@ -562,10 +562,6 @@ const exportRasxodByIdExcelData = async (req, res) => {
       itogo[`${deduction.deduction_name}`] = 0;
     }
     column = nextExcelColumn(column);
-
-    worksheet.getCell(`${column}3`).value = `Жами ушлаб қолинди`;
-    column = nextExcelColumn(column);
-    columns.push({ key: "deduction_money", width: 25 });
 
     worksheet.getCell(
       `${column}3`
