@@ -530,131 +530,86 @@ const exportRasxodByIdExcelData = async (req, res) => {
     const file_name = `rasxod_fio_${new Date().getTime()}.xlsx`;
     const worksheet = workbook.addWorksheet(`rasxod FIO`);
 
-    const columns = [
-      { key: "order", width: 10 },
-      { key: "fio", width: 60 },
-      { key: "summa", width: 20 },
-    ];
-
-    worksheet.mergeCells(`A1`, `I1`);
+    worksheet.mergeCells(`A1`, `J1`);
     worksheet.getCell(`A1`).value = `ТАРҚАТУВ ВЕДМОСТИ ${data.doc_num}-№`;
 
-    worksheet.mergeCells(`A2`, `I2`);
+    worksheet.mergeCells(`A2`, `J2`);
     worksheet.getCell(
       `A2`
     ).value = `Ўзбекистон Республикаси Миллий гвардияси Тошкент шаҳри бўйича бошқармаси  Оммавий тадбирларни ўтказишда фуқоролар хавфсизлигини таъминлашда иштирок этган харбий хизматчиларнинг мукофотлаш тўғрисида`;
 
-    worksheet.getCell(`A3`).value = "№";
-    worksheet.getCell(`B3`).value = "Фамилия ва исми шарифи";
-    worksheet.getCell(`C3`).value = `Премия 100%`;
+    worksheet.getRow(3).values = [
+      "№",
+      "Фамилия ва исми шарифи",
+      "Премия (100%)",
+      "Моддий базани ривожлантириш учун (75%)",
+      "I ва II гурух харажатлари учун (25%)",
+      "Шахсий таркибга таксимланди",
+      "Ягона ижтимоий солик (25%)",
+      "Даромад солиғи (12%)",
+      "Банк пластик картасига ўтказиб берилди",
+      "Имзо",
+    ];
 
-    const itogo = { summa: 0, deduction_money: 0, result_summa: 0 };
+    worksheet.columns = [
+      {
+        key: "order",
+        widt: 10,
+      },
+      {
+        key: "fio",
+        width: 50,
+      },
+      {
+        key: "summa",
+        width: 20,
+      },
+      {
+        key: "75",
+        width: 20,
+      },
+      {
+        key: "25",
+        width: 20,
+      },
+      {
+        key: "1/25",
+        width: 20,
+      },
+      {
+        key: "25/2",
+        width: 20,
+      },
+      {
+        key: "12",
+        width: 20,
+      },
+      {
+        key: "worker_summa",
+        width: 20,
+      },
+      {
+        key: "podpis",
+        width: 20,
+      },
+    ];
 
-    let column = `C`;
-
-    data.deductions.forEach((deduction, index) => {
-      let nextColumn = nextExcelColumn(column);
-
-      if (index === 1) {
-        worksheet.getCell(
-          `${nextColumn}3`
-        ).value = `Шахсий таркибни рағбатлантириш 25%`;
-
-        columns.push({ key: "premiya", width: 20 });
-        itogo[`premiya`] = 0;
-
-        nextColumn = nextExcelColumn(nextColumn);
-      }
-
-      worksheet.getCell(
-        `${nextColumn}3`
-      ).value = `${deduction.deduction_name} ${deduction.percent}%`;
-      column = nextColumn;
-
-      columns.push({ key: deduction.deduction_name, width: 20 });
-
-      itogo[`${deduction.deduction_name}`] = 0;
-    });
-
-    column = nextExcelColumn(column);
-    worksheet.getCell(
-      `${column}3`
-    ).value = `Банк пластик картасига ўтказиб берилди`;
-    column = nextExcelColumn(column);
-    columns.push({ key: "result_summa", width: 25 });
-
-    worksheet.getCell(`${column}3`).value = `Имзо`;
-    column = nextExcelColumn(column);
-    columns.push({ key: "podpis", width: 25 });
-
-    worksheet.columns = columns;
-
-    tasks.forEach((task, index) => {
-      let first_summa = task.summa;
-
-      let task_deductions = {};
-
-      const deductions = data.deductions.map((item, index) => {
-        const summa = first_summa * (item.percent / 100);
-        first_summa -= summa;
-
-        task_deductions[item.deduction_name] = summa;
-
-        return {
-          key: item.deduction_name,
-          summa,
-        };
-      });
-
-      data.deductions.forEach((item, index) => {
-        if (index === 0) {
-          const summa = task.summa - task.summa * (item.percent / 100);
-
-          task_deductions["premiya"] = summa;
-
-          deductions.push({
-            key: "premiya",
-            summa,
-          });
-        }
-      });
-
-      deductions.forEach(({ key, summa }) => {
-        itogo[key] = (itogo[key] || 0) + summa;
-      });
-
-      itogo.summa += task.summa;
-      itogo.result_summa += task.result_summa;
-      itogo.deduction_money += task.deduction_money;
-
-      let fioArray = task.fio.split(" ");
-      let fio = fioArray
-        .map((word, index) => {
-          if (fioArray.length === 4 && index === 3) {
-            return word.toLowerCase();
-          }
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(" ");
-
+    data.worker_tasks.forEach((task, index) => {
       worksheet.addRow({
-        order: index + 1,
-        fio,
-        summa: task.summa,
-        ...task_deductions,
-        deduction_money: task.deduction_money,
-        result_summa: task.result_summa,
+        order: index,
+        fio: task.fio,
+        summa: Math.round(task.summa),
+        75: Math.round(task.summa * 0.75),
+        25: Math.round(task.summa * 0.25),
+        "1/25": Math.round(task.summa / 1.25),
+        "25/2": Math.round((task.summa / 1.25) * 0.25),
+        12: Math.round((task.summa / 1.25) * 0.12),
+        worker_summa: Math.round(
+          task.summa / 1.25 - (task.summa / 1.25) * 0.12
+        ),
         podpis: "",
       });
     });
-
-    const rowData = {};
-
-    Object.keys(itogo).forEach((key) => {
-      rowData[key] = itogo[key];
-    });
-
-    worksheet.addRow(rowData);
 
     //css
     worksheet.eachRow((row, rowNumber) => {
@@ -676,12 +631,8 @@ const exportRasxodByIdExcelData = async (req, res) => {
       }
 
       row.eachCell((cell, column) => {
-        if (column > 3 && rowNumber > 3) {
+        if (column > 2 && rowNumber > 3) {
           horizontal = "right";
-        }
-
-        if (column !== 1) {
-          cell.numFmt = "#,##0.00";
         }
 
         if (column === 2 && rowNumber > 3) {
