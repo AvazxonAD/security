@@ -504,11 +504,6 @@ const exportRasxodByIdExcelData = async (req, res) => {
     const account_number_id = req.query.account_number_id;
     const id = req.params.id;
 
-    function nextExcelColumn(column) {
-      const nextCharCode = column.charCodeAt(0) + 1;
-      return String.fromCharCode(nextCharCode);
-    }
-
     await getByIdaccount_numberService(
       user_id,
       account_number_id,
@@ -713,6 +708,182 @@ const exportRasxodByIdExcelData = async (req, res) => {
   }
 };
 
+const exportRasxodByIdExcelData2 = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const account_number_id = req.query.account_number_id;
+    const id = req.params.id;
+
+    await getByIdaccount_numberService(
+      user_id,
+      account_number_id,
+      null,
+      req.i18n
+    );
+
+    const data = await getByIdRasxodService(
+      user_id,
+      account_number_id,
+      id,
+      null,
+      req.i18n
+    );
+
+    const tasks = await getByGroupTasks([id]);
+
+    const workbook = new ExcelJS.Workbook();
+    const file_name = `rasxod_fio_${new Date().getTime()}.xlsx`;
+    const worksheet = workbook.addWorksheet(`rasxod FIO`);
+
+    worksheet.mergeCells(`A1`, `I1`);
+    worksheet.getCell(`A1`).value = `ТАРҚАТУВ ВЕДМОСТИ ${data.doc_num}-№`;
+
+    worksheet.getCell(`J1`).value = data.batalon_name;
+
+    worksheet.mergeCells(`A2`, `J2`);
+    worksheet.getCell(
+      `A2`
+    ).value = `Ўзбекистон Республикаси Миллий гвардияси Тошкент шаҳри бўйича бошқармаси  Оммавий тадбирларни ўтказишда фуқоролар хавфсизлигини таъминлашда иштирок этган харбий хизматчиларнинг мукофотлаш тўғрисида`;
+
+    worksheet.getRow(3).values = [
+      "№",
+      "Фамилия ва исми шарифи",
+      "Хисоб рақам",
+      "Карта рақам",
+      "Банк пластик картасига ўтказиб берилди",
+      "Имзо",
+    ];
+
+    worksheet.columns = [
+      {
+        key: "order",
+        widt: 10,
+      },
+      {
+        key: "fio",
+        width: 50,
+      },
+      {
+        key: "xisob_raqam",
+        width: 30,
+      },
+      {
+        key: "karta_raqam",
+        width: 30,
+      },
+      {
+        key: "worker_summa",
+        width: 25,
+      },
+      {
+        key: "podpis",
+        width: 20,
+      },
+    ];
+
+    const total = {
+      order: "Итого",
+      fio: "",
+      xisob_raqam: "",
+      karta_raqam: "",
+      worker_summa: 0,
+      podpis: "",
+    };
+
+    let row_number = 4;
+
+    tasks.forEach((task, index) => {
+      const row = {
+        order: index + 1,
+        fio: task.fio,
+        xisob_raqam: task.xisob_raqam,
+        karta_raqam: task.account_number,
+        worker_summa: Math.round(
+          (task.summa * 0.25) / 1.25 - ((task.summa * 0.25) / 1.25) * 0.12
+        ),
+        podpis: "",
+      };
+
+      worksheet.addRow(row);
+      row_number++;
+
+      total.worker_summa += row.worker_summa;
+    });
+
+    worksheet.addRow(total);
+
+    //css
+    worksheet.eachRow((row, rowNumber) => {
+      let bold = false;
+      let size = 14;
+      let horizontal = "center";
+
+      if (rowNumber === 1) {
+        worksheet.getRow(rowNumber).height = 20;
+        bold = true;
+      } else if (rowNumber === 2) {
+        worksheet.getRow(rowNumber).height = 60;
+        bold = true;
+      } else if (rowNumber === 3) {
+        bold = true;
+      } else {
+        size = 11;
+        worksheet.getRow(rowNumber).height = 30;
+      }
+
+      if (rowNumber === row_number) {
+        bold = true;
+      }
+
+      row.eachCell((cell, column) => {
+        if (column > 2 && rowNumber > 3) {
+          horizontal = "right";
+        }
+
+        if (column === 2 && rowNumber > 3) {
+          horizontal = "left";
+        }
+
+        if (column !== 1) {
+          cell.numFmt = "# ##0 ##0.00";
+        }
+
+        Object.assign(cell, {
+          font: { size, name: "Times New Roman", bold },
+          alignment: {
+            vertical: "middle",
+            horizontal,
+            wrapText: true,
+          },
+          fill: {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFFFFFF" },
+          },
+          border: {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          },
+        });
+      });
+    });
+
+    const filePath = path.join(__dirname, "../../public/exports/" + file_name);
+
+    await workbook.xlsx.writeFile(filePath);
+
+    return res.download(filePath, (err) => {
+      if (err) {
+        throw new ErrorResponse(err, err.statusCode);
+      }
+    });
+  } catch (error) {
+    errorCatch(error, res);
+  }
+};
+
 const forPdfData = async (req, res) => {
   try {
     const user_id = req.user.id;
@@ -754,5 +925,6 @@ module.exports = {
   updateRasxod,
   exportExcelData,
   exportRasxodByIdExcelData,
+  exportRasxodByIdExcelData2,
   forPdfData,
 };

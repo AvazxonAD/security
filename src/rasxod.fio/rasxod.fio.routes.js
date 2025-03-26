@@ -12,6 +12,7 @@ const {
   updateRasxod,
   exportExcelData,
   exportRasxodByIdExcelData,
+  exportRasxodByIdExcelData2,
   forPdfData,
 } = require("./rasxod.fio.controller");
 
@@ -20,7 +21,7 @@ router
   .get("/pdf", protect, forPdfData)
   .get("/:id", protect, getByIdRasxod)
   .get("/export", protect, exportExcelData)
-  .get("/export/:id", protect, exportRasxodByIdExcelData)
+  .get("/export/:id", protect, exportRasxodByIdExcelData2)
   .get("/", protect, getRasxod)
   .post("/", protect, createRasxod)
   .put("/:id", protect, updateRasxod)
