@@ -21,7 +21,7 @@ router
   .get("/pdf", protect, forPdfData)
   .get("/:id", protect, getByIdRasxod)
   .get("/export", protect, exportExcelData)
-  .get("/export/:id", protect, exportRasxodByIdExcelData2)
+  .get("/export/:id", protect, exportRasxodByIdExcelData)
   .get("/", protect, getRasxod)
   .post("/", protect, createRasxod)
   .put("/:id", protect, updateRasxod)
