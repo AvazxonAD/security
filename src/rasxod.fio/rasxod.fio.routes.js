@@ -12,6 +12,7 @@ const {
   updateRasxod,
   exportExcelData,
   exportRasxodByIdExcelData,
+  exportRasxodByIdExcelData2,
   forPdfData,
 } = require("./rasxod.fio.controller");
 

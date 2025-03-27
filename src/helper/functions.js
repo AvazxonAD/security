@@ -1,6 +1,11 @@
 const xlsx = require("xlsx");
 
 exports.Functions = class {
+  static nextExcelColumn(column) {
+    const nextCharCode = column.charCodeAt(0) + 1;
+    return String.fromCharCode(nextCharCode);
+  }
+
   static paramsValues(data) {
     const index_max = data.params.length;
     let values = "(";
