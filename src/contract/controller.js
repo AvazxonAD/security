@@ -235,7 +235,7 @@ exports.contractUpdate = async (req, res) => {
       null,
       req.i18n
     );
-    const oldData = await getByIdcontractService(
+    const old_data = await getByIdcontractService(
       user_id,
       id,
       false,
@@ -244,9 +244,19 @@ exports.contractUpdate = async (req, res) => {
       req.i18n
     );
 
-    const check_doc = await ContractService.checkDoc({ id });
-    if (check_doc.length) {
-      return res.error(req.i18n.t("docExists"), 400, { docs: check_doc });
+    const check_task = true;
+    for (let task of old_data.tasks) {
+      const check = data.tasks.find((item) => item.id === task.id);
+      if (!check) {
+        check_task = false;
+      }
+    }
+
+    if (!check_task) {
+      const check_doc = await ContractService.checkDoc({ id });
+      if (check_doc.length) {
+        return res.error(req.i18n.t("docExists"), 400, { docs: check_doc });
+      }
     }
 
     const data = validationResponse(contractUpdateValidation, req.body);
@@ -287,7 +297,7 @@ exports.contractUpdate = async (req, res) => {
       task.bxm_summa = bxm.bxm_07;
 
       if (task.id) {
-        const check = oldData.tasks.find((item) => item.id === task.id);
+        const check = old_data.tasks.find((item) => item.id === task.id);
         if (!check) {
           return res.error(req.i18n.t("taskNotFound"), 404);
         }
@@ -298,7 +308,7 @@ exports.contractUpdate = async (req, res) => {
       ...data,
       user_id,
       id,
-      oldData,
+      old_data,
     });
 
     return res.success(req.i18n.t("updateSuccess"), 200, null, result);
@@ -600,7 +610,7 @@ exports.importDataDB = async (req, res) => {
   });
 
   try {
-    const oldData = await oldDb.query(`
+    const old_data = await oldDb.query(`
             SELECT 
                 c.id, 
                 c.contractnumber, 
@@ -639,7 +649,7 @@ exports.importDataDB = async (req, res) => {
     try {
       await client.query("BEGIN");
 
-      for (let contract of oldData.rows) {
+      for (let contract of old_data.rows) {
         const organization = await client.query(
           `SELECT id FROM organization WHERE name = $1`,
           [contract.clientname.trim()]
@@ -652,7 +662,7 @@ exports.importDataDB = async (req, res) => {
         }
       }
       const bxm = await client.query(`SELECT * FROM bxm WHERE user_id = 1`);
-      for (let contract of oldData.rows) {
+      for (let contract of old_data.rows) {
         const organization = await client.query(
           `SELECT id FROM organization WHERE name = $1`,
           [contract.clientname.trim()]
