@@ -244,6 +244,8 @@ exports.contractUpdate = async (req, res) => {
       req.i18n
     );
 
+    const data = validationResponse(contractUpdateValidation, req.body);
+
     const check_task = true;
     for (let task of old_data.tasks) {
       const check = data.tasks.find((item) => item.id === task.id);
@@ -259,7 +261,6 @@ exports.contractUpdate = async (req, res) => {
       }
     }
 
-    const data = validationResponse(contractUpdateValidation, req.body);
     const organization = await getByIdorganizationService(
       user_id,
       data.organization_id,
