@@ -57,6 +57,7 @@ const pg = require("pg");
 const pool = require("../config/db");
 const ErrorResponse = require("../utils/errorResponse");
 const xlsx = require("xlsx");
+const { BxmService } = require("../spravochnik/bxm/service");
 
 exports.contractCreate = async (req, res) => {
   try {
@@ -235,6 +236,7 @@ exports.contractUpdate = async (req, res) => {
       null,
       req.i18n
     );
+
     const old_data = await getByIdcontractService(
       user_id,
       id,
@@ -246,11 +248,37 @@ exports.contractUpdate = async (req, res) => {
 
     const data = validationResponse(contractUpdateValidation, req.body);
 
-    const check_task = true;
+    let check_task = true;
     for (let task of old_data.tasks) {
-      const check = data.tasks.find((item) => item.id === task.id);
-      if (!check) {
+      const new_task = data.tasks.find((item) => item.id === task.id);
+
+      if (!new_task) {
         check_task = false;
+      } else if (new_task) {
+        const bxm = await BxmService.getByIdBxm({
+          id: new_task.bxm_id,
+          user_id,
+        });
+
+        new_task.task_discount_money = 0;
+        new_task.task_result_summa = 0;
+        new_task.task_summa =
+          new_task.task_time *
+          new_task.worker_number *
+          Math.round(bxm.summa * 0.07);
+
+        if (data.discount) {
+          new_task.task_discount_money =
+            new_task.task_summa * (data.discount / 100);
+          new_task.task_result_summa =
+            new_task.task_summa - new_task.task_discount_money;
+        } else {
+          new_task.task_result_summa = new_task.task_summa;
+        }
+
+        if (task.result_summa !== new_task.task_result_summa) {
+          check_task = false;
+        }
       }
     }
 
