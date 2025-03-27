@@ -279,7 +279,7 @@ exports.contractUpdateService = async (data) => {
     const contract = rows[0];
     const create_tasks = [];
 
-    for (let task of data.oldData.tasks) {
+    for (let task of data.old_data.tasks) {
       const check = data.tasks.find((item) => item.id === task.id);
       if (!check) {
         await this.ContractDB.deleteTask([task.id], client);
