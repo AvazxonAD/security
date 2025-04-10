@@ -189,7 +189,7 @@ const getRasxodService = async (
       params.push(batalon_id);
     }
     const result = await pool.query(
-      `
+      `--sql
             WITH data AS (
                 SELECT 
                     d.id,

@@ -194,8 +194,8 @@ const getRasxod = async (req, res) => {
       currentPage: page,
       nextPage: page >= pageCount ? null : page + 1,
       backPage: page === 1 ? null : page - 1,
-      from_balance: returnStringSumma(summa_from),
-      to_balance: returnStringSumma(summa_to),
+      from_balance: returnStringSumma(Math.round(summa_from * 100) / 100),
+      to_balance: returnStringSumma(Math.round(summa_to * 100) / 100),
     };
 
     return res.success(req.i18n.t("getSuccess"), 200, meta, data);

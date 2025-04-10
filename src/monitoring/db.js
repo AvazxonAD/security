@@ -69,7 +69,7 @@ exports.MonitoringDB = class {
                     d.doc_num,
                     TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,
                     d.opisanie,
-                    COALESCE(SUM(r.summa), 0)::FLOAt AS rasxod_sum,
+                    COALESCE(SUM(w_t.summa), 0)::FLOAt AS rasxod_sum,
                     0::FLOAT AS prixod_sum,
                     'rasxod fio' AS type    
                 FROM rasxod_fio_doc AS d
@@ -212,7 +212,7 @@ exports.MonitoringDB = class {
 
             rasxod_fio AS (
                 SELECT 
-                    COALESCE(SUM(r.summa), 0)::FLOAT AS summa
+                    COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa
                 FROM rasxod_fio_doc AS d
                 JOIN rasxod_fio AS r ON d.id = r.rasxod_fio_doc_id
                 JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
