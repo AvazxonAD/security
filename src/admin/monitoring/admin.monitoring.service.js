@@ -486,6 +486,11 @@ const monitoringService = async (year, month, user_id) => {
         `,
       params_2
     );
+
+    for (let batalon of batalons.rows) {
+      batalon.task_time = Math.round(batalon.task_time * 100) / 100;
+    }
+
     user_result.sort((a, b) => b.percent - a.percent);
     return {
       itogo,
