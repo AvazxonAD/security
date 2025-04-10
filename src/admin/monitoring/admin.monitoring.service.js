@@ -306,7 +306,9 @@ const monitoringService = async (year, month, user_id) => {
         `,
       params
     );
+
     let itogo = 0;
+
     const colors = [
       "#FF5733",
       "#33FF57",
