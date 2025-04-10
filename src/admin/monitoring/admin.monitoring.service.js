@@ -37,7 +37,7 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             LEFT JOIN doer AS d ON d.user_id = u.id
             LEFT JOIN adress AS a ON a.user_id = u.id
             LEFT JOIN str AS s ON s.user_id = u.id
-            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.id = p.account_number_id 
             LEFT JOIN boss ON boss.user_id = u.id
             LEFT JOIN bank AS b ON b.user_id = u.id
             JOIN contract AS c ON c.id = p.contract_id
@@ -79,12 +79,13 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             LEFT JOIN doer AS d ON d.user_id = u.id
             LEFT JOIN adress AS a ON a.user_id = u.id
             LEFT JOIN str AS s ON s.user_id = u.id
-            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.id = r_d.account_number_id 
             LEFT JOIN boss ON boss.user_id = u.id
             LEFT JOIN bank AS b ON b.user_id = u.id
             JOIN batalon AS t ON t.id = r_d.batalon_id
             WHERE r_d.isdeleted = false
-              AND r_d.doc_date BETWEEN $1 AND $2 ${user_filter}
+              AND r_d.doc_date BETWEEN $1 AND $2
+              ${user_filter}
 
             UNION ALL 
 
@@ -121,11 +122,13 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             LEFT JOIN doer AS d ON d.user_id = u.id
             LEFT JOIN adress AS a ON a.user_id = u.id
             LEFT JOIN str AS s ON s.user_id = u.id
-            LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
+            LEFT JOIN account_number AS a_n ON a_n.id = r_d.account_number_id 
             LEFT JOIN boss ON boss.user_id = u.id
             LEFT JOIN bank AS b ON b.user_id = u.id
             JOIN batalon AS t ON t.id = r_d.batalon_id 
-            WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 ${user_filter}
+            WHERE r_d.isdeleted = false
+              AND r_d.doc_date BETWEEN $1 AND $2
+              ${user_filter}
 
             ORDER BY doc_date
             OFFSET $3 LIMIT $4
