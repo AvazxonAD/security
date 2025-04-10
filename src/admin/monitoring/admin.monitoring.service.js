@@ -66,7 +66,7 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
                 r_d.opisanie,
                 (
                   SELECT 
-                    COALESCE(SUM(t_k.summa), 0)
+                    COALESCE(SUM(t_k.result_summa), 0)
                   FROM rasxod AS r 
                   JOIN task AS t_k ON t_k.id = r.task_id
                   WHERE r_d.id = r.rasxod_doc_id AND t_k.isdeleted = false
