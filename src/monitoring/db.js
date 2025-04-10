@@ -1,8 +1,8 @@
-const { db } = require('@db/index');
+const { db } = require("@db/index");
 
 exports.MonitoringDB = class {
-    static async getDocs(params) {
-        const query = `
+  static async getDocs(params) {
+    const query = `
             WITH data AS (
                 SELECT 
                     t.id AS tashkilot_id,
@@ -158,31 +158,33 @@ exports.MonitoringDB = class {
                             AND d.account_number_id = $2 
                             AND d.doc_date BETWEEN $3 AND $4
                     ) AS subquery
-                )
+                )::FLOAT AS total
 
             FROM data 
         `;
 
-        const data = await db.query(query, params);
+    const data = await db.query(query, params);
 
-        return data[0];
+    return data[0];
+  }
+
+  static async getSumma(params, start, end) {
+    let date_filter = ``;
+
+    if (start && end) {
+      params.push(start, end);
+      date_filter = `AND d.doc_date BETWEEN $${params.length - 1} AND $${
+        params.length
+      }`;
+    } else if (start && !end) {
+      params.push(start);
+      date_filter = `AND d.doc_date <= $${params.length}`;
+    } else if (!start && end) {
+      params.push(end);
+      date_filter = `AND d.doc_date <= $${params.length}`;
     }
 
-    static async getSumma(params, start, end) {
-        let date_filter = ``;
-
-        if (start && end) {
-            params.push(start, end);
-            date_filter = `AND d.doc_date BETWEEN $${params.length - 1} AND $${params.length}`;
-        } else if (start && !end) {
-            params.push(start);
-            date_filter = `AND d.doc_date <= $${params.length}`;
-        } else if (!start && end) {
-            params.push(end);
-            date_filter = `AND d.doc_date <= $${params.length}`;
-        }
-
-        const query = `
+    const query = `
             WITH prixod AS (
                 SELECT 
                     COALESCE(SUM(d.summa), 0)::FLOAT AS summa
@@ -242,8 +244,8 @@ exports.MonitoringDB = class {
             FROM prixod, rasxod, rasxod_fio, rasxod_organ;
         `;
 
-        const data = await db.query(query, params);
+    const data = await db.query(query, params);
 
-        return data[0];
-    }
-}
+    return data[0];
+  }
+};
