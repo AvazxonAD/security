@@ -2,6 +2,7 @@ const { db } = require("@db/index");
 
 exports.MonitoringDB = class {
   static async getDocs(params) {
+    console.log("/////////");
     const query = `--sql
             WITH data AS (
                 SELECT 
@@ -41,20 +42,24 @@ exports.MonitoringDB = class {
                     d.doc_num,
                     TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,
                     d.opisanie,
-                    COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS rasxod_sum,
+                    (
+                        SELECT 
+                            COALESCE(SUM(t_k.result_summa), 0)
+                        FROM rasxod AS r 
+                        JOIN task AS t_k ON t_k.id = r.task_id
+                        WHERE d.id = r.rasxod_doc_id AND t_k.isdeleted = false
+                            AND r.isdeleted = false
+                    ) AS rasxod_sum,
                     0::FLOAT AS prixod_sum,
                     'rasxod' AS type
                 FROM rasxod_doc AS d
-                JOIN rasxod AS r ON d.id = r.rasxod_doc_id
-                JOIN task AS t_k ON t_k.id = r.task_id
-                JOIN batalon AS t ON t.id = t_k.batalon_id
+                JOIN batalon AS t ON t.id = d.batalon_id
                 LEFT JOIN gazna_numbers g ON g.id = d.batalon_gazna_number_id
                 LEFT JOIN organ_account_numbers a ON a.id = d.batalon_account_number_id
                 WHERE d.user_id = $1 
                     AND d.isdeleted = false 
                     AND d.account_number_id = $2 
                     AND d.doc_date BETWEEN $3 AND $4
-                GROUP BY t.id, t.name, t.address, t.str, d.id, d.doc_num, d.doc_date, d.opisanie, g.gazna_number, a.account_number
 
                 UNION ALL 
 

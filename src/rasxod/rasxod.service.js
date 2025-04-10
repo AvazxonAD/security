@@ -157,7 +157,7 @@ const getRasxodService = async (
       params.push(offset, limit);
     }
     const result = await pool.query(
-      `
+      `--sql
             WITH data AS (
                 SELECT 
                     d.id,
@@ -178,7 +178,9 @@ const getRasxodService = async (
                         SELECT COALESCE(SUM(t.result_summa), 0) AS summa
                         FROM rasxod AS r
                         JOIN task AS t ON t.id = r.task_id
-                        WHERE r.rasxod_doc_id = d.id AND r.isdeleted = false
+                        WHERE r.rasxod_doc_id = d.id
+                          AND r.isdeleted = false
+                          AND t.isdeleted = false
                     ) AS summa
                 FROM rasxod_doc AS d
                 JOIN batalon AS b ON b.id = d.batalon_id 
