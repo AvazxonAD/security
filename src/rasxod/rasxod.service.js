@@ -205,21 +205,21 @@ const getRasxodService = async (
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
-                    WHERE r.isdeleted = false AND d.doc_date < $2  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
+                    WHERE r.isdeleted = false  AND t.isdeleted = false AND d.doc_date < $2  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_from,
                 (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
-                    WHERE r.isdeleted = false AND d.doc_date < $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
+                    WHERE r.isdeleted = false AND AND t.isdeleted = false d.doc_date < $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_to,
                  (
                     SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
                     FROM rasxod AS r
                     JOIN task AS t ON t.id = r.task_id
                     JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
-                    WHERE r.isdeleted = false AND d.doc_date BETWEEN $2 AND $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
+                    WHERE r.isdeleted = false AND d.doc_date BETWEEN $2 AND $3 AND t.isdeleted = false AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa
             FROM data
         `,
