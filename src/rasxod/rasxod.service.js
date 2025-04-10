@@ -249,7 +249,7 @@ const getByIdRasxodService = async (
       ignore_filter = `AND d.isdeleted = false`;
     }
     const data = await pool.query(
-      `
+      `--sql
             SELECT 
                 d.id,
                 d.doc_num,
@@ -303,6 +303,7 @@ const getByIdRasxodService = async (
         `,
       [account_number_id, user_id, id]
     );
+
     if (!data.rows[0]) {
       throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
@@ -325,7 +326,7 @@ const deeleteRasxodService = async (id) => {
       [id]
     );
     await client.query(`COMMIT`);
-    return rasxod_fio;
+    return;
   } catch (error) {
     await client.query(`ROLLBACK`);
     throw new ErrorResponse(error, error.statusCode);

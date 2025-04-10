@@ -2,7 +2,7 @@ const { db } = require("@db/index");
 
 exports.MonitoringDB = class {
   static async getDocs(params) {
-    const query = `
+    const query = `--sql
             WITH data AS (
                 SELECT 
                     t.id AS tashkilot_id,

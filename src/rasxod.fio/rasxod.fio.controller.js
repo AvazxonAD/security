@@ -181,6 +181,11 @@ const getRasxod = async (req, res) => {
       limit,
       batalon_id
     );
+
+    for (let doc of data) {
+      doc.summa = Math.round(doc.summa * 100) / 100;
+    }
+
     const pageCount = Math.ceil(total / limit);
 
     const meta = {

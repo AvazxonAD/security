@@ -207,8 +207,9 @@ const getRasxodService = async (
                     g.gazna_number,
                     a.account_number,
                     (
-                        SELECT COALESCE(SUM(r.summa), 0) AS summa
+                        SELECT COALESCE(SUM(wt.summa), 0) AS summa
                         FROM rasxod_fio AS r
+                        JOIN worker_task wt ON wt.id = r.worker_task_id
                         WHERE r.rasxod_fio_doc_id = d.id AND r.isdeleted = false
                     ) AS summa,
                     b.name AS batalon_name
@@ -232,14 +233,18 @@ const getRasxodService = async (
                     AND d.user_id = $4 ${batalon_filter} AND d.isdeleted = false
                 ) AS total_count,
                 (
-                    SELECT COALESCE(SUM(r.summa), 0)::FLOAT AS summa
+                    SELECT 
+                      COALESCE(SUM(wt.summa), 0)::FLOAT AS summa
                     FROM rasxod_fio AS r
+                    JOIN worker_task wt ON wt.id = r.worker_task_id
                     JOIN rasxod_fio_doc AS d ON d.id = r.rasxod_fio_doc_id
                     WHERE r.isdeleted = false AND d.doc_date < $2  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_from,
                  (
-                    SELECT COALESCE(SUM(r.summa), 0)::FLOAT AS summa
+                    SELECT 
+                      COALESCE(SUM(wt.summa), 0)::FLOAT AS summa
                     FROM rasxod_fio AS r
+                    JOIN worker_task wt ON wt.id = r.worker_task_id
                     JOIN rasxod_fio_doc AS d ON d.id = r.rasxod_fio_doc_id
                     WHERE r.isdeleted = false AND d.doc_date < $3  AND d.isdeleted = false ${batalon_filter} AND d.isdeleted = false
                 ) AS summa_to
