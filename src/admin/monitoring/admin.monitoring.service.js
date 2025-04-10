@@ -272,10 +272,10 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
     return {
       rows,
       total: total.rows[0].total_count,
-      summa_from,
-      summa_to,
-      prixod,
-      rasxod,
+      summa_from: Math.round(summa_from * 100) / 100,
+      summa_to: Math.round(summa_to * 100) / 100,
+      prixod: Math.round(prixod * 100) / 100,
+      rasxod: Math.round(rasxod * 100) / 100,
     };
   } catch (error) {
     throw new ErrorResponse(error, error.statusCode);
