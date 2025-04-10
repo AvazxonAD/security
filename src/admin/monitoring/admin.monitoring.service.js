@@ -158,18 +158,16 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
                 JOIN users AS u ON u.id = r_d.user_id
                 JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
                 JOIN task AS t_k ON t_k.id = r.task_id
-                JOIN contract AS c ON c.id = t_k.contract_id
                 JOIN batalon AS t ON t.id = t_k.batalon_id
-                WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter_total}) + 
+                WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 ${user_filter_total}) + 
                 (SELECT COALESCE(COUNT(DISTINCT r_d.id), 0)::INTEGER  
                 FROM rasxod_fio_doc AS r_d
                 JOIN users AS u ON u.id = r_d.user_id
                 JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
                 JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
                 JOIN task AS t_k ON t_k.id = w_t.task_id
-                JOIN contract AS c ON c.id = t_k.contract_id
                 JOIN batalon AS t ON t.id = t_k.batalon_id
-                WHERE r_d.isdeleted = false AND  r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter_total}) AS total_count
+                WHERE r_d.isdeleted = false AND  r_d.doc_date BETWEEN $1 AND $2 ${user_filter_total}) AS total_count
         `,
       total_params
     );
@@ -186,8 +184,9 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             SELECT COALESCE(SUM(p.summa), 0)::FLOAT AS summa 
             FROM prixod AS p 
             JOIN users AS u ON u.id = p.user_id
-            JOIN contract AS c ON c.id = p.contract_id
-            WHERE p.doc_date < $1 AND c.isdeleted = false AND p.isdeleted = false ${user_date_filter}
+            WHERE p.doc_date < $1
+              AND p.isdeleted = false
+              ${user_date_filter}
         `,
       summa_from_params
     );
@@ -201,9 +200,9 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             JOIN users AS u ON u.id = r_d.user_id
             JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
             LEFT JOIN task AS t_k ON t_k.id = r.task_id
-            LEFT JOIN contract AS c ON c.id = t_k.contract_id
             LEFT JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+            WHERE r_d.isdeleted = false
+              AND r_d.doc_date < $1  ${user_date_filter}
         `,
       summa_from_params
     );
@@ -212,15 +211,12 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
     const rasxod_fio_from = await pool.query(
       `--sql
             SELECT 
-            COALESCE(SUM(r.summa), 0)::FLOAT AS summa 
+              COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa 
             FROM rasxod_fio_doc AS r_d
             JOIN users AS u ON u.id = r_d.user_id
             JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
-            JOIN task AS t_k ON t_k.id = w_t.task_id
-            JOIN contract AS c ON c.id = t_k.contract_id
-            JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 ${user_date_filter}
         `,
       summa_from_params
     );
@@ -233,8 +229,7 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             SELECT COALESCE(SUM(p.summa), 0)::FLOAT AS summa 
             FROM prixod AS p 
             JOIN users AS u ON u.id = p.user_id
-            JOIN contract AS c ON c.id = p.contract_id
-            WHERE p.doc_date < $1 AND c.isdeleted = false AND p.isdeleted = false ${user_date_filter}
+            WHERE p.doc_date < $1 AND  p.isdeleted = false ${user_date_filter}
         `,
       summa_to_params
     );
@@ -248,9 +243,7 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
             JOIN users AS u ON u.id = r_d.user_id
             JOIN task AS t_k ON t_k.id = r.task_id
-            JOIN contract AS c ON c.id = t_k.contract_id
-            JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1  ${user_date_filter}
         `,
       summa_to_params
     );
@@ -259,14 +252,12 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
     const rasxod_fio_to = await pool.query(
       `--sql
             SELECT 
-            COALESCE(SUM(r.summa), 0)::FLOAT AS summa
+            COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa
             FROM rasxod_fio_doc AS r_d
             JOIN users AS u ON u.id = r_d.user_id
             JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
-            JOIN task AS t_k ON t_k.id = w_t.task_id
-            JOIN contract AS c ON c.id = t_k.contract_id
-            WHERE r_d.isdeleted = false AND r_d.doc_date < $1 AND c.isdeleted = false ${user_date_filter}
+            WHERE r_d.isdeleted = false AND r_d.doc_date < $1  ${user_date_filter}
         `,
       summa_to_params
     );
