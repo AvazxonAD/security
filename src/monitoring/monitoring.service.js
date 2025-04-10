@@ -38,20 +38,26 @@ const prixodRasxodService = async (
                 t.address AS tashkilot_address,
                 t.str AS tashkilot_inn,
                 t.account_number AS tashkilot_account_number,
-                r_d.id,
-                r_d.doc_num,
-                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
-                r_d.opisanie,
-                COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS rasxod_sum,
+                d.id,
+                d.doc_num,
+                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,
+                d.opisanie,
+                (
+                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
+                    FROM rasxod AS r
+                    JOIN task AS t ON t.id = r.task_id
+                    WHERE r.rasxod_doc_id = d.id
+                      AND r.isdeleted = false
+                ) AS summa,
                 0::FLOAT AS prixod_sum,
                 'rasxod' AS type
-            FROM rasxod_doc AS r_d
-            JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
+            FROM rasxod_doc AS d
+            JOIN rasxod AS r ON d.id = r.rasxod_doc_id
             JOIN task AS t_k ON t_k.id = r.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
-            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie
+            WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2 AND d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
+            GROUP BY t.id, t.name, t.address, t.str, d.id, d.doc_num, d.doc_date, d.opisanie
 
             UNION ALL 
 
@@ -61,21 +67,21 @@ const prixodRasxodService = async (
                 t.address AS tashkilot_address,
                 t.str AS tashkilot_inn,
                 t.account_number AS tashkilot_account_number,
-                r_d.id,
-                r_d.doc_num,
-                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
-                r_d.opisanie,
+                d.id,
+                d.doc_num,
+                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,
+                d.opisanie,
                 COALESCE(SUM(r.summa), 0)::FLOAt AS rasxod_sum,
                 0::FLOAT AS prixod_sum,
                 'rasxod fio' AS type    
-            FROM rasxod_fio_doc AS r_d
-            JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
+            FROM rasxod_fio_doc AS d
+            JOIN rasxod_fio AS r ON d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
-            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie
+            WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2 AND d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false
+            GROUP BY t.id, t.name, t.address, t.str, d.id, d.doc_num, d.doc_date, d.opisanie
             ORDER BY doc_date
             OFFSET $5 LIMIT $6
         `,
@@ -90,21 +96,21 @@ const prixodRasxodService = async (
                 JOIN contract AS c ON c.id = p.contract_id
                 JOIN organization AS t ON t.id = c.organization_id
                 WHERE p.user_id = $1 AND p.isdeleted = false AND p.account_number_id = $2 AND p.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) + 
-                (SELECT COALESCE(COUNT( DISTINCT r_d.id), 0)::INTEGER
-                FROM rasxod_doc AS r_d
-                JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
+                (SELECT COALESCE(COUNT( DISTINCT d.id), 0)::INTEGER
+                FROM rasxod_doc AS d
+                JOIN rasxod AS r ON d.id = r.rasxod_doc_id
                 JOIN task AS t_k ON t_k.id = r.task_id
                 JOIN contract AS c ON c.id = t_k.contract_id
                 JOIN batalon AS t ON t.id = t_k.batalon_id
-                WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) + 
-                (SELECT COALESCE(COUNT(DISTINCT r_d.id), 0)::INTEGER  
-                FROM rasxod_fio_doc AS r_d
-                JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
+                WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2 AND d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) + 
+                (SELECT COALESCE(COUNT(DISTINCT d.id), 0)::INTEGER  
+                FROM rasxod_fio_doc AS d
+                JOIN rasxod_fio AS r ON d.id = r.rasxod_fio_doc_id
                 JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
                 JOIN task AS t_k ON t_k.id = w_t.task_id
                 JOIN contract AS c ON c.id = t_k.contract_id
                 JOIN batalon AS t ON t.id = t_k.batalon_id
-                WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) AS total_count
+                WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2 AND d.doc_date BETWEEN $3 AND $4 AND c.isdeleted = false) AS total_count
         `,
       [user_id, account_number_id, from, to]
     );
@@ -123,17 +129,17 @@ const prixodRasxodService = async (
       prixod_from.rows.length > 0 ? prixod_from.rows[0].summa : 0;
 
     const rasxod_from = await pool.query(
-      `
+      `--sql
             SELECT 
                 COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS summa
-            FROM rasxod_doc AS r_d
-            JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
+            FROM rasxod_doc AS d
+            JOIN rasxod AS r ON d.id = r.rasxod_doc_id
             LEFT JOIN task AS t_k ON t_k.id = r.task_id
             LEFT JOIN contract AS c ON c.id = t_k.contract_id
             LEFT JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false 
-            AND r_d.account_number_id = $2 
-            AND r_d.doc_date < $3 
+            WHERE d.user_id = $1 AND d.isdeleted = false 
+            AND d.account_number_id = $2 
+            AND d.doc_date < $3 
             AND c.isdeleted = false
         `,
       [user_id, account_number_id, from]
@@ -145,13 +151,13 @@ const prixodRasxodService = async (
       `
             SELECT 
             COALESCE(SUM(r.summa), 0)::FLOAT AS summa 
-            FROM rasxod_fio_doc AS r_d
-            JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
+            FROM rasxod_fio_doc AS d
+            JOIN rasxod_fio AS r ON d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
+            WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2 AND d.doc_date < $3 AND c.isdeleted = false
         `,
       [user_id, account_number_id, from]
     );
@@ -179,13 +185,13 @@ const prixodRasxodService = async (
             SELECT 
             COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS summa
             FROM rasxod AS r
-            JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id
+            JOIN rasxod_doc AS d ON d.id = r.rasxod_doc_id
             JOIN task AS t_k ON t_k.id = r.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
             JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false 
-            AND r_d.account_number_id = $2 
-            AND r_d.doc_date < $3 
+            WHERE d.user_id = $1 AND d.isdeleted = false 
+            AND d.account_number_id = $2 
+            AND d.doc_date < $3 
             AND c.isdeleted = false
         `,
       [user_id, account_number_id, to]
@@ -198,12 +204,12 @@ const prixodRasxodService = async (
       `
             SELECT 
             COALESCE(SUM(r.summa), 0)::FLOAT AS summa
-            FROM rasxod_fio_doc AS r_d
-            JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
+            FROM rasxod_fio_doc AS d
+            JOIN rasxod_fio AS r ON d.id = r.rasxod_fio_doc_id
             JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
             JOIN task AS t_k ON t_k.id = w_t.task_id
             JOIN contract AS c ON c.id = t_k.contract_id
-            WHERE r_d.user_id = $1 AND r_d.isdeleted = false AND r_d.account_number_id = $2 AND r_d.doc_date < $3 AND c.isdeleted = false
+            WHERE d.user_id = $1 AND d.isdeleted = false AND d.account_number_id = $2 AND d.doc_date < $3 AND c.isdeleted = false
         `,
       [user_id, account_number_id, to]
     );
