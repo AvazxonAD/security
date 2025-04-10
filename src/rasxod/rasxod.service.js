@@ -229,9 +229,9 @@ const getRasxodService = async (
     return {
       data: data?.data || [],
       total: data.total_count,
-      summa_from: data.summa_from,
-      summa_to: data.summa_to,
-      summa: data.summa,
+      summa_from: Math.round(data.summa_from * 100) / 100,
+      summa_to: Math.round(data.summa_to * 100) / 100,
+      summa: Math.round(data.summa * 100) / 100,
     };
   } catch (error) {
     throw new ErrorResponse(error, error.statusCode);
