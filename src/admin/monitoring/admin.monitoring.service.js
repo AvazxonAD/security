@@ -30,7 +30,8 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
                 TO_CHAR(p.doc_date, 'YYYY-MM-DD') AS doc_date,
                 p.opisanie,
                 0::FLOAT AS rasxod_sum,
-                p.summa::FLOAT AS prixod_sum    
+                p.summa::FLOAT AS prixod_sum,
+                'prixod' AS type  
             FROM prixod AS p 
             JOIN users AS u ON u.id = p.user_id
             LEFT JOIN doer AS d ON d.user_id = u.id
@@ -63,8 +64,16 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
                 r_d.doc_num,
                 TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
                 r_d.opisanie,
-                COALESCE(SUM(t_k.result_summa), 0)::FLOAT AS rasxod_sum,
-                0::FLOAT AS prixod_sum
+                (
+                  SELECT 
+                    COALESCE(SUM(t_k.summa), 0)
+                  FROM rasxod AS r 
+                  JOIN task AS t_k ON t_k.id = r.task_id
+                  WHERE r_d.id = r.rasxod_doc_id AND t_k.isdeleted = false
+                    AND r.isdeleted = false
+                ) AS rasxod_sum,
+                0::FLOAT AS prixod_sum,
+                'rasxod' AS type
             FROM rasxod_doc AS r_d
             JOIN users AS u ON u.id = r_d.user_id
             LEFT JOIN doer AS d ON d.user_id = u.id
@@ -73,12 +82,9 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
             LEFT JOIN boss ON boss.user_id = u.id
             LEFT JOIN bank AS b ON b.user_id = u.id
-            JOIN rasxod AS r ON r_d.id = r.rasxod_doc_id
-            JOIN task AS t_k ON t_k.id = r.task_id
-            JOIN contract AS c ON c.id = t_k.contract_id
-            JOIN batalon AS t ON t.id = t_k.batalon_id
-            WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter}
-            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie, u.id, d.doer, a.adress, s.str, a_n.account_number,boss.boss, b.bank, b.mfo
+            JOIN batalon AS t ON t.id = r_d.batalon_id
+            WHERE r_d.isdeleted = false
+              AND r_d.doc_date BETWEEN $1 AND $2 ${user_filter}
 
             UNION ALL 
 
@@ -100,8 +106,16 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
                 r_d.doc_num,
                 TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS doc_date,
                 r_d.opisanie,
-                COALESCE(SUM(r.summa), 0)::FLOAt AS rasxod_sum,
-                0::FLOAT AS prixod_sum    
+                (
+                  SELECT 
+                    COALESCE(SUM(w_t.summa), 0)
+                  FROM rasxod_fio AS r 
+                  JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
+                  WHERE r_d.id = r.rasxod_fio_doc_id AND w_t.isdeleted = false
+                    AND r.isdeleted = false
+                ) AS rasxod_sum,
+                0::FLOAT AS prixod_sum,
+                'rasxod fio' AS type
             FROM rasxod_fio_doc AS r_d
             JOIN users AS u ON u.id = r_d.user_id
             LEFT JOIN doer AS d ON d.user_id = u.id
@@ -110,24 +124,23 @@ const prixodRasxodService = async (from, to, offset, limit, user_id) => {
             LEFT JOIN account_number AS a_n ON a_n.user_id = u.id
             LEFT JOIN boss ON boss.user_id = u.id
             LEFT JOIN bank AS b ON b.user_id = u.id
-            JOIN rasxod_fio AS r ON r_d.id = r.rasxod_fio_doc_id
-            JOIN worker_task AS w_t ON w_t.id = r.worker_task_id
-            JOIN task AS t_k ON t_k.id = w_t.task_id
-            JOIN contract AS c ON c.id = t_k.contract_id
-            JOIN batalon AS t ON t.id = t_k.batalon_id 
-            WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 AND c.isdeleted = false ${user_filter}
-            GROUP BY t.id, t.name, t.address, t.str, r_d.id, r_d.doc_num, r_d.doc_date, r_d.opisanie, u.id, d.doer, a.adress, s.str, a_n.account_number,boss.boss, b.bank, b.mfo
+            JOIN batalon AS t ON t.id = r_d.batalon_id 
+            WHERE r_d.isdeleted = false AND r_d.doc_date BETWEEN $1 AND $2 ${user_filter}
+
             ORDER BY doc_date
             OFFSET $3 LIMIT $4
         `,
       params
     );
+
     const total_params = [from, to];
     let user_filter_total = "";
+
     if (user_id) {
       user_filter_total = `AND u.id = $${total_params.length + 1}`;
       total_params.push(user_id);
     }
+
     const total = await pool.query(
       `--sql
             SELECT 
