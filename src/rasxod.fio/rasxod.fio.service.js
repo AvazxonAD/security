@@ -264,7 +264,7 @@ const getRasxodService = async (
 };
 
 const getByGroupTasks = async (params) => {
-  const query = `
+  const query = `--sql
     SELECT
       w.id AS worker_id,
       COALESCE(SUM(w_t.task_time), 0)::FLOAT AS task_time,
@@ -308,7 +308,7 @@ const getByIdRasxodService = async (
     }
 
     const data = await pool.query(
-      `
+      `--sql
             SELECT 
                 d.id,
                 d.doc_num,
