@@ -667,8 +667,36 @@ exports.getByIdcontractService = async (
   }
 };
 
-exports.dataForExcelService = async (user_id, account_number_id, from, to) => {
+exports.dataForExcelService = async (
+  user_id,
+  account_number_id,
+  from,
+  to,
+  search
+) => {
   try {
+    let serach_filter = "";
+    let tasks_search_filter = "";
+
+    if (search) {
+      serach_filter = `AND (
+                    d.doc_num = $${params.length + 1} 
+                    OR o.name ILIKE  '%' || $${params.length + 1} || '%'
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM task t 
+                        JOIN batalon b ON t.batalon_id = b.id 
+                        WHERE t.isdeleted = false 
+                            AND b.name = $${params.length + 1} 
+                            AND d.id = t.contract_id 
+                    )
+                )
+            `;
+
+      tasks_search_filter = `AND b.name = $${params.length + 1}`;
+
+      params.push(search);
+    }
     const data = await pool.query(
       `--sql
             WITH data AS (

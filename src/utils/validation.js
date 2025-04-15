@@ -139,11 +139,11 @@ const authUpdateValidation = Joi.object({
 });
 const batalionValidation = Joi.object({
   name: Joi.string().trim().required(),
-  birgada: Joi.boolean(),
-  address: Joi.string().trim().required(),
-  str: Joi.string().trim().required(),
-  bank_name: Joi.string().trim().required(),
-  mfo: Joi.string().trim().required(),
+  birgada: Joi.boolean().required(),
+  address: Joi.string().trim().allow("", null),
+  str: Joi.string().trim().allow("", null),
+  bank_name: Joi.string().trim().allow("", null),
+  mfo: Joi.string().trim().allow("", null),
   gazna_numbers: Joi.array()
     .items(
       Joi.object({
