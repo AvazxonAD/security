@@ -151,12 +151,13 @@ const batalionValidation = Joi.object({
         gazna_number: Joi.string().trim().required(),
       })
     )
-    .empty(),
+    .empty()
+    .default([]),
   account_numbers: Joi.array().items(
     Joi.object({
       id: Joi.number().min(1).integer(),
       account_number: Joi.string().trim().required(),
-    })
+    }).default([])
   ),
 }).options({ stripUnknown: true });
 
