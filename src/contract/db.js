@@ -501,7 +501,7 @@ exports.getcontractService = async (
                     ${batalion_filter}
                     AND d.doc_date BETWEEN $4 AND $5 
                     AND d.account_number_id = $6
-                ORDER BY d.created_at DESC 
+                ORDER BY CAST(d.doc_num AS FLOAT) DESC
                 OFFSET $2 LIMIT $3
             )
             SELECT 
