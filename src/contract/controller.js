@@ -1,29 +1,52 @@
 const { ContractService } = require("./service");
+const { AccountNumberService } = require(`@account_number/service`);
+const { BatalonService } = require(`@batalon/service`);
 
-// exports.Controller = class {
-//     static async create(req, res) {
-//         const user_id = req.user.id
-//         const { account_number_id } = req.query;
-//         const { organization_id, organ_account_number_id, gazna_number_id } = req.body;
+exports.Controller = class {
+  static async getByBatalonReport(req, res) {
+    const { account_number_id, batalon_id, excel, from, to } = req.query;
+    const user_id = req.user.id;
 
-//         await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n)
-//         const { error, value: data } = contractValidation.validate(req.body);
-//         if (error) {
-//             return res.error(req.i18n.t('validationError'), 400, error.details[0].message);
-//         }
+    const account_number = await AccountNumberService.getById({
+      user_id,
+      id: account_number_id,
+    });
+    if (account_number) {
+      return res.error(req.i18n.t("accountNumberError"), 404);
+    }
 
-//         const organization = await getByIdorganizationService(user_id, data.organization_id, null, req.i18n);
+    const batalon = await BatalonService.getById({ user_id, id: batalon_id });
 
-//         for (let task of data.tasks) {
-//             await getByIdBatalonService(user_id, task.batalon_id, null, null, req.i18n);
-//             const bxm = await getByIdBxmService(user_id, task.bxm_id, req.i18n)
-//             task.bxm_summa = bxm.bxm_07;
-//         }
+    const result = await ContractService.getByBatalonReport({
+      user_id,
+      account_number_id,
+      from,
+      to,
+    });
 
-//         const result = await contractCreateService({ ...data, user_id, account_number_id })
-//
-//     }
-// }
+    if (excel === "true") {
+      const { file_name, file_path } =
+        await ContractService.getByBatalonReportExcel({
+          ...result,
+          batalon,
+          ...req.query,
+        });
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${file_name}"`
+      );
+
+      return res.sendFile(file_path);
+    }
+
+    return res.success(req.i18n.t("getSuccess"), 200, null, result);
+  }
+};
 
 const {
   contractCreateService,
@@ -50,7 +73,10 @@ const {
 } = require("../spravochnik/account.number/account.number.service");
 const { getByIdBxmService } = require("../spravochnik/bxm/db");
 const { returnStringSumma } = require("../utils/return.summa");
-const { returnStringDate } = require("../utils/date.functions");
+const {
+  returnStringDate,
+  returnLocalDate,
+} = require("../utils/date.functions");
 const ExcelJs = require("exceljs");
 const path = require("path");
 const pg = require("pg");
@@ -391,22 +417,22 @@ exports.exportExcelData = async (req, res) => {
     const contractSheet = contractBook.addWorksheet("Shartnomalar");
     contractSheet.columns = [
       { header: "N_", key: "doc_num", width: 10 },
-      { header: "client", key: "organization_name", width: 40 },
-      { header: "shartnoma sanasi", key: "doc_date", width: 20 },
-      { header: "amal qilish muddati", key: "period", width: 20 },
-      { header: "adress", key: "adress", width: 40 },
+      { header: "Hamkor tashkilot", key: "organization_name", width: 40 },
+      { header: "Shartnoma sanasi", key: "doc_date", width: 20 },
+      { header: "Amal qilish muddati", key: "period", width: 20 },
+      { header: "Manzil", key: "adress", width: 40 },
       { header: "Boshlanish vaqti", key: "start_date", width: 20 },
       { header: "Tugallash sanasi", key: "end_date", width: 20 },
-      { header: "shegirma %", key: "discount", width: 20 },
+      { header: "Chegirma %", key: "discount", width: 20 },
       { header: "Chegirma summa", key: "discount_money", width: 20 },
-      { header: "summa", key: "summa", width: 20 },
-      { header: "umumiy summa", key: "result_summa", width: 20 },
-      { header: "kridit", key: "kridit", width: 20 },
-      { header: "debit", key: "debit", width: 20 },
+      { header: "Summa", key: "summa", width: 20 },
+      { header: "Umumiy summa", key: "result_summa", width: 20 },
+      { header: "Debit", key: "debit", width: 20 },
+      { header: "Kredit", key: "kridit", width: 20 },
       { header: "Qolgan summa", key: "remaining_summa", width: 20 },
-      { header: "xisob raqam", key: "account_number", width: 25 },
-      { header: "xodimlar soni", key: "all_worker_number", width: 20 },
-      { header: "topshiriq vaqti", key: "all_task_time", width: 20 },
+      { header: "Xisob raqam", key: "account_number", width: 25 },
+      { header: "Xodimlar soni", key: "all_worker_number", width: 20 },
+      { header: "Topshiriq vaqti", key: "all_task_time", width: 20 },
     ];
     const headerRow = contractSheet.getRow(1);
     headerRow.font = { bold: true };
@@ -436,17 +462,21 @@ exports.exportExcelData = async (req, res) => {
       contractSheet.addRow({
         doc_num: contract.doc_num,
         organization_name: contract.organization_name,
-        doc_date: contract.doc_date,
-        period: contract.period,
+        doc_date: returnLocalDate(new Date(contract.doc_date)),
+        period: returnLocalDate(new Date(contract.period)),
         adress: contract.adress,
-        start_date: `${contract.start_date} ${contract.start_time}`,
-        end_date: `${contract.end_date} ${contract.end_time}`,
+        start_date: `${returnLocalDate(new Date(contract.start_date))} ${
+          contract.start_time
+        }`,
+        end_date: `${returnLocalDate(new Date(contract.end_date))} ${
+          contract.end_time
+        }`,
         discount: contract.discount,
         discount_money: contract.discount_money,
         summa: contract.summa,
         result_summa: contract.result_summa,
-        kridit: contract.kridit,
         debit: contract.debit,
+        kridit: contract.kridit,
         remaining_summa: contract.remaining_summa,
         account_number: contract.account_number,
         all_worker_number: contract.all_worker_number,

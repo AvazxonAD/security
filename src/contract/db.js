@@ -73,6 +73,65 @@ exports.ContractDB = class {
 
     await client.query(query, params);
   }
+
+  static async getByBatalonReport(params, batalon_id = null) {
+    let batalon_filter = ``;
+
+    if (batalon_id) {
+      params.push(batalon_id);
+      batalon_filter = `AND t.batalon_id = $${params.length}`;
+    }
+
+    const query = `--sql
+      SELECT 
+        d.id,
+        d.doc_num, 
+        o.name AS organization_name,
+        TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date, 
+        TO_CHAR(d.period, 'YYYY-MM-DD') AS period, 
+        d.adress, 
+        TO_CHAR(d.start_date, 'YYYY-MM-DD') AS start_date, 
+        TO_CHAR(d.end_date, 'YYYY-MM-DD') AS end_date, 
+        d.discount, 
+        d.discount_money::FLOAT, 
+        d.summa::FLOAT, 
+        d.result_summa::FLOAT, 
+        d.organization_id, 
+        d.account_number_id,
+        a_n.account_number,
+        d.start_time,
+        d.end_time,
+        d.all_worker_number,
+        d.all_task_time,
+        (d.result_summa - COALESCE(p.total_summa, 0))::FLOAT AS kredit,
+        COALESCE(p.total_summa, 0)::FLOAT AS debet,
+        (
+          SELECT JSON_AGG(row_to_json(t))
+          FROM task t 
+          WHERE t.isdeleted = false
+            AND t.contract_id = d.id
+            ${batalon_filter}
+        ) AS tasks
+      FROM contract d
+      JOIN organization o ON o.id = d.organization_id
+      JOIN account_number a_n ON a_n.id = d.account_number_id
+      LEFT JOIN (
+        SELECT contract_id, SUM(summa) AS total_summa
+        FROM prixod
+        WHERE isdeleted = false
+        GROUP BY contract_id
+      ) p ON p.contract_id = d.id
+      WHERE d.user_id = $1
+        AND d.isdeleted = false
+        AND d.account_number_id = $2
+        AND d.doc_date BETWEEN $3 AND $4
+      ORDER BY CAST(d.doc_num AS FLOAT)
+    `;
+
+    const result = await db.query(query, params);
+
+    return result;
+  }
 };
 
 const pool = require("../config/db");
@@ -580,7 +639,7 @@ exports.getByIdcontractService = async (
       params.push(organization_id);
     }
 
-    const query = `
+    const query = `--sql
             SELECT 
                 d.id,
                 d.doc_num, 
@@ -667,36 +726,8 @@ exports.getByIdcontractService = async (
   }
 };
 
-exports.dataForExcelService = async (
-  user_id,
-  account_number_id,
-  from,
-  to,
-  search
-) => {
+exports.dataForExcelService = async (user_id, account_number_id, from, to) => {
   try {
-    let serach_filter = "";
-    let tasks_search_filter = "";
-
-    if (search) {
-      serach_filter = `AND (
-                    d.doc_num = $${params.length + 1} 
-                    OR o.name ILIKE  '%' || $${params.length + 1} || '%'
-                    OR EXISTS (
-                        SELECT 1 
-                        FROM task t 
-                        JOIN batalon b ON t.batalon_id = b.id 
-                        WHERE t.isdeleted = false 
-                            AND b.name = $${params.length + 1} 
-                            AND d.id = t.contract_id 
-                    )
-                )
-            `;
-
-      tasks_search_filter = `AND b.name = $${params.length + 1}`;
-
-      params.push(search);
-    }
     const data = await pool.query(
       `--sql
             WITH data AS (
@@ -780,7 +811,7 @@ exports.deleteContractService = async (id) => {
 
 exports.contractViewService = async (user_id, account_number_id, id) => {
   try {
-    const query = `
+    const query = `--sql
             SELECT 
                 d.id,
                 d.doc_num, 

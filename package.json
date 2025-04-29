@@ -45,7 +45,7 @@
     "@rasxod_organ": "./src/rasxod.organ",
     "@db": "./src/db",
     "@account_number": "./src/spravochnik/account.number",
-    "@batalon": "./src/batalon",
+    "@batalon": "./src/batalon/",
     "@bxm": "./src/spravochnik/bxm",
     "@organization": "./src/organization"
   }
