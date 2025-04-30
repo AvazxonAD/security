@@ -1,4 +1,4 @@
-const { returnStringDate } = require("../utils/date.functions");
+const { returnStringDate, tashkentTime } = require("../utils/date.functions");
 const { ContractDB } = require("./db");
 const ExcelJs = require(`exceljs`);
 const path = require(`path`);
@@ -12,12 +12,33 @@ exports.ContractService = class {
   }
 
   static async getByBatalonReport(data) {
-    const result = await ContractDB.getByBatalonReport(
-      [data.user_id, data.account_number_id, data.from, data.to],
-      data.batalon_id
-    );
+    const itogo = {
+      summa: 0,
+      worker_number: 0,
+      task_time: 0,
+      task: {
+        summa: 0,
+        worker_number: 0,
+      },
+    };
 
-    return result;
+    const result = await ContractDB.getByBatalonReport([
+      data.user_id,
+      data.account_number_id,
+      data.from,
+      data.to,
+      data.batalon_id,
+    ]);
+
+    for (let item of result) {
+      itogo.summa += item.summa;
+      itogo.worker_number += item.worker_number;
+      itogo.task_time += item.task_time;
+      itogo.task.summa += item.task.summa;
+      itogo.task.worker_number += item.task.worker_number;
+    }
+
+    return { contracts: result, itogo };
   }
 
   static async getByBatalonReportExcel(data) {
@@ -56,40 +77,80 @@ exports.ContractService = class {
     worksheet.getCell(`I2`).value = `${data.batalon.name} harbiy qisim`;
     worksheet.getCell(`I3`).value = `soni`;
     worksheet.getCell(`J3`).value = `summasi`;
+    worksheet.getRow(4).values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+    worksheet.columns = [
+      { key: "order", width: 5 },
+      { key: "client", width: 50 },
+      { key: "number", width: 15 },
+      { key: "date", width: 20 },
+      { key: "summa", width: 25 },
+      { key: "worker_number", width: 25 },
+      { key: "task_time", width: 20 },
+      { key: "event_date", width: 30 },
+      { key: "batalon_worker_number", width: 15 },
+      { key: "batalon_summa", width: 25 },
+    ];
+
+    data.contracts.forEach((contract, index) => {
+      const event_date =
+        contract.start_date === contract.end_date
+          ? returnStringDate(new Date(contract.start_date))
+          : `${returnStringDate(
+              new Date(contract.start_date)
+            )} дан  ${returnStringDate(new Date(contract.end_date))} гача`;
+      worksheet.addRow({
+        order: index + 1,
+        client: contract.organization_name,
+        number: contract.doc_num,
+        date: contract.doc_date,
+        summa: contract.result_summa,
+        worker_number: contract.worker_number,
+        task_time: contract.task_time,
+        event_date: event_date,
+        batalon_worker_number: contract.task.worker_number,
+        batalon_summa: contract.task.summa,
+      });
+    });
+
+    worksheet.addRow({
+      summa: data.itogo.summa,
+      worker_number: data.itogo.worker_number,
+      task_time: data.itogo.task_time,
+      batalon_worker_number: data.itogo.task.worker_number,
+      batalon_summa: data.itogo.task.summa,
+    });
+
+    // template
     worksheet.eachRow((row, row_number) => {
       let bold = false;
-      let size = 14;
+      let size = 10;
       let horizontal = "center";
+      let numFmt = "# ##0 ##0.00";
+      let argb = "FFFFFFFF";
 
-      if (row_number === 1) {
-        worksheet.getRow(row_number).height = 20;
+      if (row_number < 5 || row_number === worksheet.rowCount) {
         bold = true;
-      } else if (row_number === 2) {
-        worksheet.getRow(row_number).height = 60;
-        bold = true;
-      } else if (row_number === 3) {
-        bold = true;
-      } else {
-        size = 11;
-        worksheet.getRow(row_number).height = 30;
+        size = 12;
       }
 
-      if (row_number === row_number) {
-        bold = true;
+      if (row_number === 1) {
+        worksheet.getRow(row_number).height = 40;
+      }
+
+      if (row_number === 4) {
+        argb = "FF90EE90";
       }
 
       row.eachCell((cell, column) => {
-        if (column > 2 && row_number > 3) {
+        if ((column === 5 || column === 10) && row_number > 4) {
           horizontal = "right";
-        }
-
-        if (column === 2 && row_number > 3) {
+          cell.numFmt = numFmt;
+        } else if ((column === 8 || column === 2) && row_number > 4) {
           horizontal = "left";
-        }
-
-        if (column !== 1) {
-          cell.numFmt = "# ##0 ##0.00";
+        } else {
+          horizontal = "center";
+          cell.numFmt = "";
         }
 
         Object.assign(cell, {
@@ -102,7 +163,7 @@ exports.ContractService = class {
           fill: {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFFFFFFF" },
+            fgColor: { argb },
           },
           border: {
             top: { style: "thin" },

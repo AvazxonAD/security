@@ -74,44 +74,42 @@ exports.ContractDB = class {
     await client.query(query, params);
   }
 
-  static async getByBatalonReport(params, batalon_id = null) {
-    let batalon_filter = ``;
-
-    if (batalon_id) {
-      params.push(batalon_id);
-      batalon_filter = `AND t.batalon_id = $${params.length}`;
-    }
-
+  static async getByBatalonReport(params) {
     const query = `--sql
       SELECT 
-        d.id,
-        d.doc_num, 
+        d.*, 
         o.name AS organization_name,
         TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date, 
         TO_CHAR(d.period, 'YYYY-MM-DD') AS period, 
-        d.adress, 
         TO_CHAR(d.start_date, 'YYYY-MM-DD') AS start_date, 
         TO_CHAR(d.end_date, 'YYYY-MM-DD') AS end_date, 
-        d.discount, 
+        a_n.account_number,
         d.discount_money::FLOAT, 
         d.summa::FLOAT, 
         d.result_summa::FLOAT, 
-        d.organization_id, 
-        d.account_number_id,
-        a_n.account_number,
-        d.start_time,
-        d.end_time,
-        d.all_worker_number,
-        d.all_task_time,
         (d.result_summa - COALESCE(p.total_summa, 0))::FLOAT AS kredit,
         COALESCE(p.total_summa, 0)::FLOAT AS debet,
         (
-          SELECT JSON_AGG(row_to_json(t))
+          SELECT 
+            JSON_BUILD_OBJECT(
+              'worker_number', COALESCE(SUM(t.worker_number)),
+              'summa', COALESCE(SUM(t.result_summa))
+            )
           FROM task t 
           WHERE t.isdeleted = false
             AND t.contract_id = d.id
-            ${batalon_filter}
-        ) AS tasks
+            AND t.batalon_id = $5
+        ) AS task,
+        (
+          SELECT 
+            t.task_time 
+          FROM task t
+          WHERE t.contract_id = d.id 
+            AND t.isdeleted = false
+            AND t.batalon_id = $5
+          LIMIT 1
+        ) AS task_time,
+        d.all_worker_number AS worker_number
       FROM contract d
       JOIN organization o ON o.id = d.organization_id
       JOIN account_number a_n ON a_n.id = d.account_number_id
@@ -125,6 +123,13 @@ exports.ContractDB = class {
         AND d.isdeleted = false
         AND d.account_number_id = $2
         AND d.doc_date BETWEEN $3 AND $4
+        AND (
+          SELECT JSON_AGG(row_to_json(t))
+          FROM task t 
+          WHERE t.isdeleted = false
+            AND t.contract_id = d.id
+            AND t.batalon_id = $5
+        ) IS NOT NULL
       ORDER BY CAST(d.doc_num AS FLOAT)
     `;
 

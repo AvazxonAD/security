@@ -16,12 +16,13 @@ exports.Controller = class {
     }
 
     const batalon = await BatalonService.getById({ user_id, id: batalon_id });
+    if (!batalon) {
+      return res.error(req.i18n.t("batalonNotFound"), 404);
+    }
 
     const result = await ContractService.getByBatalonReport({
       user_id,
-      account_number_id,
-      from,
-      to,
+      ...req.query,
     });
 
     if (excel === "true") {
