@@ -462,15 +462,15 @@ const exportExcelData = async (req, res) => {
       if (index === 1 || index === 2 || index === 9 || index === 11)
         horizontal = "left";
       if (index === 10) (size = 8), (horizontal = "right");
-      if (
-        index === 9 ||
-        index === 10 ||
-        index === 0 ||
-        index === 1 ||
-        index === 2 ||
-        index === 11
-      )
-        (fill = {}), (border = {});
+      // if (
+      //   index === 9 ||
+      //   index === 10 ||
+      //   index === 0 ||
+      //   index === 1 ||
+      //   index === 2 ||
+      //   index === 11
+      // )
+      //   (fill = {}), (border = {});
       Object.assign(element, {
         numFmt: "#,#00.00",
         font: { size, name: "Times New Roman", bold },

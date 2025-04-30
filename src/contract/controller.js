@@ -440,10 +440,11 @@ exports.exportExcelData = async (req, res) => {
     headerRow.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFFFFFFF" },
+      fgColor: { argb: "FF90EE90" },
     };
     headerRow.alignment = { horizontal: "center" };
     headerRow.height = 30;
+
     contractSheet.columns.forEach((column) => {
       column.alignment = {
         vertical: "middle",
@@ -490,6 +491,7 @@ exports.exportExcelData = async (req, res) => {
       "Soni",
       `${total}`,
     ]);
+
     totalRow.font = { bold: true };
     totalRow.fill = {
       type: "pattern",

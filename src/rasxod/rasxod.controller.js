@@ -279,6 +279,11 @@ const exportExcelData = async (req, res) => {
       null,
       req.i18n
     );
+
+    if (!from || !to) {
+      return res.error(req.i18n.t("dateRangeRequired"), 400);
+    }
+
     if (batalon_id) {
       await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n);
     }
@@ -368,6 +373,7 @@ const exportExcelData = async (req, res) => {
           },
         });
       });
+
       row_number++;
     }
     worksheet.mergeCells(`A${row_number}`, `D${row_number}`);
@@ -414,15 +420,16 @@ const exportExcelData = async (req, res) => {
       if (index === 1 || index === 2 || index === 9 || index === 11)
         horizontal = "left";
       if (index === 10) (size = 8), (horizontal = "right");
-      if (
-        index === 9 ||
-        index === 10 ||
-        index === 0 ||
-        index === 1 ||
-        index === 2 ||
-        index === 11
-      )
-        (fill = {}), (border = {});
+      // if (
+      //   index === 9 ||
+      //   index === 10 ||
+      //   index === 0 ||
+      //   index === 1 ||
+      //   index === 2 ||
+      //   index === 11
+      // )
+      //   (fill = {}), (border = {});
+
       Object.assign(element, {
         numFmt: "#,#00.00",
         font: { size, name: "Times New Roman", bold },
@@ -444,7 +451,10 @@ const exportExcelData = async (req, res) => {
     worksheet.getRow(itogoCell.row).height = 30;
     worksheet.getRow(summa_toCell.row).height = 30;
     const filePath = path.join(__dirname, "../../public/exports/" + file_name);
-    await workbook.xlsx.writeFile(filePath);
+    await workbook.xlsx.writeFile(filePath, {
+      useStyles: true,
+      useSharedStrings: true,
+    });
     return res.download(filePath, (err) => {
       if (err) {
         throw new ErrorResponse(err, err.statusCode);
