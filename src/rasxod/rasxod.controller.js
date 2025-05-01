@@ -23,6 +23,7 @@ const { returnStringSumma } = require("../utils/return.summa");
 const ExcelJS = require("exceljs");
 const { returnStringDate } = require("../utils/date.functions");
 const path = require("path");
+const { RasxodService } = require("./service");
 
 const getPaymentRequest = async (req, res) => {
   try {
@@ -468,14 +469,16 @@ const exportExcelData = async (req, res) => {
 const exportRasoxBYId = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const account_number_id = req.query.account_number_id;
+    const { account_number_id, excel } = req.query;
     await getByIdaccount_numberService(
       user_id,
       account_number_id,
       null,
       req.i18n
     );
+
     const id = req.params.id;
+
     const data = await getByIdRasxodService(
       user_id,
       account_number_id,
@@ -483,6 +486,36 @@ const exportRasoxBYId = async (req, res) => {
       true,
       req.i18n
     );
+
+    const batalon = await getByIdBatalonService(
+      user_id,
+      data.batalon_id,
+      true,
+      null,
+      req.i18n
+    );
+
+    if (excel !== "false") {
+      const { file_name, file_path } =
+        await RasxodService.getByBatalonReportExcel({
+          ...data,
+          batalon,
+          ...req.query,
+        });
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${file_name}"`
+      );
+
+      return res.sendFile(file_path);
+    }
+
+    return res.send(data);
   } catch (error) {
     errorCatch(error, res);
   }

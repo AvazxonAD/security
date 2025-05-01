@@ -252,57 +252,87 @@ const getByIdRasxodService = async (
     }
     const data = await pool.query(
       `--sql
-            SELECT 
-                d.id,
-                d.doc_num,
-                TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
-                d.opisanie,
-                b.id AS batalon_id,
-                b.name AS batalon_name,
-                b.address AS batalon_address,
-                b.str AS batalon_str,
-                b.bank_name AS batalon_bank_name,
-                b.mfo AS batalon_mfo,
-                d.batalon_gazna_number_id,
-                d.batalon_account_number_id,
-                b.account_number AS batalon_account_number,
-                (
-                    SELECT COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
-                    FROM rasxod AS r
-                    JOIN task AS t ON t.id = r.task_id
-                    WHERE r.rasxod_doc_id = d.id AND r.isdeleted = false
-                ) AS summa,
-                (
+        SELECT 
+            d.id,
+            d.doc_num,
+            TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+            d.opisanie,
+            b.id AS batalon_id,
+            b.name AS batalon_name,
+            b.address AS batalon_address,
+            b.str AS batalon_str,
+            b.bank_name AS batalon_bank_name,
+            b.mfo AS batalon_mfo,
+            d.batalon_gazna_number_id,
+            d.batalon_account_number_id,
+            b.account_number AS batalon_account_number,
+            (
+                SELECT
+                  COALESCE(SUM(t.result_summa), 0)::FLOAT AS summa
+                FROM rasxod AS r
+                JOIN task AS t ON t.id = r.task_id
+                WHERE r.rasxod_doc_id = d.id
+                  AND r.isdeleted = false
+                  AND t.isdeleted = false
+            ) AS summa,
+            (
+                SELECT 
+                    ARRAY_AGG(ROW_TO_JSON(task_row))
+                FROM (
                     SELECT 
-                        ARRAY_AGG(ROW_TO_JSON(task))
-                    FROM (
-                        SELECT 
-                            t.id AS task_id,
-                            c.doc_num,
-                            c.doc_date,
-                            o.name AS organization_name,
-                            o.address AS organization_address,
-                            o.str AS organization_str,
-                            o.bank_name AS organization_bank_name,
-                            o.mfo AS organization_mfo,
-                            o.account_number AS organization_account_number,
-                            t.task_time,
-                            t.worker_number,
-                            t.result_summa::FLOAT,
-                            t.result_summa,
-                            t.discount_money,
-                            t.summa    
-                        FROM rasxod AS r 
-                        JOIN task AS t ON r.task_id = t.id
-                        JOIN contract AS c ON c.id = t.contract_id
-                        JOIN organization AS o ON o.id = c.organization_id
-                        WHERE r.rasxod_doc_id = $3
-                    ) AS task
-                ) AS tasks 
-            FROM rasxod_doc AS d
-            JOIN batalon AS b ON b.id = d.batalon_id
-            WHERE d.account_number_id = $1 AND d.user_id = $2 AND d.id = $3  ${ignore_filter}
-        `,
+                        t.id AS task_id,
+                        c.doc_num,
+                        c.doc_date,
+                        o.name AS organization_name,
+                        o.address AS organization_address,
+                        o.str AS organization_str,
+                        o.bank_name AS organization_bank_name,
+                        o.mfo AS organization_mfo,
+                        o.account_number AS organization_account_number,
+                        t.task_time,
+                        t.worker_number,
+                        t.result_summa::FLOAT,
+                        t.discount_money,
+                        t.summa,
+                        TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS doc_date, 
+                        TO_CHAR(c.period, 'YYYY-MM-DD') AS period, 
+                        TO_CHAR(c.start_date, 'YYYY-MM-DD') AS start_date, 
+                        TO_CHAR(c.end_date, 'YYYY-MM-DD') AS end_date, 
+                        a_n.account_number,
+                        c.discount_money::FLOAT, 
+                        c.summa::FLOAT, 
+                        c.result_summa::FLOAT, 
+                        (c.result_summa - COALESCE(p.total_summa, 0))::FLOAT AS kredit,
+                        COALESCE(p.total_summa, 0)::FLOAT AS debet,
+                        (
+                          SELECT 
+                            JSON_BUILD_OBJECT(
+                              'worker_number', COALESCE(SUM(t.worker_number)),
+                              'summa', COALESCE(SUM(t.result_summa))
+                            )
+                          FROM task t 
+                          WHERE t.isdeleted = false
+                            AND t.contract_id = c.id
+                            AND t.batalon_id = d.batalon_id
+                        ) AS task
+                    FROM rasxod AS r 
+                    JOIN task AS t ON r.task_id = t.id
+                    JOIN contract AS c ON c.id = t.contract_id
+                    LEFT JOIN (
+                      SELECT contract_id, SUM(summa) AS total_summa
+                      FROM prixod
+                      WHERE isdeleted = false
+                      GROUP BY contract_id
+                    ) p ON p.contract_id = c.id
+                    JOIN account_number AS a_n ON a_n.id = c.account_number_id
+                    JOIN organization AS o ON o.id = c.organization_id
+                    WHERE r.rasxod_doc_id = $3
+                ) AS task_row
+            ) AS tasks 
+        FROM rasxod_doc AS d
+        JOIN batalon AS b ON b.id = d.batalon_id
+        WHERE d.account_number_id = $1 AND d.user_id = $2 AND d.id = $3  ${ignore_filter}
+    `,
       [account_number_id, user_id, id]
     );
 
