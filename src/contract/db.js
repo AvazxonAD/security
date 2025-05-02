@@ -688,7 +688,7 @@ exports.getByIdcontractService = async (
                             COALESCE(t.time_money, 0) AS timemoney, 
                             t.discount_money,
                             t.result_summa,
-                            TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
+                            TO_CHAR(t.task_date, 'DD.MM.YYYY') AS task_date,
                             b.name AS batalon_name,
                             t.address,
                             (   
