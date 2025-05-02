@@ -156,7 +156,7 @@ exports.RasxodService = class {
       });
     });
 
-    const file_name = `contract_${new Date().getTime()}.xlsx`;
+    const file_name = `rasxod_${new Date().getTime()}.xlsx`;
     const folder_path = path.join(__dirname, "../../public/exports");
     const file_path = `${folder_path}/${file_name}`;
 
