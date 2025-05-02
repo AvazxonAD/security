@@ -95,8 +95,10 @@ const createRasxodDocService = async (data) => {
                 opisanie, 
                 account_number_id,
                 batalon_gazna_number_id,
-                batalon_account_number_id
-            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+                batalon_account_number_id,
+                "from",
+                "to"
+            ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
             RETURNING * 
         `,
       [
@@ -108,6 +110,8 @@ const createRasxodDocService = async (data) => {
         data.account_number_id,
         data.batalon_gazna_number_id,
         data.batalon_account_number_id,
+        data.from,
+        data.to,
       ]
     );
 

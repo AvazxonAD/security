@@ -499,6 +499,7 @@ const exportRasoxBYId = async (req, res) => {
       const { file_name, file_path } =
         await RasxodService.getByBatalonReportExcel({
           ...data,
+          contracts: data.tasks,
           batalon,
           ...req.query,
         });

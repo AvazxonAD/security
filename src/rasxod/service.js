@@ -5,6 +5,24 @@ const path = require("path");
 
 exports.RasxodService = class {
   static async getByBatalonReportExcel(data) {
+    const itogo = {
+      summa: 0,
+      worker_number: 0,
+      task_time: 0,
+      task: {
+        summa: 0,
+        worker_number: 0,
+      },
+    };
+
+    for (let item of data.contracts) {
+      itogo.summa += item.summa;
+      itogo.worker_number += item.worker_number;
+      itogo.task_time += item.task_time;
+      itogo.task.summa += item.task.summa;
+      itogo.task.worker_number += item.task.worker_number;
+    }
+
     const workbook = new ExcelJs.Workbook();
     const worksheet = workbook.addWorksheet("contract");
 
@@ -77,11 +95,11 @@ exports.RasxodService = class {
     });
 
     worksheet.addRow({
-      summa: data.itogo.summa,
-      worker_number: data.itogo.worker_number,
-      task_time: data.itogo.task_time,
-      batalon_worker_number: data.itogo.task.worker_number,
-      batalon_summa: data.itogo.task.summa,
+      summa: itogo.summa,
+      worker_number: itogo.worker_number,
+      task_time: itogo.task_time,
+      batalon_worker_number: itogo.task.worker_number,
+      batalon_summa: itogo.task.summa,
     });
 
     // template
