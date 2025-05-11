@@ -2,46 +2,58 @@ const express = require("express");
 const router = express.Router();
 const protect = require("./middleware/auth");
 
-router
-  .use("/auth", require("./auth/auth.routes"))
-  .use("/batalon", protect, require("./batalon/batalon.routes"))
-  .use("/bxm", protect, require("./spravochnik/bxm/bxm.routes"))
-  .use(
-    "/account",
-    protect,
-    require("./spravochnik/account.number/account.number.routes")
-  )
-  .use("/doer", protect, require("./spravochnik/doer/doer.routes"))
-  .use("/boss", protect, require("./spravochnik/boss/boss.routes"))
-  .use("/adress", protect, require("./spravochnik/adress/adress.routes"))
-  .use("/bank", protect, require("./spravochnik/bank/bank.routes"))
-  .use("/str", protect, require("./spravochnik/str/str.routes"))
-  .use(
-    "/deduction",
-    protect,
-    require("./spravochnik/deduction/deduction.routes")
-  )
-  .use("/worker", protect, require("./worker/index"))
-  .use("/organization", protect, require("./organization/organization.routes"))
-  .use("/contract", protect, require("./contract/index"))
-  .use("/rasxod_organ", protect, require("@rasxod_organ/index"))
-  .use("/worker_task", protect, require("./worker.task/worker.task.routes"))
-  .use("/task", protect, require("./task/task.routes"))
-  .use("/prixod", protect, require("./prixod/prixod.routes"))
-  .use(
-    "/template",
-    protect,
-    require("./spravochnik/contract.shablon/contract.shablon.routes")
-  )
-  .use("/rasxod/fio", protect, require("./rasxod.fio/rasxod.fio.routes"))
-  .use("/rasxod", protect, require("./rasxod/rasxod.routes"))
-  .use("/monitoring", protect, require("./monitoring/monitoring.routes"))
-  .use("/admin/user", protect, require("./admin/user/user.routes"))
-  .use(
-    "/admin/monitoring",
-    protect,
-    require("./admin/monitoring/admin.monitoring.routes")
-  )
-  .use("/admin/regions", protect, require("./admin/region/region.routes"));
+// ROUTE IMPORTS
+const authRoutes = require("./auth/auth.routes");
+const batalonRoutes = require("./batalon/batalon.routes");
+const bxmRoutes = require("./spravochnik/bxm/bxm.routes");
+const accountRoutes = require("./spravochnik/account.number/account.number.routes");
+const doerRoutes = require("./spravochnik/doer/doer.routes");
+const bossRoutes = require("./spravochnik/boss/boss.routes");
+const adressRoutes = require("./spravochnik/adress/adress.routes");
+const bankRoutes = require("./spravochnik/bank/bank.routes");
+const strRoutes = require("./spravochnik/str/str.routes");
+const deductionRoutes = require("./spravochnik/deduction/deduction.routes");
+const workerRoutes = require("./worker/index");
+const organizationRoutes = require("./organization/organization.routes");
+const contractRoutes = require("./contract/index");
+const rasxodOrganRoutes = require("@rasxod_organ/index");
+const workerTaskRoutes = require("./worker.task/worker.task.routes");
+const taskRoutes = require("./task/task.routes");
+const prixodRoutes = require("./prixod/prixod.routes");
+const templateRoutes = require("./spravochnik/contract.shablon/contract.shablon.routes");
+const rasxodFioRoutes = require("./rasxod.fio/rasxod.fio.routes");
+const rasxodRoutes = require("./rasxod/rasxod.routes");
+const monitoringRoutes = require("./monitoring/monitoring.routes");
+const adminUserRoutes = require("./admin/user/user.routes");
+const adminMonitoringRoutes = require("./admin/monitoring/admin.monitoring.routes");
+const adminRegionRoutes = require("./admin/region/region.routes");
+const regionUsers = require(`./region/users`);
+
+// ROUTE USAGE
+router.use("/auth", authRoutes);
+router.use("/batalon", protect, batalonRoutes);
+router.use("/bxm", protect, bxmRoutes);
+router.use("/account", protect, accountRoutes);
+router.use("/doer", protect, doerRoutes);
+router.use("/boss", protect, bossRoutes);
+router.use("/adress", protect, adressRoutes);
+router.use("/bank", protect, bankRoutes);
+router.use("/str", protect, strRoutes);
+router.use("/deduction", protect, deductionRoutes);
+router.use("/worker", protect, workerRoutes);
+router.use("/organization", protect, organizationRoutes);
+router.use("/contract", protect, contractRoutes);
+router.use("/rasxod_organ", protect, rasxodOrganRoutes);
+router.use("/worker_task", protect, workerTaskRoutes);
+router.use("/task", protect, taskRoutes);
+router.use("/prixod", protect, prixodRoutes);
+router.use("/template", protect, templateRoutes);
+router.use("/rasxod/fio", protect, rasxodFioRoutes);
+router.use("/rasxod", protect, rasxodRoutes);
+router.use("/monitoring", protect, monitoringRoutes);
+router.use("/admin/user", protect, adminUserRoutes);
+router.use("/admin/monitoring", protect, adminMonitoringRoutes);
+router.use("/admin/regions", protect, adminRegionRoutes);
+router.use("/region/users", protect, regionUsers);
 
 module.exports = router;

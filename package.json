@@ -42,8 +42,10 @@
   "_moduleAliases": {
     "@contract": "./src/contract",
     "@helper": "./src/helper",
+    "@auth": "./src/auth",
     "@rasxod_organ": "./src/rasxod.organ",
     "@db": "./src/db",
+    "@region_users": "./src/region/users",
     "@account_number": "./src/spravochnik/account.number",
     "@batalon": "./src/batalon/",
     "@bxm": "./src/spravochnik/bxm",

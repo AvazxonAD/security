@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@db/*": ["db/*"],
+      "@public/*": ["../public/*"],
+      "@account_number/*": ["/spravochnik/account.number/*"],
+      "@contract/*": ["/contract/*"],
+      "@region_users/*": ["/region/users/*"],
+      "@helper/*": ["/helper/*"],
+      "@auth/*": ["/auth/*"],
+      "@rasxod_organ/*": ["/rasxod.organ/*"],
+      "@organization/*": ["/organization/*"],
+      "@batalon/*": ["/batalon/*"],
+      "@bxm/*": ["/spravochnik/bxm/*"]
+    }
+  },
+  "include": ["src"]
+}
