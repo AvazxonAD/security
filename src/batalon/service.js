@@ -1,13 +1,16 @@
-const { BatalonDB } = require('./db');
+const { BatalonDB } = require("./db");
 
 exports.BatalonService = class {
-    static async getById(data) {
-        const result = await BatalonDB.getById([data.user_id, data.id], data.isdeleted);
-        return result;
-    }
+  static async getById(data) {
+    const result = await BatalonDB.getById(
+      [data.user_id, data.id],
+      data.isdeleted
+    );
+    return result;
+  }
 
-    static async getByName(data) {
-        const batalon = await BatalonDB.getByName([data.user_id, data.name]);
-        return batalon;
-    }
-}
+  static async getByName(data) {
+    const batalon = await BatalonDB.getByName([data.user_id, data.name]);
+    return batalon;
+  }
+};
