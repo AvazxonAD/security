@@ -393,7 +393,7 @@ const workerTaskValidation = Joi.object({
       worker_id: Joi.number().integer().required(),
     }).required()
   ),
-});
+}).options({ stripUnknown: true });
 
 const workerTaskUpdateValidation = Joi.object({
   task_time: Joi.number().min(0.1).required(),
