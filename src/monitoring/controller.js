@@ -15,7 +15,7 @@ const {
   getByIdaccount_numberService,
 } = require("../spravochnik/account.number/account.number.service");
 const { returnStringSumma } = require("../utils/return.summa");
-const { getByIdBatalonService } = require("../batalon/db");
+const { getByIdBatalonService } = require("../region/batalon/db");
 
 const prixodRasxod = async (req, res) => {
   try {

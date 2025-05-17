@@ -6,10 +6,10 @@ const {
   deleteBatalonService,
   getByNameBatalonService,
 } = require("./db.js");
-const { batalionValidation } = require("../utils/validation");
-const { resFunc } = require("../utils/resFunc");
-const { validationResponse } = require("../utils/response.validation");
-const { errorCatch } = require("../utils/errorCatch");
+const { batalionValidation } = require("../../utils/validation");
+const { resFunc } = require("../../utils/resFunc");
+const { validationResponse } = require("../../utils/response.validation");
+const { errorCatch } = require("../../utils/errorCatch");
 
 const batalonCreate = async (req, res) => {
   try {

@@ -45,9 +45,10 @@
     "@auth": "./src/auth",
     "@rasxod_organ": "./src/rasxod.organ",
     "@db": "./src/db",
+    "@batalon_worker": "./src/batalon/worker",
     "@region_users": "./src/region/users",
     "@account_number": "./src/spravochnik/account.number",
-    "@batalon": "./src/batalon/",
+    "@batalon": "./src/region/batalon/",
     "@bxm": "./src/spravochnik/bxm",
     "@organization": "./src/organization"
   }

@@ -17,7 +17,7 @@ const {
 const {
   getByIdaccount_numberService,
 } = require("../spravochnik/account.number/account.number.service");
-const { getByIdBatalonService } = require("../batalon/db");
+const { getByIdBatalonService } = require("../region/batalon/db");
 const { getByIdTaskService } = require("./rasxod.service");
 const { returnStringSumma } = require("../utils/return.summa");
 const ExcelJS = require("exceljs");

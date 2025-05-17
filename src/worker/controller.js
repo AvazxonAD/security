@@ -1,12 +1,12 @@
 const { WorkerService } = require("./service");
-const { BatalonService } = require("../batalon/service");
+const { BatalonService } = require("../region/batalon/service");
 const path = require("path");
 const xlsx = require("xlsx");
 const { db } = require("@db/index");
 const { textLatinToCyrl } = require("../helper/functions");
 
 exports.Controller = class {
-  static async workerCreate(req, res) {
+  static async create(req, res) {
     const user_id = req.user.id;
     const { fio, batalon_id, account_number, xisob_raqam } = req.body;
 
@@ -17,31 +17,31 @@ exports.Controller = class {
       }
     }
     if (account_number) {
-      const check1 = await WorkerService.workerGetByAccountNumber({
+      const check1 = await WorkerService.getByAccountNumber({
         user_id,
         account_number,
       });
       if (check1) {
-        return res.error(req.i18n.t("accountNumberAlreadyExists"), 409);
+        return res.error(req.i18n.t("accountNumberExists"), 409);
       }
     }
 
     if (xisob_raqam) {
-      const check2 = await WorkerService.workerGetByXisobRaqam({
+      const check2 = await WorkerService.getByXisobNumber({
         user_id,
         xisob_raqam,
       });
       if (check2) {
-        return res.error(req.i18n.t("xisobNumberAlreadyExists"), 409);
+        return res.error(req.i18n.t("accountNumberExists"), 409);
       }
     }
 
-    const check = await WorkerService.workerGetByFio({ user_id, fio });
+    const check = await WorkerService.getByFio({ user_id, fio });
     if (check) {
-      return res.error(req.i18n.t("fioAlreadyExists"), 409);
+      return res.error(req.i18n.t("fioExists"), 409);
     }
 
-    await WorkerService.workerCreate({
+    await WorkerService.create({
       fio,
       batalon_id,
       account_number,
@@ -52,12 +52,12 @@ exports.Controller = class {
     return res.success(req.i18n.t("createSuccess"), 201);
   }
 
-  static async workerGet(req, res) {
+  static async get(req, res) {
     const user_id = req.user.id;
     const { page, limit, batalon_id, search } = req.query;
     const offset = (page - 1) * limit;
 
-    const { data, total } = await WorkerService.workerGet({
+    const { data, total } = await WorkerService.get({
       user_id,
       search,
       batalon_id,
@@ -95,7 +95,7 @@ exports.Controller = class {
     return res.success(req.i18n.t("getSuccess"), 200, null, result);
   }
 
-  static async workerUpdate(req, res) {
+  static async update(req, res) {
     const user_id = req.user.id;
     const id = req.params.id;
     const { fio, batalon_id, account_number, xisob_raqam } = req.body;
@@ -114,36 +114,36 @@ exports.Controller = class {
 
     if (account_number) {
       if (oldData.account_number !== account_number) {
-        const check1 = await WorkerService.workerGetByAccountNumber({
+        const check1 = await WorkerService.getByAccountNumber({
           user_id,
           account_number,
         });
         if (check1) {
-          return res.error(req.i18n.t("accountNumberAlreadyExists"), 409);
+          return res.error(req.i18n.t("accountNumberExists"), 409);
         }
       }
     }
 
     if (xisob_raqam) {
       if (oldData.xisob_raqam !== xisob_raqam) {
-        const check2 = await WorkerService.workerGetByXisobRaqam({
+        const check2 = await WorkerService.getByXisobNumber({
           user_id,
           xisob_raqam,
         });
         if (check2) {
-          return res.error(req.i18n.t("xisobNumberAlreadyExists"), 409);
+          return res.error(req.i18n.t("accountNumberExists"), 409);
         }
       }
     }
 
     if (oldData.fio !== fio) {
-      const check = await WorkerService.workerGetByFio({ user_id, fio });
+      const check = await WorkerService.getByFio({ user_id, fio });
       if (check) {
-        return res.error(req.i18n.t("fioAlreadyExists"), 409);
+        return res.error(req.i18n.t("fioExists"), 409);
       }
     }
 
-    await WorkerService.workerUpdate({
+    await WorkerService.update({
       fio,
       batalon_id,
       account_number,
@@ -154,7 +154,7 @@ exports.Controller = class {
     return res.success(req.i18n.t("updateSuccess"), 200);
   }
 
-  static async workerDelete(req, res) {
+  static async delete(req, res) {
     const user_id = req.user.id;
     const id = req.params.id;
 
@@ -163,7 +163,7 @@ exports.Controller = class {
       return res.error(req.i18n.t("workerNotFound"), 404);
     }
 
-    await WorkerService.workerDelete({ id });
+    await WorkerService.delete({ id });
 
     return res.success(req.i18n.t("deleteSuccess"), 200);
   }
@@ -179,7 +179,7 @@ exports.Controller = class {
       }
     }
 
-    const result = await WorkerService.workerGet({
+    const result = await WorkerService.get({
       user_id,
       search,
       batalon_id,
@@ -218,21 +218,21 @@ exports.Controller = class {
       }
 
       // if (Karta_raqam) {
-      //     const check = await WorkerService.workerGetByAccountNumber({ user_id, account_number: Karta_raqam });
+      //     const check = await WorkerService.getByAccountNumber({ user_id, account_number: Karta_raqam });
       //     if (check) {
       //         return res.error('This data already exists', 409);
       //     }
       // }
 
       // if (Xisob_raqam) {
-      //     const check = await WorkerService.workerGetByXisobRaqam({ user_id, xisob_raqam: Xisob_raqam });
+      //     const check = await WorkerService.getByXisobNumber({ user_id, xisob_raqam: Xisob_raqam });
       //     if (check) {
       //         return res.error('This data already exists', 409);
       //     }
       // }
 
       // if (FIO) {
-      //     const check = await WorkerService.workerGetByFio({ user_id, fio: FIO });
+      //     const check = await WorkerService.getByFio({ user_id, fio: FIO });
       //     if (check) {
       //         return res.error('This data already exists', 409);
       //     }
@@ -242,7 +242,7 @@ exports.Controller = class {
         continue;
       }
 
-      await WorkerService.workerCreate({
+      await WorkerService.create({
         batalon_id: batalon?.id,
         account_number: Karta_raqam,
         fio: FIO,

@@ -1,9 +1,7 @@
 const { WorkerDB } = require("./db");
 const { access, constants, mkdir } = require("fs").promises;
-const xlsx = require("xlsx");
 const ExcelJS = require("exceljs");
 const path = require("path");
-const db = require("@db/index");
 
 exports.WorkerService = class {
   static async create(data) {
@@ -19,7 +17,6 @@ exports.WorkerService = class {
   static async update(data) {
     await WorkerDB.update([
       data.fio,
-      data.batalon_id,
       data.account_number,
       data.xisob_raqam,
       data.id,
@@ -28,16 +25,15 @@ exports.WorkerService = class {
 
   static async get(data) {
     const result = await WorkerDB.get(
-      [data.user_id, data.offset, data.limit],
-      data.search,
-      data.batalon_id
+      [data.batalon_id, data.offset, data.limit],
+      data.search
     );
     return result;
   }
 
   static async getById(data) {
     const result = await WorkerDB.getById(
-      [data.user_id, data.id],
+      [data.batalon_id, data.id],
       data.isdeleted
     );
     return result;
@@ -135,28 +131,5 @@ exports.WorkerService = class {
     await workbook.xlsx.writeFile(filePath);
 
     return { filePath, fileName };
-  }
-
-  static async readFile(data) {
-    const workbook = xlsx.readFile(data.filePath);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-
-    const result = xlsx.utils.sheet_to_json(sheet).map((row) => {
-      const newRow = {};
-      const requiredKeys = ["FIO", "Karta_raqam", "Xisob_raqam", "Batalon"];
-
-      requiredKeys.forEach((key) => {
-        if (row[key] !== undefined && row[key] !== null) {
-          newRow[key] = String(row[key]).trim();
-        } else {
-          newRow[key] = null;
-        }
-      });
-
-      return newRow;
-    });
-
-    return result;
   }
 };

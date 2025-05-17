@@ -65,7 +65,10 @@ const {
 } = require("../utils/validation");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require("../utils/errorCatch");
-const { getByIdBatalonService, getBatalonService } = require("../batalon/db");
+const {
+  getByIdBatalonService,
+  getBatalonService,
+} = require("../region/batalon/db");
 const {
   getByIdorganizationService,
 } = require("../organization/organization.service");

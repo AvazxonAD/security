@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const protect = require("./middleware/auth");
 
-// ROUTE IMPORTS
+// ROUTES IMPORTS
 const authRoutes = require("./auth/auth.routes");
-const batalonRoutes = require("./batalon/batalon.routes");
+const batalonRoutes = require("./region/batalon/batalon.routes");
 const bxmRoutes = require("./spravochnik/bxm/bxm.routes");
 const accountRoutes = require("./spravochnik/account.number/account.number.routes");
 const doerRoutes = require("./spravochnik/doer/doer.routes");
@@ -28,8 +28,11 @@ const adminUserRoutes = require("./admin/user/user.routes");
 const adminMonitoringRoutes = require("./admin/monitoring/admin.monitoring.routes");
 const adminRegionRoutes = require("./admin/region/region.routes");
 const regionUsers = require(`./region/users`);
+const batalonWorker = require(`@batalon_worker/index`);
 
-// ROUTE USAGE
+// BATALON ROUTES
+router.use("/batalon/worker", protect, batalonWorker);
+// REGION ROUTES
 router.use("/auth", authRoutes);
 router.use("/batalon", protect, batalonRoutes);
 router.use("/bxm", protect, bxmRoutes);
@@ -51,9 +54,10 @@ router.use("/template", protect, templateRoutes);
 router.use("/rasxod/fio", protect, rasxodFioRoutes);
 router.use("/rasxod", protect, rasxodRoutes);
 router.use("/monitoring", protect, monitoringRoutes);
+router.use("/region/users", protect, regionUsers);
+// ADMIN ROUTES
 router.use("/admin/user", protect, adminUserRoutes);
 router.use("/admin/monitoring", protect, adminMonitoringRoutes);
 router.use("/admin/regions", protect, adminRegionRoutes);
-router.use("/region/users", protect, regionUsers);
 
 module.exports = router;

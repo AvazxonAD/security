@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const router = Router();
 
-const protect = require("../middleware/auth");
+const protect = require("../../middleware/auth");
 
 const {
   batalonCreate,

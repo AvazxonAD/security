@@ -7,7 +7,7 @@ const { validator } = require("../helper/validator");
 const { Schema } = require("./schema");
 
 router
-  .post("/", validator(Controller.workerCreate, Schema.createSchema()))
+  .post("/", validator(Controller.create, Schema.createSchema()))
   .get("/template", validator(Controller.WorkerTemplate))
   .get("/excel", validator(Controller.exportExcel, Schema.exportSchema()))
   .put(
@@ -15,10 +15,10 @@ router
     uploadExcel.single("file"),
     validator(Controller.updateWorkerWithExcel)
   )
-  .put("/:id", validator(Controller.workerUpdate, Schema.updateSchema()))
+  .put("/:id", validator(Controller.update, Schema.updateSchema()))
   .get("/:id", validator(Controller.getById))
-  .get("/", validator(Controller.workerGet))
-  .delete("/:id", validator(Controller.workerDelete))
+  .get("/", validator(Controller.get))
+  .delete("/:id", validator(Controller.delete))
   .post("/excel", uploadExcel.single("file"), validator(Controller.importData));
 
 module.exports = router;

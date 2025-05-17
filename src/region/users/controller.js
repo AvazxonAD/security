@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const { UsersService } = require("./service");
 const { AuthService } = require(`../../auth/service`);
-const { BatalonService } = require(`../../batalon/service`);
+const { BatalonService } = require(`../../region/batalon/service`);
 
 exports.Controller = class {
   static async create(req, res) {

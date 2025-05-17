@@ -1,5 +1,5 @@
-const { db } = require("../db/index");
-const { textCyrlToLatin, textLatinToCyrl } = require("../helper/functions");
+const { db } = require("@db/index");
+const { textCyrlToLatin, textLatinToCyrl } = require("@helper/functions");
 
 exports.WorkerDB = class {
   static async create(params) {
@@ -16,8 +16,8 @@ exports.WorkerDB = class {
     await db.query(
       `
             UPDATE worker 
-            SET fio = $1, batalon_id = $2, account_number = $3, xisob_raqam = $4
-            WHERE id = $5 AND isdeleted = false
+            SET fio = $1, account_number = $2, xisob_raqam = $3
+            WHERE id = $4 AND isdeleted = false
         `,
       params
     );
@@ -25,7 +25,7 @@ exports.WorkerDB = class {
 
   static async get(params, search = null, batalon_id = null) {
     let filter = ``;
-    let batalon_filter = ``;
+
     if (search) {
       let translate;
       if (/^[a-zA-Z\s]+$/.test(search)) {
@@ -41,11 +41,6 @@ exports.WorkerDB = class {
       params.push(search, translate);
     }
 
-    if (batalon_id) {
-      batalon_filter = `AND b.id = $${params.length + 1}`;
-      params.push(batalon_id);
-    }
-
     const query = `
             WITH data AS (
                 SELECT 
@@ -55,9 +50,9 @@ exports.WorkerDB = class {
                 FROM worker w 
                 LEFT JOIN batalon  b ON b.id = w.batalon_id
                 JOIN users u ON w.user_id = u.id
-                WHERE w.isdeleted = false AND u.id = $1 
-                ${filter} 
-                ${batalon_filter} 
+                WHERE w.isdeleted = false
+                  b.id = $1
+                  ${filter} 
                 ORDER BY w.fio
                 OFFSET $2 LIMIT $3
             )
@@ -68,7 +63,8 @@ exports.WorkerDB = class {
                     FROM worker w 
                     LEFT JOIN batalon AS b ON b.id = w.batalon_id
                     JOIN users AS u ON w.user_id = u.id
-                    WHERE w.isdeleted = false AND u.id = $1 
+                    WHERE w.isdeleted = false 
+                      AND b.id = $1
                     ${filter} 
                     ${batalon_filter}
                 )::INTEGER  total_count
@@ -100,7 +96,7 @@ exports.WorkerDB = class {
             FROM worker w 
             LEFT JOIN batalon AS b ON b.id = w.batalon_id
             JOIN users AS u ON w.user_id = u.id
-            WHERE u.id = $1 
+            WHERE  b.id = $1
                 AND w.id = $2 
                 ${batalon_filter}
                 ${!isdeleted ? "AND w.isdeleted = false" : ""}

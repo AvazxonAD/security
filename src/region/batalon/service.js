@@ -9,6 +9,11 @@ exports.BatalonService = class {
     return result;
   }
 
+  static async getByBatalonId(data) {
+    const result = await BatalonDB.getByBatalonId([data.id]);
+    return result;
+  }
+
   static async getByName(data) {
     const batalon = await BatalonDB.getByName([data.user_id, data.name]);
     return batalon;

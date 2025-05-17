@@ -3,17 +3,18 @@
     "baseUrl": "./src",
     "paths": {
       "@db/*": ["db/*"],
+      "@batalon_worker/*": ["batalon/worker/*"],
       "@public/*": ["../public/*"],
-      "@account_number/*": ["/spravochnik/account.number/*"],
-      "@contract/*": ["/contract/*"],
-      "@region_users/*": ["/region/users/*"],
-      "@helper/*": ["/helper/*"],
-      "@auth/*": ["/auth/*"],
-      "@rasxod_organ/*": ["/rasxod.organ/*"],
-      "@organization/*": ["/organization/*"],
-      "@batalon/*": ["/batalon/*"],
-      "@bxm/*": ["/spravochnik/bxm/*"]
+      "@account_number/*": ["spravochnik/account.number/*"],
+      "@contract/*": ["contract/*"],
+      "@region_users/*": ["region/users/*"],
+      "@helper/*": ["helper/*"],
+      "@auth/*": ["auth/*"],
+      "@rasxod_organ/*": ["rasxod.organ/*"],
+      "@organization/*": ["organization/*"],
+      "@batalon/*": ["region/batalon/*"],
+      "@bxm/*": ["spravochnik/bxm/*"]
     }
   },
-  "include": ["src"]
+  "include": ["./src"]
 }

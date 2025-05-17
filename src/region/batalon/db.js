@@ -1,4 +1,4 @@
-const { db } = require("../db/index");
+const { db } = require("../../db/index");
 
 exports.BatalonDB = class {
   static async getById(params, isdeleted = null) {
@@ -9,6 +9,20 @@ exports.BatalonDB = class {
             WHERE user_id = $1 
                 AND id = $2
                 ${!isdeleted ? "AND isdeleted = false" : ""} 
+        `,
+      params
+    );
+
+    return result[0];
+  }
+
+  static async getByBatalonId(params) {
+    const result = await db.query(
+      `
+            SELECT
+              *
+            FROM batalon 
+            WHERE id = $1
         `,
       params
     );
@@ -30,8 +44,8 @@ exports.BatalonDB = class {
   }
 };
 
-const pool = require("../config/db");
-const ErrorResponse = require("../utils/errorResponse");
+const pool = require("../../config/db");
+const ErrorResponse = require("../../utils/errorResponse");
 
 exports.batalonCreateService = async (data) => {
   try {
