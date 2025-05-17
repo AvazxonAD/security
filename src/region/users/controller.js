@@ -43,7 +43,7 @@ exports.Controller = class {
       image: url,
     });
 
-    return res.success(req.i18n.t("getSuccess"), 200, null, result);
+    return res.success(req.i18n.t("createSuccess"), 200, null, result);
   }
 
   static async get(req, res) {
@@ -139,6 +139,7 @@ exports.Controller = class {
 
   static async delete(req, res) {
     const id = req.params.id;
+    const user_id = req.user.id;
 
     const old_data = await UsersService.getById({ id, user_id });
     if (!old_data) {
