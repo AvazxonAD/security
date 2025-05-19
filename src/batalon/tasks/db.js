@@ -58,7 +58,7 @@ exports.BatalonTaskDB = class {
           c.doc_num,
           (
             SELECT
-              t.task_time - COALESCE(SUM(wt.task_time), 0)
+              (t.task_time * t.worker_number) - COALESCE(SUM(wt.task_time), 0)
             FROM worker_task wt 
             WHERE wt.isdeleted = false
               AND wt.task_id = t.id
@@ -90,7 +90,8 @@ exports.BatalonTaskDB = class {
             'end_date', TO_CHAR(c.end_date, 'DD.MM.YYYY'),
             'end_time', c.end_time,
             'organization', o.name
-          ) AS contract_info
+          ) AS contract_info,
+          COALESCE((t.task_time * t.worker_number), 0) AS real_task_time
         FROM task t
         JOIN contract c ON c.id = t.contract_id
         JOIN organization o ON o.id = c.organization_id
@@ -126,6 +127,36 @@ exports.BatalonTaskDB = class {
   }
 
   static async getById(params) {
-    // const
+    const query = `--sql
+      SELECT 
+        t.id, 
+        t.batalon_id, 
+        b.name AS batalon_name,
+        b.birgada,
+        t.task_time, 
+        t.summa::FLOAT, 
+        t.result_summa::FLOAT,
+        t.discount_money::FLOAT,
+        t.worker_number,
+        c.doc_num AS contract_number,
+        TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
+        (   
+            (t.task_time * t.worker_number) - (
+                SELECT COALESCE(SUM(task_time), 0)
+                FROM worker_task 
+                WHERE task_id = t.id AND isdeleted = false
+                ) 
+        ) AS remaining_task_time,
+        COALESCE((t.task_time * t.worker_number), 0) AS real_task_time
+      FROM task AS t
+      JOIN contract c ON c.id = t.contract_id 
+      JOIN batalon AS b ON b.id = t.batalon_id 
+      WHERE t.id = $1
+        AND t.isdeleted = false
+    `;
+
+    const result = await db.query(query, params);
+
+    return result[0];
   }
 };

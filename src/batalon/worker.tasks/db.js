@@ -27,8 +27,9 @@ exports.WorkerTaskDB = class {
     await client.query(query, params);
   }
 
-  static async getByTaskId(params, search = null) {
+  static async get(params, search = null, worker_id = null) {
     let filter = ``;
+    let worker_filter = ``;
 
     if (search) {
       let translate;
@@ -48,6 +49,11 @@ exports.WorkerTaskDB = class {
       params.push(search, translate);
     }
 
+    if (worker_id) {
+      params.push(worker_id);
+      worker_filter = `AND w_t.worker_id = $${params.length}`;
+    }
+
     const result = await db.query(
       `--sql
         SELECT 
@@ -60,6 +66,7 @@ exports.WorkerTaskDB = class {
         WHERE w_t.task_id = $1 
             AND w_t.isdeleted = false
             ${filter}
+            ${worker_filter}
         GROUP BY w.fio, w_t.worker_id
     `,
       params
@@ -68,14 +75,14 @@ exports.WorkerTaskDB = class {
     return result;
   }
 
-  static async deleteByTaskId(params, client) {
+  static async delete(params) {
     const query = `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1  AND task_id = $2`;
 
-    await client.query(query, params);
+    await db.query(query, params);
   }
 
-  static async delete(params, client) {
-    const query = `UPDATE worker_task SET isdeleted = true WHERE id = $1`;
+  static async deleteByTaskId(params, client) {
+    const query = `UPDATE worker_task SET isdeleted = true WHERE task_id = $1`;
 
     await client.query(query, params);
   }

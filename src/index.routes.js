@@ -31,10 +31,17 @@ const adminRegionRoutes = require("./admin/region/region.routes");
 const regionUsers = require(`./region/users`);
 const batalonWorker = require(`@batalon_worker/index`);
 const batalonTasks = require(`@batalon_tasks/index`);
+const batalonWorkerTasks = require(`@batalon_worker_tasks/index`);
 
 // BATALON ROUTES
 router.use("/batalon/worker", protect, Middleware.checkBatalon, batalonWorker);
 router.use("/batalon/tasks", protect, Middleware.checkBatalon, batalonTasks);
+router.use(
+  "/batalon/worker-tasks",
+  protect,
+  Middleware.checkBatalon,
+  batalonWorkerTasks
+);
 // REGION ROUTES
 router.use("/auth", authRoutes);
 router.use("/batalon", protect, batalonRoutes);

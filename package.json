@@ -49,6 +49,7 @@
     "@batalon_worker": "./src/batalon/worker",
     "@region_worker": "./src/worker",
     "@batalon_tasks": "./src/batalon/tasks",
+    "@batalon_worker_tasks": "./src/batalon/worker.tasks",
     "@region_users": "./src/region/users",
     "@account_number": "./src/spravochnik/account.number",
     "@batalon": "./src/region/batalon/",

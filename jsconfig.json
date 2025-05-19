@@ -6,6 +6,7 @@
       "@batalon_worker/*": ["batalon/worker/*"],
       "@region_worker/*": ["worker/*"],
       "@batalon_tasks/*": ["batalon/tasks/*"],
+      "@batalon_worker_tasks/*": ["batalon/worker.tasks/*"],
       "@public/*": ["../public/*"],
       "@account_number/*": ["spravochnik/account.number/*"],
       "@contract/*": ["contract/*"],

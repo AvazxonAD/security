@@ -25,4 +25,16 @@ exports.Controller = class {
 
     return res.success(req.i18n.t("getSuccess"), 200, meta, data);
   }
+
+  static async getById(req, res) {
+    const { task_id } = req.params;
+
+    const data = await BatalonTasksService.getById({ id: task_id });
+
+    if (!data) {
+      return res.error(req.i18n.t("taskNotFound"), 404);
+    }
+
+    return res.success(req.i18n.t("getSuccess"), 200, null, data);
+  }
 };

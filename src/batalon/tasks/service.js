@@ -13,10 +13,7 @@ exports.BatalonTasksService = class {
   }
 
   static async getById(data) {
-    const result = await BatalonTaskDB.get(
-      [data.batalon_id, data.from, data.to, data.offset, data.limit, this.now],
-      data
-    );
+    const result = await BatalonTaskDB.getById([data.id]);
 
     return result;
   }
