@@ -164,7 +164,6 @@ exports.contractCreateService = async (data) => {
     } else {
       result_summa = summa;
     }
-    console.log(data.organ_account_number_id);
     const { rows } = await client.query(
       `--sql
             INSERT INTO contract(

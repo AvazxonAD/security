@@ -1,7 +1,7 @@
 UPDATE
     task
 SET
-    address = COALESCE(contract.address, 'nomalum')
+    address = COALESCE(contract.adress, 'nomalum')
 FROM
     contract
 WHERE

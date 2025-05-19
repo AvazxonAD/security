@@ -55,10 +55,6 @@ exports.Controler = class {
 
       contract.contract = db_data[0];
 
-      if (!contract.contract) {
-        console.log(contract);
-      }
-
       if (contract.contract && contract.remaining_summa === 0) {
         await db.query(
           `

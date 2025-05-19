@@ -6,7 +6,7 @@ const {
   getByTaskIdANDWorkerIdWorkerTaskService,
   deleteByTaskIDWorkerTaskService,
 } = require("./worker.task.service");
-const { workerTaskValidation } = require("../utils/validation");
+const { workerTaskValidation } = require("../../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require("../utils/errorCatch");

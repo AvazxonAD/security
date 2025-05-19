@@ -27,7 +27,6 @@ const getByIdWorkerTaskService = async (
     );
 
     if (!result.rows[0]) {
-      console.log(batalon_id, worker_task_id, user_id);
       throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
 

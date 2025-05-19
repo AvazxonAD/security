@@ -22,4 +22,12 @@ exports.BatalonTasksSchema = class {
       }),
     });
   }
+
+  static getById() {
+    return Joi.object({
+      params: Joi.object({
+        task_id: Joi.number().min(1).integer().required(),
+      }),
+    });
+  }
 };

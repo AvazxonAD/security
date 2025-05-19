@@ -124,4 +124,8 @@ exports.BatalonTaskDB = class {
 
     return result[0];
   }
+
+  static async getById(params) {
+    // const
+  }
 };

@@ -47,6 +47,7 @@
     "@rasxod_organ": "./src/rasxod.organ",
     "@db": "./src/db",
     "@batalon_worker": "./src/batalon/worker",
+    "@region_worker": "./src/worker",
     "@batalon_tasks": "./src/batalon/tasks",
     "@region_users": "./src/region/users",
     "@account_number": "./src/spravochnik/account.number",

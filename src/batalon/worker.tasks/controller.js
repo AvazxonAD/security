@@ -1,21 +1,9 @@
-const {
-  workerTaskCreateService,
-  deleteWorkerTaskService,
-  getByTaskIdWorkerTaskService,
-  getByContractIdWorkerTaskService,
-  getByTaskIdANDWorkerIdWorkerTaskService,
-  deleteByTaskIDWorkerTaskService,
-} = require("./worker.task.service");
-const { workerTaskValidation } = require("../utils/validation");
-const { resFunc } = require("../utils/resFunc");
-const { validationResponse } = require("../utils/response.validation");
-const { errorCatch } = require("../utils/errorCatch");
-const { getByIdTaskService } = require("../task/task.service");
-const ErrorResponse = require("../utils/errorResponse");
-const { WorkerService } = require("../worker/service");
-const { getByIdcontractService } = require("../contract/db");
+const { WorkerService } = require("@region_worker/service");
 const { WorkerTaskService } = require("./service");
 
+exports.Controller = class {
+  static;
+};
 const workerTaskCreate = async (req, res) => {
   try {
     const user_id = req.user.id;
@@ -179,12 +167,4 @@ const getByContractIdWorkerTask = async (req, res) => {
   } catch (error) {
     errorCatch(error, res);
   }
-};
-
-module.exports = {
-  workerTaskCreate,
-  workerTaskUpdate,
-  workerTaskDelete,
-  getBYTaskIdWorkerTask,
-  getByContractIdWorkerTask,
 };

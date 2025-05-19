@@ -7,7 +7,6 @@ const generateToken = (user) => {
     expiresIn: process.env.JWT_EXPIRE || "30d",
   };
   const token = jwt.sign(payload, secret, options);
-  console.log(token);
   return token;
 };
 

@@ -2,7 +2,6 @@ const { db } = require("@db/index");
 
 exports.MonitoringDB = class {
   static async getDocs(params) {
-    console.log("/////////");
     const query = `--sql
             WITH data AS (
                 SELECT 
