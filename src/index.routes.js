@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const protect = require("./middleware/auth");
+const { Middleware } = require(`@middleware/index`);
 
 // ROUTES IMPORTS
 const authRoutes = require("./auth/auth.routes");
@@ -29,9 +30,11 @@ const adminMonitoringRoutes = require("./admin/monitoring/admin.monitoring.route
 const adminRegionRoutes = require("./admin/region/region.routes");
 const regionUsers = require(`./region/users`);
 const batalonWorker = require(`@batalon_worker/index`);
+const batalonTasks = require(`@batalon_tasks/index`);
 
 // BATALON ROUTES
-router.use("/batalon/worker", protect, batalonWorker);
+router.use("/batalon/worker", protect, Middleware.checkBatalon, batalonWorker);
+router.use("/batalon/tasks", protect, Middleware.checkBatalon, batalonTasks);
 // REGION ROUTES
 router.use("/auth", authRoutes);
 router.use("/batalon", protect, batalonRoutes);

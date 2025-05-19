@@ -16,26 +16,14 @@ class Db {
   }
 
   static getInstance() {
-    const options = {
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      port: process.env.DB_PORT,
-      host: process.env.DB_HOST,
-      database: process.env.DB_DATABASE,
-    };
-
     if (!Db.instance) {
-      if (
-        !options.user ||
-        !options.password ||
-        !options.port ||
-        !options.host ||
-        !options.database
-      ) {
-        console.log(options);
-        throw new Error("Env file error");
-      }
-
+      const options = {
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT,
+        host: process.env.DB_HOST,
+        database: process.env.DB_DATABASE,
+      };
       Db.instance = new Db(options);
     }
     return Db.instance;
@@ -90,39 +78,66 @@ class Db {
                 "file_name" VARCHAR NOT NULL UNIQUE
             );
         `);
-    const folderPath = path.join(__dirname, "./migrations");
-    const files = fs.readdirSync(folderPath);
-    const sqlFiles = files.filter((file) => file.endsWith(".sql"));
+
+    const folder_path_archive = path.join(__dirname, "./migrations_archive");
+    const folder_path = path.join(__dirname, "./migrations");
+
+    const files_archive = fs.readdirSync(folder_path_archive);
+    const files = fs.readdirSync(folder_path);
+
+    const sql_files_archive = files_archive.filter((file) =>
+      file.endsWith(".sql")
+    );
+
+    const sql_files = files.filter((file) => file.endsWith(".sql"));
+
+    const all_files = sql_files.concat(sql_files_archive);
+
     const versions = await db.query(`SELECT * FROM migrations ORDER BY id`);
-    if (sqlFiles.length === 0) {
+
+    if (all_files.length === 0) {
       throw new Error("No .sql files found in the directory");
     }
-    const sortedFiles = sqlFiles.sort((a, b) => {
+
+    const sortedFiles = all_files.sort((a, b) => {
       const numA = parseInt(a.split(".")[0], 10);
       const numB = parseInt(b.split(".")[0], 10);
       return numA - numB;
     });
+
+    let filePath;
     for (let file of sortedFiles) {
       const version = versions.find((item) => item.file_name === file);
       if (!version) {
         const client = await dbPool.connect();
+
         try {
           await client.query("BEGIN");
           await client.query(`INSERT INTO migrations(file_name) VALUES($1)`, [
             file,
           ]);
-          const filePath = `${folderPath}/${file}`;
+
+          try {
+            filePath = `${folder_path_archive}/${file}`;
+            await fs.promises.access(filePath, fs.promises.constants.R_OK);
+          } catch (error) {
+            filePath = `${folder_path}/${file}`;
+          }
+
           const sqlQuery = await fs.promises.readFile(filePath, "utf-8");
+
           await client.query(sqlQuery);
+
           await client.query("COMMIT");
         } catch (error) {
           await client.query("ROLLBACK");
-          throw new Error(`${file} ${error}`);
+          throw new Error(`${file} ${error} filePath: ${filePath}`);
         } finally {
           client.release();
         }
       }
     }
+
     return { db, dbPool };
   }
 }
@@ -130,5 +145,5 @@ class Db {
 module.exports = {
   Db,
   db: Db.getInstance(),
-  dbPool: Db.getInstance().getPool(),
+  pool: Db.getInstance().getPool(),
 };

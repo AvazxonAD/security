@@ -2,7 +2,7 @@ const { db } = require("@db/index");
 
 exports.ContractDB = class {
   static async checkDoc(params) {
-    const query = `
+    const query = `--sql
             SELECT 
                 id,
                 doc_num,
@@ -18,7 +18,7 @@ exports.ContractDB = class {
                 d.id,
                 d.doc_num,
                 d.doc_date,
-                'prixod' AS type 
+                'rasxod_fio_doc' AS type 
             FROM rasxod_fio_doc d
             JOIN rasxod_fio ch ON ch.rasxod_fio_doc_id = d.id
             JOIN worker_task AS w_t ON w_t.id = ch.worker_task_id 
@@ -32,7 +32,7 @@ exports.ContractDB = class {
                 d.id,
                 d.doc_num,
                 d.doc_date,
-                'prixod' AS type
+                'rasxod_doc' AS type
             FROM rasxod_doc d
             JOIN rasxod ch ON ch.rasxod_doc_id = d.id
             JOIN task AS t ON t.id = ch.task_id
@@ -54,7 +54,7 @@ exports.ContractDB = class {
   }
 
   static async updateTask(params, client) {
-    const query = `
+    const query = `--sql
         UPDATE task 
         SET 
             batalon_id = $1, 
@@ -67,8 +67,9 @@ exports.ContractDB = class {
             bxm_id = $8, 
             time_money = $9, 
             address = $10,
-            comment = $11
-        WHERE id = $12
+            comment = $11,
+            deadline = $12
+        WHERE id = $13
     `;
 
     await client.query(query, params);
@@ -165,7 +166,7 @@ exports.contractCreateService = async (data) => {
     }
     console.log(data.organ_account_number_id);
     const { rows } = await client.query(
-      `
+      `--sql
             INSERT INTO contract(
                 doc_num, 
                 doc_date, 
@@ -217,6 +218,8 @@ exports.contractCreateService = async (data) => {
     );
 
     const contract = rows[0];
+    const deadline = new Date(data.end_date);
+    deadline.setDate(deadline.getDate() + 5);
 
     const taskPromises = data.tasks.map((task) => {
       let task_discount_money = 0;
@@ -231,10 +234,10 @@ exports.contractCreateService = async (data) => {
       }
 
       return client.query(
-        `
+        `--sql
                 INSERT INTO 
-                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address, comment) 
-                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *
+                task(contract_id, batalon_id, task_time, worker_number, summa, user_id, task_date, discount_money, result_summa, bxm_id, time_money, address, comment, deadline) 
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *
             `,
         [
           contract.id,
@@ -250,6 +253,7 @@ exports.contractCreateService = async (data) => {
           task.bxm_summa,
           task.address,
           task.comment,
+          deadline,
         ]
       );
     });
@@ -293,7 +297,7 @@ exports.contractUpdateService = async (data) => {
     }
 
     const { rows } = await client.query(
-      `
+      `--sql
             UPDATE contract SET 
                 doc_num = $1, 
                 doc_date = $2, 
@@ -342,6 +346,8 @@ exports.contractUpdateService = async (data) => {
 
     const contract = rows[0];
     const create_tasks = [];
+    const deadline = new Date(data.end_date);
+    deadline.setDate(deadline.getDate() + 5);
 
     for (let task of data.old_data.tasks) {
       const check = data.tasks.find((item) => item.id === task.id);
@@ -376,6 +382,7 @@ exports.contractUpdateService = async (data) => {
             task.bxm_summa,
             task.address,
             task.comment,
+            deadline,
             task.id,
           ],
           client
@@ -387,7 +394,7 @@ exports.contractUpdateService = async (data) => {
 
     const taskPromises = create_tasks.map((task) => {
       return client.query(
-        `
+        `--sql
                 INSERT INTO 
                 task(
                     contract_id, 
@@ -420,6 +427,7 @@ exports.contractUpdateService = async (data) => {
           task.bxm_summa,
           task.address,
           task.comment,
+          deadline,
         ]
       );
     });
@@ -511,7 +519,7 @@ exports.getcontractService = async (
       params.push(batalion_id);
     }
 
-    const query = `
+    const query = `--sql
             WITH data AS (
                 SELECT 
                     d.id,

@@ -42,10 +42,12 @@
   "_moduleAliases": {
     "@contract": "./src/contract",
     "@helper": "./src/helper",
+    "@middleware": "./src/middleware",
     "@auth": "./src/auth",
     "@rasxod_organ": "./src/rasxod.organ",
     "@db": "./src/db",
     "@batalon_worker": "./src/batalon/worker",
+    "@batalon_tasks": "./src/batalon/tasks",
     "@region_users": "./src/region/users",
     "@account_number": "./src/spravochnik/account.number",
     "@batalon": "./src/region/batalon/",

@@ -118,7 +118,7 @@ exports.WorkerService = class {
     totalRow.getCell(1).alignment = { horizontal: "center" };
 
     const fileName = `workers_${Date.now()}.xlsx`;
-    const folderPath = path.join(__dirname, "../../public/exports");
+    const folderPath = path.join(__dirname, "../../../public/exports");
 
     try {
       await access(folderPath, constants.W_OK);

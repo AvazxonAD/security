@@ -4,11 +4,13 @@
     "paths": {
       "@db/*": ["db/*"],
       "@batalon_worker/*": ["batalon/worker/*"],
+      "@batalon_tasks/*": ["batalon/tasks/*"],
       "@public/*": ["../public/*"],
       "@account_number/*": ["spravochnik/account.number/*"],
       "@contract/*": ["contract/*"],
       "@region_users/*": ["region/users/*"],
       "@helper/*": ["helper/*"],
+      "@middleware/*": ["middleware/*"],
       "@auth/*": ["auth/*"],
       "@rasxod_organ/*": ["rasxod.organ/*"],
       "@organization/*": ["organization/*"],

@@ -5,7 +5,6 @@ exports.Schema = class {
     return Joi.object({
       body: Joi.object({
         fio: Joi.string().trim().required(),
-        batalon_id: Joi.number().min(1).integer().required(),
         account_number: Joi.string().trim().allow("", null),
         xisob_raqam: Joi.string().trim().allow("", null),
       }),
@@ -16,7 +15,6 @@ exports.Schema = class {
     return Joi.object({
       body: Joi.object({
         fio: Joi.string().trim().required(),
-        batalon_id: Joi.number().min(1).integer().required(),
         account_number: Joi.string().trim().allow("", null),
         xisob_raqam: Joi.string().trim().allow("", null),
       }),

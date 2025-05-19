@@ -4,7 +4,7 @@ const { BatalonService } = require(`@batalon/service`);
 
 exports.Controller = class {
   static async getByBatalonReport(req, res) {
-    const { account_number_id, batalon_id, excel, from, to } = req.query;
+    const { account_number_id, batalon_id, excel } = req.query;
     const user_id = req.user.id;
 
     const account_number = await AccountNumberService.getById({
