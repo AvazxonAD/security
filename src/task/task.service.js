@@ -1,17 +1,31 @@
-const pool = require('../config/db');
-const ErrorResponse = require('../utils/errorResponse');
+const pool = require("../config/db");
+const ErrorResponse = require("../utils/errorResponse");
 
-const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false, batalon = false, lang) => {
-    try {
-        let batalon_filter = ``
-        if(batalon){
-            batalon_filter = `AND b.birgada = false`
-        }
-        let condition = `WHERE t.id = $1 AND t.user_id = $2`;
-        if (!ignore_isdeleted) {
-            condition += ` AND t.isdeleted = false`;
-        }
-        const task = await pool.query(`
+const updateTaskDeadline = async (deadline, task_id) => {
+  const query = `UPDATE task SET deadline = $1 WHERE id = $2 RETURNING *`;
+  const result = await pool.query(query, [deadline, task_id]);
+
+  return result.rows[0];
+};
+
+const getByIdTaskService = async (
+  user_id,
+  task_id,
+  ignore_isdeleted = false,
+  batalon = false,
+  lang
+) => {
+  try {
+    let batalon_filter = ``;
+    if (batalon) {
+      batalon_filter = `AND b.birgada = false`;
+    }
+    let condition = `WHERE t.id = $1 AND t.user_id = $2`;
+    if (!ignore_isdeleted) {
+      condition += ` AND t.isdeleted = false`;
+    }
+    const task = await pool.query(
+      `
             SELECT 
                 t.id, 
                 t.batalon_id, 
@@ -30,22 +44,25 @@ const getByIdTaskService = async (user_id, task_id, ignore_isdeleted = false, ba
             JOIN contract c ON c.id = t.contract_id 
             JOIN batalon b ON b.id = t.batalon_id 
             ${condition} ${batalon_filter}
-        `, [task_id, user_id]);
+        `,
+      [task_id, user_id]
+    );
 
-        if (!task.rows[0]) {
-            throw new ErrorResponse(lang.t('docNotFound'), 404);
-        }
-        return task.rows[0]
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
+    if (!task.rows[0]) {
+      throw new ErrorResponse(lang.t("docNotFound"), 404);
     }
-}
+    return task.rows[0];
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const getByContractIdTaskService = async (conrtact_id) => {
-    try {
-        const tasks = await pool.query(`
+  try {
+    const tasks = await pool.query(
+      `--sql
             SELECT 
-                t.id, 
+                t.*, 
                 t.batalon_id, 
                 b.name AS batalon_name,
                 b.birgada,
@@ -62,31 +79,55 @@ const getByContractIdTaskService = async (conrtact_id) => {
                         FROM worker_task 
                         WHERE task_id = t.id AND isdeleted = false
                         ) 
-                ) AS remaining_task_time 
+                ) AS remaining_task_time ,
+                TO_CHAR(t.deadline, 'YYYY-MM-DD') AS deadline,
+                CASE
+                  WHEN 0 = (
+                    SELECT
+                    (t.task_time * t.worker_number) - COALESCE(SUM(wt.task_time), 0)
+                    FROM worker_task wt 
+                    WHERE wt.isdeleted = false
+                      AND wt.task_id = t.id
+                    )
+                  THEN 'Bajarilgan'
+                  WHEN 0 != (
+                    SELECT
+                      ((t.task_time * t.worker_number)) - COALESCE(SUM(wt.task_time), 0)
+                    FROM worker_task wt 
+                    WHERE wt.isdeleted = false
+                      AND wt.task_id = t.id
+                    )
+                    AND t.deadline < now()
+                  THEN 'Muddati o''tgan'
+                  ELSE 'Bajarilmoqda'
+                END AS status
             FROM task AS t
             JOIN contract c ON c.id = t.contract_id 
             JOIN batalon AS b ON b.id = t.batalon_id 
             WHERE  t.contract_id = $1 AND t.isdeleted = false
-        `, [conrtact_id])
-        return tasks.rows
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      [conrtact_id]
+    );
+    return tasks.rows;
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 const getTaskService = async (user_id, batalon_id, birgada) => {
-    try {
-        const params = [user_id]
-        let batalon_filter = ``
-        let birgada_filter = ``
-        if(batalon_id){
-            batalon_filter = `AND b.id = $${params.length + 1}`
-            params.push(batalon_id)
-        }
-        if(birgada === 'false' || birgada === 'true'){
-            birgada_filter = `AND b.birgada = ${birgada}`
-        }
-        const data = await pool.query(`
+  try {
+    const params = [user_id];
+    let batalon_filter = ``;
+    let birgada_filter = ``;
+    if (batalon_id) {
+      batalon_filter = `AND b.id = $${params.length + 1}`;
+      params.push(batalon_id);
+    }
+    if (birgada === "false" || birgada === "true") {
+      birgada_filter = `AND b.birgada = ${birgada}`;
+    }
+    const data = await pool.query(
+      `
             SELECT 
                 t.id, 
                 c.id AS contract_id,
@@ -105,15 +146,18 @@ const getTaskService = async (user_id, batalon_id, birgada) => {
             JOIN batalon AS b ON b.id = t.batalon_id 
             WHERE t.user_id = $1 ${batalon_filter} ${birgada_filter}  AND t.isdeleted = false
             ORDER BY id DESC
-        `, params);
-        return data.rows
-    } catch (error) {
-        throw new ErrorResponse(error, error.statusCode)
-    }
-}
+        `,
+      params
+    );
+    return data.rows;
+  } catch (error) {
+    throw new ErrorResponse(error, error.statusCode);
+  }
+};
 
 module.exports = {
-    getByIdTaskService,
-    getByContractIdTaskService,
-    getTaskService
-}
+  getByIdTaskService,
+  getByContractIdTaskService,
+  getTaskService,
+  updateTaskDeadline,
+};

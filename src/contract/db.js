@@ -560,7 +560,21 @@ exports.getcontractService = async (
                             AND d.id = t.contract_id 
                             ${tasks_search_filter}
                             ${tasks_filter}
-                    ) AS tasks
+                    ) AS tasks,
+                    CASE 
+                      WHEN 
+                        ( d.all_worker_number * d.all_task_time ) = (
+                          SELECT 
+                            COALESCE(SUM(wt.task_time), 0) 
+                          FROM worker_task wt
+                          JOIN task t ON t.id =  wt.task_id
+                          WHERE t.isdeleted = false
+                            AND wt.isdeleted = false
+                            AND t.contract_id = d.id
+                        )
+                      THEN 'Bajarilgan'
+                      ELSE 'Bajarilmagan'
+                    END AS worker_task_status 
                 FROM contract  AS d 
                 JOIN organization AS o ON o.id = d.organization_id
                 LEFT JOIN gazna_numbers g ON g.id = d.gazna_number_id
@@ -612,7 +626,19 @@ exports.getcontractService = async (
                         ${serach_filter} 
                         ${organization_filter} 
                         ${batalion_filter}
-                )::FLOAT AS to_balance
+                )::FLOAT AS to_balance,
+                (
+                  SELECT COALESCE(SUM(d.result_summa), 0) 
+                  FROM contract AS d 
+                  JOIN organization AS o ON o.id = d.organization_id 
+                  WHERE d.isdeleted = false 
+                      AND d.user_id = $1 
+                      AND d.doc_date BETWEEN $4 AND $5 
+                      AND d.account_number_id = $6 
+                      ${serach_filter} 
+                      ${organization_filter} 
+                      ${batalion_filter}
+                )::FLOAT AS internal
             FROM data
         `;
 
@@ -623,6 +649,7 @@ exports.getcontractService = async (
       total: rows[0].total_count,
       from_balance: rows[0].from_balance,
       to_balance: rows[0].to_balance,
+      internal: rows[0].internal,
     };
   } catch (error) {
     throw new ErrorResponse(error, error.statusCode);

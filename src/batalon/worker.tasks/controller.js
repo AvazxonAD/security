@@ -26,6 +26,10 @@ exports.Controller = class {
       return res.error(req.i18n.t("taskNotFound"), 404);
     }
 
+    if (new Date(task.deadline) < new Date()) {
+      return res.error(req.i18n.t("taskDeadline"), 400);
+    }
+
     let all_task_time = 0;
 
     for (let worker of workers) {
@@ -58,6 +62,10 @@ exports.Controller = class {
     const task = await BatalonTasksService.getById({ id: task_id });
     if (!task) {
       return res.error(req.i18n.t("taskNotFound"), 404);
+    }
+
+    if (new Date(task.deadline) < new Date()) {
+      return res.error(req.i18n.t("taskDeadline"), 400);
     }
 
     let all_task_time = 0;
@@ -95,6 +103,10 @@ exports.Controller = class {
     const task = await BatalonTasksService.getById({ id: task_id });
     if (!task) {
       return res.error(req.i18n.t("taskNotFound"), 404);
+    }
+
+    if (new Date(task.deadline) < new Date()) {
+      return res.error(req.i18n.t("taskDeadline"), 400);
     }
 
     const checkWorker = await WorkerService.getById({

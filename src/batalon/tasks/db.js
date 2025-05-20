@@ -17,7 +17,7 @@ exports.BatalonTaskDB = class {
         conditions.push(` 
           0 = (
             SELECT
-              t.task_time - COALESCE(SUM(wt.task_time), 0)
+              (t.task_time * t.worker_number) - COALESCE(SUM(wt.task_time), 0)
             FROM worker_task wt 
             WHERE wt.isdeleted = false
               AND wt.task_id = t.id
@@ -27,7 +27,7 @@ exports.BatalonTaskDB = class {
         conditions.push(` 
           0 != (
             SELECT
-              t.task_time - COALESCE(SUM(wt.task_time), 0)
+              (t.task_time * t.worker_number) - COALESCE(SUM(wt.task_time), 0)
             FROM worker_task wt 
             WHERE wt.isdeleted = false
               AND wt.task_id = t.id
@@ -38,7 +38,7 @@ exports.BatalonTaskDB = class {
         conditions.push(` 
           0 != (
             SELECT
-              t.task_time - COALESCE(SUM(wt.task_time), 0)
+              (t.task_time * t.worker_number) - COALESCE(SUM(wt.task_time), 0)
             FROM worker_task wt 
             WHERE wt.isdeleted = false
               AND wt.task_id = t.id
@@ -66,7 +66,7 @@ exports.BatalonTaskDB = class {
           CASE
             WHEN 0 = (
               SELECT
-                t.task_time - COALESCE(SUM(wt.task_time), 0)
+              (t.task_time * t.worker_number) - COALESCE(SUM(wt.task_time), 0)
               FROM worker_task wt 
               WHERE wt.isdeleted = false
                 AND wt.task_id = t.id
@@ -74,7 +74,7 @@ exports.BatalonTaskDB = class {
             THEN 'Bajarilgan'
             WHEN 0 != (
               SELECT
-                t.task_time - COALESCE(SUM(wt.task_time), 0)
+                ((t.task_time * t.worker_number)) - COALESCE(SUM(wt.task_time), 0)
               FROM worker_task wt 
               WHERE wt.isdeleted = false
                 AND wt.task_id = t.id
@@ -129,15 +129,12 @@ exports.BatalonTaskDB = class {
   static async getById(params) {
     const query = `--sql
       SELECT 
-        t.id, 
-        t.batalon_id, 
+        t.*, 
         b.name AS batalon_name,
         b.birgada,
-        t.task_time, 
         t.summa::FLOAT, 
         t.result_summa::FLOAT,
         t.discount_money::FLOAT,
-        t.worker_number,
         c.doc_num AS contract_number,
         TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
         (   
