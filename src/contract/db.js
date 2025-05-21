@@ -563,7 +563,14 @@ exports.getcontractService = async (
                     ) AS tasks,
                     CASE 
                       WHEN 
-                        ( d.all_worker_number * d.all_task_time ) = (
+                        ( 
+                          SELECT 
+                            COALESCE(SUM(t.worker_number * t.task_time), 0)
+                          FROM task t 
+                          JOIN batalon b ON b.id = t.batalon_id 
+                          WHERE b.birgada = false 
+                            AND t.contract_id  = d.id
+                        ) = (
                           SELECT 
                             COALESCE(SUM(wt.task_time), 0) 
                           FROM worker_task wt
