@@ -65,6 +65,7 @@ exports.getPrixodService = async (
       offset_limit = `OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
       params.push(offset, limit);
     }
+
     const conditions = [];
 
     if (search) {

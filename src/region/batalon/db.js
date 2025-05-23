@@ -60,8 +60,9 @@ exports.batalonCreateService = async (data) => {
                     address, 
                     str, 
                     bank_name, 
-                    mfo
-                ) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                    mfo,
+                    account_number
+                ) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
         [
           data.name,
           data.birgada,
@@ -70,32 +71,9 @@ exports.batalonCreateService = async (data) => {
           data.str,
           data.bank_name,
           data.mfo,
+          data.account_number,
         ]
       );
-
-      for (let account of data.account_numbers) {
-        const query = `
-                    INSERT INTO 
-                        account_number(
-                            account_number, 
-                            batalon_id
-                        ) 
-                    VALUES($1, $2) RETURNING *
-                `;
-        await client.query(query, [account.account_number, batalon.rows[0].id]);
-      }
-
-      for (let gazna of data.gazna_numbers) {
-        const query = `
-                    INSERT INTO 
-                        gazna_numbers(
-                            gazna_number, 
-                            batalon_id
-                        ) 
-                    VALUES($1, $2) RETURNING *
-                `;
-        await client.query(query, [gazna.gazna_number, batalon.rows[0].id]);
-      }
 
       return batalon.rows[0];
     });
@@ -116,9 +94,10 @@ exports.batalonUpdateService = async (data) => {
                 address = $3, 
                 str = $4, 
                 bank_name = $5, 
-                mfo = $6
-                WHERE id = $7 
-                    AND isdeleted = false 
+                mfo = $6,
+                account_number = $7
+                WHERE id = $8
+                  AND isdeleted = false 
                 RETURNING *
             `,
         [
@@ -128,86 +107,10 @@ exports.batalonUpdateService = async (data) => {
           data.str,
           data.bank_name,
           data.mfo,
+          data.account_number,
           data.id,
         ]
       );
-
-      const create_gazna = [];
-      const create_account_number = [];
-
-      // gazna
-      for (let gazna of data.old_data.gazna_numbers) {
-        const check = data.gazna_numbers.find((item) => item.id === gazna.id);
-        if (!check) {
-          await client.query(
-            `UPDATE gazna_numbers SET isdeleted = true WHERE id = $1`,
-            [gazna.id]
-          );
-        }
-      }
-
-      for (let gazna of data.gazna_numbers) {
-        if (!gazna.id) {
-          create_gazna.push(gazna);
-        } else {
-          await client.query(
-            `
-                        UPDATE gazna_numbers 
-                        SET gazna_number = $1, updated_at = $2  
-                        WHERE id = $3
-                    `,
-            [gazna.gazna_number, new Date(), gazna.id]
-          );
-        }
-      }
-
-      for (let gazna of create_gazna) {
-        await client.query(
-          `
-                    INSERT INTO gazna_numbers(gazna_number, batalon_id) 
-                    VALUES($1, $2) RETURNING *
-                `,
-          [gazna.gazna_number, batalon.rows[0].id]
-        );
-      }
-
-      // account_number
-      for (let account_number of data.old_data.account_numbers) {
-        const check = data.account_numbers.find(
-          (item) => item.id === account_number.id
-        );
-        if (!check) {
-          await client.query(
-            `UPDATE account_number SET isdeleted = true WHERE id = $1`,
-            [account_number.id]
-          );
-        }
-      }
-
-      for (let account_number of data.account_numbers) {
-        if (!account_number.id) {
-          create_account_number.push(account_number);
-        } else {
-          await client.query(
-            `
-                        UPDATE account_number 
-                        SET account_number = $1, updated_at = $2  
-                        WHERE id = $3
-                    `,
-            [account_number.account_number, new Date(), account_number.id]
-          );
-        }
-      }
-
-      for (let account_number of create_account_number) {
-        await client.query(
-          `
-                    INSERT INTO account_number(account_number, batalon_id) 
-                    VALUES($1, $2) RETURNING *
-                `,
-          [account_number.account_number, batalon.rows[0].id]
-        );
-      }
 
       return batalon.rows[0];
     });
@@ -240,39 +143,9 @@ exports.getBatalonService = async (user_id, birgada = null, search) => {
     }
 
     const { rows } = await pool.query(
-      `
+      `--sql
             SELECT 
-                b.id, 
-                b.name, 
-                b.address, 
-                b.str, 
-                b.bank_name, 
-                b.mfo,
-                b.birgada,
-                COALESCE((
-                    SELECT 
-                        JSON_AGG(
-                            JSON_BUILD_OBJECT(
-                                'id',    g.id,
-                                'gazna_number', g.gazna_number
-                            )
-                        )
-                    FROM gazna_numbers g
-                    WHERE g.isdeleted = false
-                        AND g.batalon_id = b.id
-                ), '[]'::JSON) AS gazna_numbers,
-                COALESCE((
-                    SELECT 
-                        JSON_AGG(
-                            JSON_BUILD_OBJECT(
-                                'id',    a.id,
-                                'account_number', a.account_number
-                            )
-                        )
-                    FROM  account_number a  
-                    WHERE a.isdeleted = false
-                        AND a.batalon_id = b.id
-                ), '[]'::JSON) AS account_numbers
+              b.*
             FROM batalon b
             WHERE b.isdeleted = false 
                 AND b.user_id = $1 
@@ -298,39 +171,9 @@ exports.getByIdBatalonService = async (
 ) => {
   try {
     const result = await pool.query(
-      `
+      `--sql
             SELECT 
-                b.id, 
-                b.name, 
-                b.address, 
-                b.str, 
-                b.bank_name, 
-                b.mfo,
-                b.birgada,
-                COALESCE((
-                    SELECT 
-                        JSON_AGG(
-                            JSON_BUILD_OBJECT(
-                                'id',    g.id,
-                                'gazna_number', g.gazna_number
-                            )
-                        )
-                    FROM gazna_numbers g
-                    WHERE g.isdeleted = false
-                        AND g.batalon_id = b.id
-                ), '[]'::JSON) AS gazna_numbers,
-                COALESCE((
-                    SELECT 
-                        JSON_AGG(
-                            JSON_BUILD_OBJECT(
-                                'id',    a.id,
-                                'account_number', a.account_number
-                            )
-                        )
-                    FROM  account_number a  
-                    WHERE a.isdeleted = false
-                        AND a.batalon_id = b.id
-                ), '[]'::JSON) AS account_numbers
+              b.*
             FROM batalon b
             WHERE b.user_id = $1 
                 AND b.id = $2 
@@ -383,7 +226,7 @@ exports.deleteBatalonService = async (id) => {
 
 exports.getOnlyBatalon = async (user_id) => {
   try {
-    const result = await pool.query(
+    await pool.query(
       `SELECT id, name FROM batalon WHERE isdeleted = false AND user_id = $1 AND birgada = false`,
       [user_id]
     );

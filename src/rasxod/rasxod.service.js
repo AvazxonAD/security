@@ -28,7 +28,7 @@ const getByIdTaskService = async (batalon_id, task_id, user_id, lang) => {
 const paymentRequestService = async (account_number, batalon_id, from, to) => {
   try {
     const result = await pool.query(
-      `
+      `--sql
             WITH data AS (
                 SELECT 
                     t.id AS task_id,
@@ -44,7 +44,6 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                     t.task_time,
                     t.worker_number,
                     t.result_summa::FLOAT,
-                    t.result_summa,
                     t.discount_money,
                     t.summa
                 FROM task AS t
@@ -257,9 +256,11 @@ const getByIdRasxodService = async (
     const data = await pool.query(
       `--sql
         SELECT 
-            d.id,
+            d.*,
             d.doc_num,
-            TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,  -- Yil, oy, kun formatini to'g'ri ko'rsatish
+            TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,
+            TO_CHAR(d.from, 'YYYY-MM-DD') AS from,
+            TO_CHAR(d.to, 'YYYY-MM-DD') AS to,
             d.opisanie,
             b.id AS batalon_id,
             b.name AS batalon_name,
@@ -382,8 +383,10 @@ const updateRasxodService = async (data) => {
             batalon_id = $3, 
             opisanie = $4,
             batalon_account_number_id = $5,
-            batalon_gazna_number_id = $6
-            WHERE id = $7
+            batalon_gazna_number_id = $6,
+            "from" = $7,
+            "to" = $8
+            WHERE id = $9
             RETURNING * 
         `,
       [
@@ -393,6 +396,8 @@ const updateRasxodService = async (data) => {
         data.opisanie,
         data.batalon_account_number_id,
         data.batalon_gazna_number_id,
+        data.from,
+        data.to,
         data.id,
       ]
     );

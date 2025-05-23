@@ -79,6 +79,14 @@ const rasxodValidation = Joi.object({
     .min(1),
   batalon_gazna_number_id: Joi.number().integer().min(1).allow(null),
   batalon_account_number_id: Joi.number().integer().min(1).allow(null),
+  to: Joi.string()
+    .trim()
+    .pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)
+    .required(),
+  from: Joi.string()
+    .trim()
+    .pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)
+    .required(),
 });
 
 const rasxodFioValidation = Joi.object({
@@ -144,21 +152,7 @@ const batalionValidation = Joi.object({
   str: Joi.string().trim().allow("", null),
   bank_name: Joi.string().trim().allow("", null),
   mfo: Joi.string().trim().allow("", null),
-  gazna_numbers: Joi.array()
-    .items(
-      Joi.object({
-        id: Joi.number().min(1).integer(),
-        gazna_number: Joi.string().trim().required(),
-      })
-    )
-    .empty()
-    .default([]),
-  account_numbers: Joi.array().items(
-    Joi.object({
-      id: Joi.number().min(1).integer(),
-      account_number: Joi.string().trim().required(),
-    }).default([])
-  ),
+  account_number: Joi.string().trim().allow(""),
 }).options({ stripUnknown: true });
 
 const userValidation = Joi.object({
@@ -449,7 +443,7 @@ const workerExcelValidation = Joi.object({
 const prixodQueryValidation = Joi.object({
   page: Joi.number().min(1).default(1),
   limit: Joi.number().min(1).default(10),
-  search: Joi.string().trim(),
+  search: Joi.string().trim().allow(""),
   from: Joi.string()
     .trim()
     .pattern(/^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)

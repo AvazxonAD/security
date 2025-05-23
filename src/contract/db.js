@@ -547,7 +547,7 @@ exports.getcontractService = async (
                     ) AS remaining_balance,
                     (
                         SELECT 
-                            COALESCE(SUM(summa), 0) 
+                            COALESCE(SUM(p.summa), 0) 
                         FROM prixod p
                         WHERE p.isdeleted = false 
                             AND p.contract_id = d.id 
@@ -612,31 +612,8 @@ exports.getcontractService = async (
                         ${batalion_filter}
                 )::INTEGER AS total_count,
                 (
-                    SELECT COALESCE(SUM(d.result_summa), 0) 
-                    FROM contract AS d 
-                    JOIN organization AS o ON o.id = d.organization_id 
-                    WHERE d.isdeleted = false 
-                        AND d.user_id = $1 
-                        AND d.doc_date <= $4 
-                        AND d.account_number_id = $6 
-                        ${serach_filter} 
-                        ${organization_filter} 
-                        ${batalion_filter}
-                )::FLOAT AS from_balance,
-                (
-                    SELECT COALESCE(SUM(d.result_summa), 0) 
-                    FROM contract AS d 
-                    LEFT JOIN organization AS o ON o.id = d.organization_id 
-                    WHERE d.isdeleted = false 
-                        AND d.user_id = $1 
-                        AND d.doc_date <= $5 
-                        AND d.account_number_id = $6 
-                        ${serach_filter} 
-                        ${organization_filter} 
-                        ${batalion_filter}
-                )::FLOAT AS to_balance,
-                (
-                  SELECT COALESCE(SUM(d.result_summa), 0) 
+                  SELECT 
+                    COALESCE(SUM(d.result_summa), 0) 
                   FROM contract AS d 
                   JOIN organization AS o ON o.id = d.organization_id 
                   WHERE d.isdeleted = false 
@@ -646,7 +623,45 @@ exports.getcontractService = async (
                       ${serach_filter} 
                       ${organization_filter} 
                       ${batalion_filter}
-                )::FLOAT AS internal
+                )::FLOAT AS internal_summa,
+                (
+                  SELECT 
+                    COALESCE(SUM((
+                      SELECT 
+                        COALESCE(SUM(p.summa), 0)
+                      FROM prixod p 
+                      WHERE p.isdeleted = false
+                        AND p.contract_id = d.id
+                    )), 0) 
+                  FROM contract AS d 
+                  JOIN organization AS o ON o.id = d.organization_id 
+                  WHERE d.isdeleted = false 
+                      AND d.user_id = $1 
+                      AND d.doc_date BETWEEN $4 AND $5 
+                      AND d.account_number_id = $6 
+                      ${serach_filter} 
+                      ${organization_filter} 
+                      ${batalion_filter}
+                )::FLOAT AS debet_summa,
+                (
+                  SELECT 
+                    COALESCE(SUM( d.result_summa - (
+                      SELECT 
+                        COALESCE(SUM(p.summa), 0)
+                      FROM prixod p 
+                      WHERE p.isdeleted = false
+                        AND p.contract_id = d.id
+                    )), 0) 
+                  FROM contract AS d 
+                  JOIN organization AS o ON o.id = d.organization_id 
+                  WHERE d.isdeleted = false 
+                      AND d.user_id = $1 
+                      AND d.doc_date BETWEEN $4 AND $5 
+                      AND d.account_number_id = $6 
+                      ${serach_filter} 
+                      ${organization_filter} 
+                      ${batalion_filter}
+                )::FLOAT AS kredit_summa
             FROM data
         `;
 
@@ -655,9 +670,9 @@ exports.getcontractService = async (
     return {
       data: rows[0]?.data || [],
       total: rows[0].total_count,
-      from_balance: rows[0].from_balance,
-      to_balance: rows[0].to_balance,
-      internal: rows[0].internal,
+      debet_summa: rows[0].debet_summa,
+      kredit_summa: rows[0].kredit_summa,
+      internal_summa: rows[0].internal_summa,
     };
   } catch (error) {
     throw new ErrorResponse(error, error.statusCode);

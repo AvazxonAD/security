@@ -59,7 +59,6 @@ const createRasxod = async (req, res) => {
     const { batalon_account_number_id, batalon_gazna_number_id } = req.body;
 
     const data = validationResponse(rasxodValidation, req.body);
-    data;
 
     await getByIdaccount_numberService(
       user_id,

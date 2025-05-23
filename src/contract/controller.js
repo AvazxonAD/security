@@ -182,17 +182,18 @@ exports.contractGet = async (req, res) => {
     );
     const offset = (page - 1) * limit;
 
-    const { data, total, from_balance, to_balance } = await getcontractService(
-      user_id,
-      offset,
-      limit,
-      search,
-      from,
-      to,
-      account_number_id,
-      organization_id,
-      batalon_id
-    );
+    const { data, total, internal_summa, debet_summa, kredit_summa } =
+      await getcontractService(
+        user_id,
+        offset,
+        limit,
+        search,
+        from,
+        to,
+        account_number_id,
+        organization_id,
+        batalon_id
+      );
 
     for (let doc of data) {
       doc.result_summa = Math.round(doc.result_summa * 100) / 100;
@@ -207,8 +208,9 @@ exports.contractGet = async (req, res) => {
       currentPage: page,
       nextPage: page >= pageCount ? null : page + 1,
       backPage: page === 1 ? null : page - 1,
-      from_balance: returnStringSumma(Math.round(from_balance * 100) / 100),
-      to_balance: returnStringSumma(Math.round(to_balance * 100) / 100),
+      internal_summa: returnStringSumma(Math.round(internal_summa * 100) / 100),
+      debet_summa: returnStringSumma(Math.round(debet_summa * 100) / 100),
+      kredit_summa: returnStringSumma(Math.round(kredit_summa * 100) / 100),
     };
 
     return res.success(req.i18n.t("getSuccess"), 200, meta, data);
