@@ -711,7 +711,7 @@ exports.getByIdcontractService = async (
                 TO_CHAR(d.start_date, 'YYYY-MM-DD') AS start_date, 
                 TO_CHAR(d.end_date, 'YYYY-MM-DD') AS end_date, 
                 d.discount, 
-                d.discount_money::FLOAT, 
+                COALESCE(d.discount_money, 0)::FLOAT AS discount_money, 
                 d.summa::FLOAT, 
                 d.result_summa::FLOAT, 
                 d.organization_id, 
@@ -743,7 +743,7 @@ exports.getByIdcontractService = async (
                             t.worker_number,
                             t.summa, 
                             COALESCE(t.time_money, 0) AS timemoney, 
-                            t.discount_money,
+                            COALESCE(d.discount_money, 0)::FLOAT AS discount_money,
                             t.result_summa,
                             TO_CHAR(t.task_date, 'YYYY-MM-DD') AS task_date,
                             TO_CHAR(t.task_date, 'DD.MM.YYYY') AS local_date,
@@ -876,11 +876,11 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
   try {
     const query = `--sql
             SELECT 
-                d.id,
+                d.*,
                 d.doc_num, 
                 TO_CHAR(d.doc_date, 'YYYY-MM-DD') AS doc_date,  
                 d.discount, 
-                d.discount_money::FLOAT, 
+                COALESCE(d.discount_money, 0)::FLOAT AS discount_money, 
                 d.summa::FLOAT, 
                 d.result_summa::FLOAT, 
                 d.all_worker_number,
@@ -896,12 +896,13 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                 a_c.account_number,
                 b_k.bank,
                 b_k.mfo,
-                ( SELECT (d.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS kridit,
-                ( SELECT COALESCE(SUM(summa), 0)::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = d.id) AS debit,
+                ( SELECT (d.result_summa - COALESCE(SUM(p.summa), 0))::FLOAT FROM prixod p WHERE p.isdeleted = false AND p.contract_id = d.id) AS kridit,
+                ( SELECT COALESCE(SUM(p.summa), 0)::FLOAT FROM prixod p  WHERE p.isdeleted = false AND p.contract_id = d.id) AS debit,
                 (
+                    
                     (
-                        COALESCE((SELECT SUM(summa) FROM prixod WHERE isdeleted = false AND contract_id = $3),0)
-                    ) - 
+                      SELECT COALESCE(SUM(summa), 0) FROM prixod p WHERE p.isdeleted = false AND p.contract_id = $3
+                    ) -
                     (
                         (
                             SELECT COALESCE(SUM(t.result_summa), 0) 
@@ -911,7 +912,7 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                             WHERE c_inner.id = $3 AND r.isdeleted = false
                         ) + 
                         (
-                            SELECT COALESCE(SUM(r_fio.summa), 0) 
+                            SELECT COALESCE(SUM(w_t.summa), 0) 
                             FROM rasxod_fio AS r_fio 
                             JOIN worker_task AS w_t ON w_t.id = r_fio.worker_task_id
                             JOIN task AS t ON t.id = w_t.task_id 
@@ -919,7 +920,39 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                             WHERE c_inner.id = $3 AND r_fio.isdeleted = false
                         )
                     )
-                )::FLOAT AS remaining_summa
+                )::FLOAT AS remaining_summa,
+                (
+                  (
+                      SELECT COALESCE(SUM(t.result_summa), 0) 
+                      FROM rasxod AS r
+                      JOIN task AS t ON t.id = r.task_id
+                      JOIN contract AS c_inner ON t.contract_id = c_inner.id 
+                      WHERE c_inner.id = $3 AND r.isdeleted = false
+                  ) + 
+                  (
+                      SELECT COALESCE(SUM(w_t.summa), 0) 
+                      FROM rasxod_fio AS r_fio 
+                      JOIN worker_task AS w_t ON w_t.id = r_fio.worker_task_id
+                      JOIN task AS t ON t.id = w_t.task_id 
+                      JOIN contract AS c_inner ON c_inner.id = t.contract_id
+                      WHERE c_inner.id = $3 AND r_fio.isdeleted = false
+                  )
+              )::FLOAT AS rasxod_summa,
+              (
+                SELECT COALESCE(SUM(t.result_summa), 0) 
+                FROM rasxod AS r
+                JOIN task AS t ON t.id = r.task_id
+                JOIN contract AS c_inner ON t.contract_id = c_inner.id 
+                WHERE c_inner.id = $3 AND r.isdeleted = false
+              )::FLOAT AS rasxod,
+              (
+                SELECT COALESCE(SUM(w_t.summa), 0) 
+                FROM rasxod_fio AS r_fio 
+                JOIN worker_task AS w_t ON w_t.id = r_fio.worker_task_id
+                JOIN task AS t ON t.id = w_t.task_id 
+                JOIN contract AS c_inner ON c_inner.id = t.contract_id
+                WHERE c_inner.id = $3 AND r_fio.isdeleted = false
+              )::FLOAT AS rasxod_fio
             FROM contract d   
             JOIN organization AS o ON o.id = d.organization_id
             JOIN account_number AS a_c ON a_c.user_id = $1
@@ -942,8 +975,9 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
                 o.str AS organization_str,
                 o.account_number AS organization_account_number
             FROM prixod AS p 
-            JOIN organization AS o ON o.id = p.organization_id 
-            WHERE p.isdeleted = false AND p.contract_id = $1
+            LEFT JOIN organization AS o ON o.id = p.organization_id 
+            WHERE p.isdeleted = false
+              AND p.contract_id = $1
         `,
       [id]
     );
@@ -963,29 +997,34 @@ exports.contractViewService = async (user_id, account_number_id, id) => {
             JOIN contract AS d ON d.id = t.contract_id
             JOIN  batalon AS b ON b.id = t.batalon_id
             JOIN rasxod_doc AS r_d ON r_d.id = r.rasxod_doc_id 
-            WHERE t.contract_id = $1 AND r.isdeleted = false
+            WHERE t.contract_id = $1
+              AND r.isdeleted = false
+              AND r_d.isdeleted = false
         `,
       [id]
     );
 
     const rasxod_fio = await pool.query(
       `--sql
-            SELECT 
-                r_d.id,
-                r_d.doc_num,
-                TO_CHAR(r_d.doc_date, 'YYYY-MM-DD') AS rasxod_date,
-                COALESCE(SUM(r_f.summa), 0)::FLOAT AS summa, 
-                b.name AS batalon_name,
-                b.str AS batalon_str,
-                b.account_number AS batalon_account_number
-            FROM rasxod_fio_doc AS r_d
-            JOIN rasxod_fio AS r_f ON r_d.id = r_f.rasxod_fio_doc_id
-            JOIN worker_task AS w_t ON w_t.id = r_f.worker_task_id
-            JOIN task AS t ON t.id = w_t.task_id 
-            JOIN batalon AS b ON b.id = t.batalon_id
-            WHERE  t.contract_id = $1
-            GROUP BY r_d.id, r_d.doc_num, rasxod_date, b.name, b.str, b.account_number 
-        `,
+          SELECT 
+            rfd.doc_num,
+            TO_CHAR(rfd.doc_date, 'YYYY-MM-DD') AS rasxod_date,
+            w.fio,
+            b.name AS batalon,
+            COALESCE(SUM(w_t.summa), 0)::FLOAT AS summa, 
+            COALESCE(SUM(w_t.task_time), 0)::FLOAT AS task_time
+        FROM worker_task AS w_t
+        JOIN task AS t ON t.id = w_t.task_id
+        JOIN worker AS w ON w_t.worker_id = w.id
+        JOIN contract AS c ON c.id = t.contract_id
+        JOIN rasxod_fio rf ON rf.worker_task_id = w_t.id
+        JOIN rasxod_fio_doc rfd ON rfd.id = rf.rasxod_fio_doc_id
+        JOIN batalon b ON b.id = w.batalon_id
+        WHERE t.contract_id = $1
+          AND rf.isdeleted = false
+          AND rfd.isdeleted = false
+        GROUP BY rfd.doc_num, rfd.doc_date, w.fio, b.name
+      `,
       [id]
     );
     return {

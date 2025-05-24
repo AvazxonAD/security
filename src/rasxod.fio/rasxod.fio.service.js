@@ -39,7 +39,7 @@ const getByIdWorkerTaskService = async (
 const paymentRequestService = async (account_number, batalon_id, from, to) => {
   try {
     const result = await pool.query(
-      `
+      `--sql
             SELECT 
                 w_t.id AS worker_task_id,
                 c.doc_num AS contract_doc_num,

@@ -238,6 +238,7 @@ exports.contractGetById = async (req, res) => {
       null,
       req.i18n
     );
+
     result.summa = Math.round(result.summa * 100) / 100;
     result.result_summa = Math.round(result.result_summa * 100) / 100;
     result.remaining_balance = Math.round(result.remaining_balance * 100) / 100;
@@ -534,6 +535,7 @@ exports.contractView = async (req, res) => {
     const user_id = req.user.id;
     const account_number_id = req.query.account_number_id;
     const id = req.params.id;
+
     await getByIdcontractService(
       user_id,
       id,
@@ -542,6 +544,7 @@ exports.contractView = async (req, res) => {
       null,
       req.i18n
     );
+
     const result = await contractViewService(user_id, account_number_id, id);
 
     return res.success(req.i18n.t("getSuccess"), 200, null, result);
