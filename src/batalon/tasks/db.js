@@ -89,7 +89,8 @@ exports.BatalonTaskDB = class {
             'start_time', c.start_time,  
             'end_date', TO_CHAR(c.end_date, 'DD.MM.YYYY'),
             'end_time', c.end_time,
-            'organization', o.name
+            'organization', o.name,
+            'adress', c.adress
           ) AS contract_info,
           COALESCE((t.task_time * t.worker_number), 0) AS real_task_time
         FROM task t
@@ -151,7 +152,8 @@ exports.BatalonTaskDB = class {
           'start_time', c.start_time,  
           'end_date', TO_CHAR(c.end_date, 'DD.MM.YYYY'),
           'end_time', c.end_time,
-          'organization', o.name
+          'organization', o.name,
+          'adress', c.adress
         ) AS contract_info
       FROM task AS t
       JOIN contract c ON c.id = t.contract_id 
