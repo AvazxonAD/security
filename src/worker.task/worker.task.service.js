@@ -109,11 +109,11 @@ const workerTaskUpdateService = async (
   }
 };
 
-const deleteWorkerTaskService = async (worker_id, task_id) => {
+const deleteWorkerTaskService = async (worker_id, task_id, user_id) => {
   try {
     await pool.query(
-      `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1 AND isdeleted = false AND task_id = $2 RETURNING *`,
-      [worker_id, task_id]
+      `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1 AND isdeleted = false AND task_id = $2 AND user_id = $3 RETURNING *`,
+      [worker_id, task_id, user_id]
     );
   } catch (error) {
     throw new ErrorResponse(error.message, error.statusCode);

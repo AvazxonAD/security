@@ -45,6 +45,7 @@ exports.WorkerTaskSchema = class {
     return Joi.object({
       query: Joi.object({
         task_id: Joi.number().min(1).integer().required(),
+        excel: Joi.string().default("false").valid("true", "false"),
       }),
     });
   }

@@ -4,15 +4,32 @@ const { BatalonTasksService } = require(`@batalon_tasks/service`);
 
 exports.Controller = class {
   static async get(req, res) {
-    const { task_id } = req.query;
+    const { task_id, excel } = req.query;
 
     const task = await BatalonTasksService.getById({ id: task_id });
     if (!task) {
       return res.error(req.i18n.t("taskNotFound"), 404);
     }
 
-    console.log(req.user.id);
     const result = await WorkerTaskService.get({ ...req.query });
+
+    if (excel && excel === "true") {
+      const { fileName, filePath } = await BatalonTasksService.getExcel({
+        workers: result,
+        task,
+      });
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${fileName}"`
+      );
+
+      return res.sendFile(filePath);
+    }
 
     return res.success(req.i18n.t("getSuccess"), 200, null, result);
   }
@@ -143,7 +160,11 @@ exports.Controller = class {
       return res.error(req.i18n.t("docExists"), 400, { docs: check });
     }
 
-    await WorkerTaskService.delete({ worker_id, task_id });
+    await WorkerTaskService.delete({
+      worker_id,
+      task_id,
+      user_id: req.user.id,
+    });
 
     return res.success(req.i18n.t("deleteSuccess"), 200);
   }

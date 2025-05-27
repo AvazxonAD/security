@@ -83,7 +83,7 @@ exports.WorkerTaskDB = class {
   }
 
   static async delete(params) {
-    const query = `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1  AND task_id = $2`;
+    const query = `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1  AND task_id = $2 AND user_id = $3`;
 
     await db.query(query, params);
   }

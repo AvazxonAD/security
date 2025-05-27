@@ -158,7 +158,7 @@ const workerTaskDelete = async (req, res) => {
       return res.error(req.i18n.t("docExists"), 400, { docs: check });
     }
 
-    await deleteWorkerTaskService(worker_id, task_id);
+    await deleteWorkerTaskService(worker_id, task_id, user_id);
 
     return res.success(req.i18n.t("deleteSuccess"), 200);
   } catch (error) {

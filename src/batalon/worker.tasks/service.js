@@ -63,6 +63,6 @@ exports.WorkerTaskService = class {
   }
 
   static async delete(data) {
-    await WorkerTaskDB.delete([data.worker_id, data.task_id]);
+    await WorkerTaskDB.delete([data.worker_id, data.task_id, data.user_id]);
   }
 };
