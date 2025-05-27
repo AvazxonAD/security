@@ -70,8 +70,8 @@ const getBYTaskIdWorkerTask = async (req, res) => {
     const workers = await getByTaskIdWorkerTaskService(task_id, search);
 
     for (let worker of workers) {
-      worker.summa = Math.round(worker.summa * 100) / 100;
-      worker.task_time = Math.round(worker.task_time * 100) / 100;
+      worker.summa = Math.round(worker.summa * 1000) / 1000;
+      worker.task_time = Math.round(worker.task_time * 1000) / 1000;
     }
 
     return res.success(req.i18n.t("getSuccess"), 200, null, workers);
