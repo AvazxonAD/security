@@ -144,7 +144,11 @@ exports.BatalonTaskDB = class {
                 WHERE task_id = t.id AND isdeleted = false
                 ) 
         ) AS remaining_task_time,
-        COALESCE((t.task_time * t.worker_number), 0) AS real_task_time
+        COALESCE((t.task_time * t.worker_number), 0) AS real_task_time,
+        c.start_date,
+        c.start_time,
+        c.end_date,
+        c.end_time
       FROM task AS t
       JOIN contract c ON c.id = t.contract_id 
       JOIN batalon AS b ON b.id = t.batalon_id 
