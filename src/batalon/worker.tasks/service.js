@@ -6,7 +6,8 @@ exports.WorkerTaskService = class {
     const result = await WorkerTaskDB.get(
       [data.task_id],
       data.search,
-      data.worker_id
+      data.worker_id,
+      data.user_id
     );
 
     return result;
@@ -28,7 +29,13 @@ exports.WorkerTaskService = class {
 
       promises.push(
         WorkerTaskDB.create(
-          [worker.worker_id, data.task.id, summa, worker.task_time],
+          [
+            worker.worker_id,
+            data.task.id,
+            summa,
+            worker.task_time,
+            data.user_id,
+          ],
           data.client
         )
       );

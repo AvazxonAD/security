@@ -53,7 +53,7 @@ const workerTaskCreate = async (req, res) => {
 
     await deleteWorkerTaskService(task_id);
 
-    const result = await workerTaskCreateService(task, value.workers);
+    const result = await workerTaskCreateService(task, value.workers, user_id);
 
     return res.success(req.i18n.t("createSuccess"), 200, null, result);
   } catch (error) {
@@ -115,7 +115,7 @@ const workerTaskUpdate = async (req, res) => {
 
     await deleteByTaskIDWorkerTaskService(task_id);
 
-    const result = await workerTaskCreateService(task, workers, all_task_time);
+    const result = await workerTaskCreateService(task, workers, user_id);
 
     return res.success(req.i18n.t("updateSuccess"), 200, null, result);
   } catch (error) {
@@ -128,6 +128,7 @@ const workerTaskDelete = async (req, res) => {
     const user_id = req.user.id;
     const worker_id = req.query.worker_id;
     const task_id = req.query.task_id;
+
     const task = await getByIdTaskService(
       user_id,
       task_id,
@@ -145,7 +146,12 @@ const workerTaskDelete = async (req, res) => {
       return res.error(req.i18n.t("workerNotFound"), 404);
     }
 
-    await getByTaskIdANDWorkerIdWorkerTaskService(task_id, worker_id, req.i18n);
+    await getByTaskIdANDWorkerIdWorkerTaskService(
+      task_id,
+      worker_id,
+      user_id,
+      req.i18n
+    );
 
     const check = await WorkerTaskService.checkDoc({ task_id });
     if (check.length) {

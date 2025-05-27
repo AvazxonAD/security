@@ -11,6 +11,7 @@ exports.Controller = class {
       return res.error(req.i18n.t("taskNotFound"), 404);
     }
 
+    console.log(req.user.id);
     const result = await WorkerTaskService.get({ ...req.query });
 
     return res.success(req.i18n.t("getSuccess"), 200, null, result);
@@ -49,7 +50,12 @@ exports.Controller = class {
       return res.error(req.i18n.t("taskTimeError"), 400);
     }
 
-    await WorkerTaskService.create({ ...req.body, ...req.query, task });
+    await WorkerTaskService.create({
+      ...req.body,
+      ...req.query,
+      task,
+      user_id: req.user.id,
+    });
 
     return res.success(req.i18n.t("createSuccess"), 201);
   }
@@ -91,7 +97,12 @@ exports.Controller = class {
       return res.error(req.i18n.t("docExists"), 400, { docs: check });
     }
 
-    await WorkerTaskService.update({ ...req.body, ...req.query, task });
+    await WorkerTaskService.update({
+      ...req.body,
+      ...req.query,
+      task,
+      user_id: req.user.id,
+    });
 
     return res.success(req.i18n.t("updateSuccess"), 200);
   }
@@ -120,6 +131,7 @@ exports.Controller = class {
     const check_task = await WorkerTaskService.get({
       task_id,
       worker_id,
+      user_id: req.user.id,
     });
 
     if (!check_task.length) {
