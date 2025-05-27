@@ -152,7 +152,7 @@ exports.BatalonTaskDB = class {
           'end_date', TO_CHAR(c.end_date, 'DD.MM.YYYY'),
           'end_time', c.end_time,
           'organization', o.name
-        ) AS contract_info,
+        ) AS contract_info
       FROM task AS t
       JOIN contract c ON c.id = t.contract_id 
       JOIN batalon AS b ON b.id = t.batalon_id 
