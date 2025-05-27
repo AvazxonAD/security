@@ -145,11 +145,14 @@ exports.BatalonTaskDB = class {
                 ) 
         ) AS remaining_task_time,
         COALESCE((t.task_time * t.worker_number), 0) AS real_task_time,
-        c.start_date,
-        c.start_time,
-        c.end_date,
-        c.end_time,
-        o.name AS organization_name
+        JSON_BUILD_OBJECT(
+          'doc_num', c.doc_num,
+          'start_date', TO_CHAR(c.start_date, 'DD.MM.YYYY'),
+          'start_time', c.start_time,  
+          'end_date', TO_CHAR(c.end_date, 'DD.MM.YYYY'),
+          'end_time', c.end_time,
+          'organization', o.name
+        ) AS contract_info,
       FROM task AS t
       JOIN contract c ON c.id = t.contract_id 
       JOIN batalon AS b ON b.id = t.batalon_id 
