@@ -217,9 +217,10 @@ const getRasxodService = async (
                 LEFT JOIN account_number a ON a.id = d.batalon_account_number_id 
                 LEFT JOIN gazna_numbers g ON g.id = d.batalon_gazna_number_id
                 WHERE d.account_number_id = $1 
-                AND d.isdeleted = false
-                AND d.doc_date BETWEEN $2 AND $3
-                AND d.user_id = $4 ${batalon_filter} AND d.isdeleted = false
+                  AND d.isdeleted = false
+                  AND d.doc_date BETWEEN $2 AND $3
+                  AND d.user_id = $4 ${batalon_filter} AND d.isdeleted = false
+                ORDER BY d.doc_num DESC, d.doc_date DESC
                 OFFSET $5 LIMIT $6
             )
             SELECT 
