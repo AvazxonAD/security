@@ -20,7 +20,7 @@ const getByIdWorkerTaskService = async (
                 AND t.user_id = $3
                 AND w_t.isdeleted = false
                 AND t.isdeleted = false
-                AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
+                AND  0 >= (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                 AND  NOT EXISTS (SELECT * FROM rasxod_fio WHERE isdeleted = false AND worker_task_id = w_t.id)
         `,
       [batalon_id, worker_task_id, user_id]

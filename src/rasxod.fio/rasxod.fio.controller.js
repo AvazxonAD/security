@@ -96,6 +96,8 @@ const createRasxod = async (req, res) => {
       req.i18n
     );
 
+    console.log("------------");
+
     const batalon = await getByIdBatalonService(
       user_id,
       data.batalon_id,
