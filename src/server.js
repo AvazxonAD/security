@@ -39,7 +39,7 @@ const PORT = process.env.PORT || 3002;
   try {
     await Db.connectDB();
 
-    await contractEdit();
+    // await contractEdit();
 
     app.listen(PORT, () => {
       console.log(`server runing on port: ${PORT}`.bgBlue);
