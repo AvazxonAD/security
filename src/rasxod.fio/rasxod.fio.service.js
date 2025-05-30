@@ -64,7 +64,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                 AND c.isdeleted = false
                 AND w_t.isdeleted = false
                 AND t.isdeleted = false
-                AND  0 = (
+                AND  0 >= (
                         SELECT 
                             (c.result_summa - COALESCE(SUM(p.summa), 0))::FLOAT 
                         FROM prixod p

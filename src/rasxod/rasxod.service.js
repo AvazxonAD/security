@@ -52,7 +52,7 @@ const paymentRequestService = async (account_number, batalon_id, from, to) => {
                 WHERE c.account_number_id = $1  
                     AND c.doc_date BETWEEN $2 AND $3 
                     AND t.batalon_id = $4
-                    AND  0 = (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
+                    AND  0 >= (SELECT (c.result_summa - COALESCE(SUM(summa), 0))::FLOAT FROM prixod WHERE isdeleted = false AND contract_id = c.id)
                     AND  NOT EXISTS (SELECT * FROM rasxod WHERE isdeleted = false AND task_id = t.id)
                     AND c.isdeleted = false
             )

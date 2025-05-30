@@ -28,6 +28,7 @@ const { OrganizationService } = require("@organization/service");
 
 exports.Controler = class {
   static async import(req, res) {
+    const user_id = req.user.id;
     const workbook = xlsx.readFile(req.file.path);
 
     const sheetName = workbook.SheetNames[0];
@@ -43,51 +44,63 @@ exports.Controler = class {
       return newRow;
     });
 
-    for (let contract of excel_data) {
-      const db_data = await db.query(
-        `
-        SELECT * 
-        FROM contract 
-        WHERE doc_num = $1
-      `,
-        [String(contract.doc_num)]
-      );
+    const not_contracts = [];
 
-      contract.contract = db_data[0];
-
-      if (contract.contract && contract.remaining_summa === 0) {
-        await db.query(
-          `
-            INSERT INTO prixod (
-            user_id,
-            organization_id,
-            contract_id,
-            opisanie,
-            doc_num,
-            doc_date,
-            summa,
-            account_number_id,
-            organ_account_number_id, 
-            organ_gazna_number_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *  
-            `,
-          [
-            contract.contract.user_id,
-            contract.contract.organization_id,
-            contract.contract.id,
-            "",
-            contract.contract.doc_num,
-            contract.contract.doc_date,
-            contract.contract.result_summa,
-            contract.contract.account_number_id,
-            null,
-            null,
-          ]
+    await db.transaction(async (client) => {
+      for (let contract of excel_data) {
+        const db_data = await client.query(
+          `--sql
+            SELECT * 
+            FROM contract 
+            WHERE doc_num = $1
+              AND EXTRACT(YEAR FROM doc_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+              AND isdeleted = false
+              AND user_id = $2
+        `,
+          [String(contract.doc_num), user_id]
         );
-      }
-    }
 
-    return res.send(excel_data);
+        contract.contract = db_data.rows[0];
+
+        if (!contract.contract) {
+          console.log(contract.doc_num, user_id);
+          not_contracts.push(contract);
+        }
+
+        if (contract.contract && contract.prixod && contract.prixod > 0) {
+          await client.query(
+            `--sql
+              INSERT INTO prixod (
+                user_id,
+                organization_id,
+                contract_id,
+                opisanie,
+                doc_num,
+                doc_date,
+                summa,
+                account_number_id,
+                organ_account_number_id, 
+                organ_gazna_number_id
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *  
+              `,
+            [
+              contract.contract.user_id,
+              contract.contract.organization_id,
+              contract.contract.id,
+              "",
+              contract.contract.doc_num,
+              contract.contract.doc_date,
+              contract.prixod,
+              contract.contract.account_number_id,
+              null,
+              null,
+            ]
+          );
+        }
+      }
+    });
+
+    return res.send({ not_contracts, excel_data });
   }
 };
 
@@ -142,9 +155,9 @@ exports.prixodCreate = async (req, res) => {
       req.i18n
     );
 
-    if (contract.remaining_balance < data.summa) {
-      throw new ErrorResponse(req.i18n.t("prixodSummaError"), 400);
-    }
+    // if (contract.remaining_balance < data.summa) {
+    //   throw new ErrorResponse(req.i18n.t("prixodSummaError"), 400);
+    // }
 
     const prixod = await prixodCreateService({
       ...data,
@@ -298,13 +311,13 @@ exports.updatePrixod = async (req, res) => {
       contract_id: contract.id,
     });
 
-    if (check_doc.length) {
+    if (check_doc.length && data.summa < contract.result_summa) {
       return res.error(req.i18n.t("docExists"), 400, { docs: check_doc });
     }
 
-    if (contract.remaining_balance + oldData.prixod_summa < data.summa) {
-      throw new ErrorResponse(req.i18n.t("prixodSummaError"), 400);
-    }
+    // if (contract.remaining_balance + oldData.prixod_summa < data.summa) {
+    //   throw new ErrorResponse(req.i18n.t("prixodSummaError"), 400);
+    // }
 
     const result = await updatePrixodService({ ...data, id });
 
