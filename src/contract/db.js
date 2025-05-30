@@ -669,43 +669,49 @@ exports.getcontractService = async (
                 )::FLOAT AS internal_summa,
                 (
                   SELECT 
-                    COALESCE(SUM((
-                      SELECT 
-                        COALESCE(SUM(p.summa), 0)
-                      FROM prixod p 
-                      WHERE p.isdeleted = false
-                        AND p.contract_id = d.id
-                    )), 0) 
-                  FROM contract AS d 
+                    COALESCE(SUM(p.summa), 0)
+                  FROM prixod p 
+                  JOIN contract AS d ON d.id = p.contract_id
                   JOIN organization AS o ON o.id = d.organization_id 
-                  WHERE d.isdeleted = false 
-                      AND d.user_id = $1 
-                      AND d.doc_date BETWEEN $4 AND $5 
-                      AND d.account_number_id = $6 
+                  WHERE p.isdeleted = false 
+                      AND p.user_id = $1 
+                      AND p.doc_date BETWEEN $4 AND $5 
+                      AND p.account_number_id = $6 
                       ${serach_filter} 
                       ${organization_filter} 
                       ${batalion_filter}
                       ${status_filter}
                 )::FLOAT AS debet_summa,
                 (
-                  SELECT 
-                    COALESCE(SUM( d.result_summa - (
-                      SELECT 
-                        COALESCE(SUM(p.summa), 0)
-                      FROM prixod p 
-                      WHERE p.isdeleted = false
-                        AND p.contract_id = d.id
-                    )), 0) 
-                  FROM contract AS d 
-                  JOIN organization AS o ON o.id = d.organization_id 
-                  WHERE d.isdeleted = false 
-                      AND d.user_id = $1 
-                      AND d.doc_date BETWEEN $4 AND $5 
-                      AND d.account_number_id = $6 
-                      ${serach_filter} 
-                      ${organization_filter} 
-                      ${batalion_filter}
-                      ${status_filter}
+                  (
+                    SELECT 
+                      COALESCE(SUM(d.result_summa), 0) 
+                    FROM contract AS d 
+                    JOIN organization AS o ON o.id = d.organization_id 
+                    WHERE d.isdeleted = false 
+                        AND d.user_id = $1 
+                        AND d.doc_date BETWEEN $4 AND $5 
+                        AND d.account_number_id = $6 
+                        ${serach_filter} 
+                        ${organization_filter} 
+                        ${batalion_filter}
+                        ${status_filter}
+                  ) -
+                  (
+                    SELECT 
+                      COALESCE(SUM(p.summa), 0)
+                    FROM prixod p 
+                    JOIN contract AS d ON d.id = p.contract_id
+                    JOIN organization AS o ON o.id = d.organization_id 
+                    WHERE p.isdeleted = false 
+                        AND p.user_id = $1 
+                        AND p.doc_date BETWEEN $4 AND $5 
+                        AND p.account_number_id = $6 
+                        ${serach_filter} 
+                        ${organization_filter} 
+                        ${batalion_filter}
+                        ${status_filter}
+                  )
                 )::FLOAT AS kredit_summa
             FROM data
         `;

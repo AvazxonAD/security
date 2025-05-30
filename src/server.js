@@ -39,13 +39,11 @@ const PORT = process.env.PORT || 3002;
   try {
     await Db.connectDB();
 
-    // await contractEdit();
-
     app.listen(PORT, () => {
       console.log(`server runing on port: ${PORT}`.bgBlue);
     });
   } catch (error) {
-    console.error(`Error db connect: error.message`.red);
+    console.error(`Error db connect: ${error.message}`.red);
     throw new Error(error);
   }
 })();
