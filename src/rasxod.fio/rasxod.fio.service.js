@@ -413,7 +413,6 @@ const deeleteRasxodService = async (id) => {
       [id]
     );
     await client.query(`COMMIT`);
-    return rasxod_fio;
   } catch (error) {
     await client.query(`ROLLBACK`);
     throw new ErrorResponse(error, error.statusCode);
