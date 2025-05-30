@@ -515,6 +515,7 @@ exports.getcontractService = async (
                           JOIN batalon b ON b.id = t.batalon_id 
                           WHERE b.birgada = false 
                             AND t.contract_id  = d.id
+                            AND t.isdeleted = false
                         ) = (
                           SELECT 
                             COALESCE(SUM(wt.task_time), 0) 
@@ -532,6 +533,7 @@ exports.getcontractService = async (
           JOIN batalon b ON b.id = t.batalon_id 
           WHERE b.birgada = false 
             AND t.contract_id  = d.id
+            AND t.isdeleted = false
         ) != (
           SELECT 
             COALESCE(SUM(wt.task_time), 0) 
