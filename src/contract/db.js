@@ -619,10 +619,29 @@ exports.getcontractService = async (
                           WHERE t.isdeleted = false
                             AND wt.isdeleted = false
                             AND t.contract_id = d.id
+                            AND t.isdeleted = false
                         )
                       THEN 'Bajarilgan'
                       ELSE 'Bajarilmagan'
-                    END AS worker_task_status 
+                    END AS worker_task_status,
+                    (
+                      SELECT 
+                        COALESCE(SUM(wt.task_time), 0) 
+                      FROM worker_task wt
+                      JOIN task t ON t.id =  wt.task_id
+                      WHERE t.isdeleted = false
+                        AND wt.isdeleted = false
+                        AND t.contract_id = d.id
+                    ) AS worker_task_count,
+                    ( 
+                      SELECT 
+                        COALESCE(SUM(t.worker_number * t.task_time), 0)
+                      FROM task t 
+                      JOIN batalon b ON b.id = t.batalon_id 
+                      WHERE b.birgada = false 
+                        AND t.contract_id  = d.id
+                        AND t.isdeleted = false
+                    ) AS contract_count
                 FROM contract  AS d 
                 JOIN organization AS o ON o.id = d.organization_id
                 LEFT JOIN gazna_numbers g ON g.id = d.gazna_number_id
