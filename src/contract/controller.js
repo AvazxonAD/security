@@ -172,6 +172,7 @@ exports.contractGet = async (req, res) => {
       account_number_id,
       organization_id,
       batalon_id,
+      status,
     } = validationResponse(conrtactQueryValidation, req.query);
 
     await getByIdaccount_numberService(
@@ -192,7 +193,8 @@ exports.contractGet = async (req, res) => {
         to,
         account_number_id,
         organization_id,
-        batalon_id
+        batalon_id,
+        status
       );
 
     for (let doc of data) {

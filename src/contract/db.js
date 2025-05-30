@@ -474,7 +474,8 @@ exports.getcontractService = async (
   to,
   account_number_id,
   organization_id = null,
-  batalion_id = null
+  batalion_id = null,
+  status = null
 ) => {
   try {
     let organization_filter = ``;
@@ -483,6 +484,7 @@ exports.getcontractService = async (
     const params = [user_id, offset, limit, from, to, account_number_id];
     let tasks_search_filter = ``;
     let tasks_filter = ``;
+    let status_filter = ``;
 
     if (search) {
       serach_filter = `AND (
@@ -502,6 +504,44 @@ exports.getcontractService = async (
       tasks_search_filter = `AND b.name = $${params.length + 1}`;
 
       params.push(search);
+    }
+
+    if (status) {
+      if (status === "done") {
+        status_filter = ` AND ( 
+                          SELECT 
+                            COALESCE(SUM(t.worker_number * t.task_time), 0)
+                          FROM task t 
+                          JOIN batalon b ON b.id = t.batalon_id 
+                          WHERE b.birgada = false 
+                            AND t.contract_id  = d.id
+                        ) = (
+                          SELECT 
+                            COALESCE(SUM(wt.task_time), 0) 
+                          FROM worker_task wt
+                          JOIN task t ON t.id =  wt.task_id
+                          WHERE t.isdeleted = false
+                            AND wt.isdeleted = false
+                            AND t.contract_id = d.id
+                        )`;
+      } else if (status === "not_done") {
+        status_filter = ` AND ( 
+          SELECT 
+            COALESCE(SUM(t.worker_number * t.task_time), 0)
+          FROM task t 
+          JOIN batalon b ON b.id = t.batalon_id 
+          WHERE b.birgada = false 
+            AND t.contract_id  = d.id
+        ) != (
+          SELECT 
+            COALESCE(SUM(wt.task_time), 0) 
+          FROM worker_task wt
+          JOIN task t ON t.id =  wt.task_id
+          WHERE t.isdeleted = false
+            AND wt.isdeleted = false
+            AND t.contract_id = d.id
+        )`;
+      }
     }
 
     if (organization_id) {
@@ -592,6 +632,7 @@ exports.getcontractService = async (
                     ${serach_filter} 
                     ${organization_filter} 
                     ${batalion_filter}
+                    ${status_filter}
                     AND d.doc_date BETWEEN $4 AND $5 
                     AND d.account_number_id = $6
                 ORDER BY CAST(d.doc_num AS FLOAT) DESC
@@ -610,6 +651,7 @@ exports.getcontractService = async (
                         ${serach_filter} 
                         ${organization_filter} 
                         ${batalion_filter}
+                        ${status_filter}
                 )::INTEGER AS total_count,
                 (
                   SELECT 
@@ -623,6 +665,7 @@ exports.getcontractService = async (
                       ${serach_filter} 
                       ${organization_filter} 
                       ${batalion_filter}
+                      ${status_filter}
                 )::FLOAT AS internal_summa,
                 (
                   SELECT 
@@ -642,6 +685,7 @@ exports.getcontractService = async (
                       ${serach_filter} 
                       ${organization_filter} 
                       ${batalion_filter}
+                      ${status_filter}
                 )::FLOAT AS debet_summa,
                 (
                   SELECT 
@@ -661,6 +705,7 @@ exports.getcontractService = async (
                       ${serach_filter} 
                       ${organization_filter} 
                       ${batalion_filter}
+                      ${status_filter}
                 )::FLOAT AS kredit_summa
             FROM data
         `;

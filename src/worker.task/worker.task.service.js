@@ -112,8 +112,8 @@ const workerTaskUpdateService = async (
 const deleteWorkerTaskService = async (worker_id, task_id, user_id) => {
   try {
     await pool.query(
-      `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1 AND isdeleted = false AND task_id = $2 AND user_id = $3 RETURNING *`,
-      [worker_id, task_id, user_id]
+      `UPDATE worker_task SET isdeleted = true WHERE worker_id = $1 AND isdeleted = false AND task_id = $2 RETURNING *`,
+      [worker_id, task_id]
     );
   } catch (error) {
     throw new ErrorResponse(error.message, error.statusCode);
@@ -154,14 +154,13 @@ const getByTaskIdANDWorkerIdWorkerTaskService = async (
       `
             SELECT w.id, w.fio, w.batalon_id, SUM(w_t.summa)
             FROM worker_task w_t
-            JOIN worker AS w ON w.id = w_t.worker_id 
+            LEFT JOIN worker AS w ON w.id = w_t.worker_id 
             WHERE w_t.task_id = $1
               AND w_t.isdeleted = false
               AND w_t.worker_id = $2
-              AND w_t.user_id = $3
             GROUP BY w.id, w.fio, w.batalon_id
         `,
-      [task_id, worker_id, user_id]
+      [task_id, worker_id]
     );
     if (!worker.rows[0]) {
       throw new ErrorResponse(lang.t("docNotFound"), 404);

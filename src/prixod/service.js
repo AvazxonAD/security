@@ -70,20 +70,21 @@ exports.getPrixodService = async (
 
     if (search) {
       conditions.push(`
-                    AND d.doc_num = $${params.length + 1} 
-                    OR o.name ILIKE  '%' || $${params.length + 1} || '%'
-                    OR c.doc_num = $${params.length + 1}
+                    AND (
+                      d.doc_num = $${params.length + 1} 
+                      OR o.name ILIKE  '%' || $${params.length + 1} || '%'
+                      OR c.doc_num = $${params.length + 1}
+                    )
                     `);
       params.push(search);
     }
 
     const where_clouse = conditions.length ? `${conditions.join(" AND ")}` : "";
 
-    const prixods = await pool.query(
-      `
-            WITH data AS (
+    const query = `
+      WITH data AS (
                 SELECT 
-                    d.id, 
+                    d.*, 
                     c.id AS contract_id,
                     c.doc_num AS contract_doc_num,
                     TO_CHAR(c.doc_date, 'YYYY-MM-DD') AS contract_doc_date, 
@@ -163,10 +164,11 @@ exports.getPrixodService = async (
                     ${where_clouse}
                 ) AS to_balance 
             FROM data
-        `,
-      params
-    );
+    `;
+    const prixods = await pool.query(query, params);
+
     const result = prixods.rows[0];
+
     return {
       data: result?.data || [],
       total: result.total_count,
@@ -223,8 +225,8 @@ exports.getByIdPrixodService = async (
             FROM prixod AS d 
             LEFT JOIN gazna_numbers g ON g.id = d.organ_gazna_number_id
             LEFT JOIN account_number a ON a.id = d.organ_account_number_id 
-            JOIN contract AS c ON c.id = d.contract_id 
-            JOIN organization AS o ON c.organization_id = o.id 
+            LEFT JOIN contract AS c ON c.id = d.contract_id 
+            LEFT JOIN organization AS o ON c.organization_id = o.id 
             WHERE d.isdeleted = false AND d.user_id = $1 AND d.account_number_id = $3 AND d.id = $2 ${filter}
         `,
       [user_id, id, account_number_id]

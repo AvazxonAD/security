@@ -8,6 +8,7 @@ const cors = require("cors");
 const path = require("path");
 const { Db, db } = require("./db/index");
 const i18next = require("./i18next");
+const contractEdit = require("@helper/contract");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -37,6 +38,8 @@ const PORT = process.env.PORT || 3002;
 (async () => {
   try {
     await Db.connectDB();
+
+    await contractEdit();
 
     app.listen(PORT, () => {
       console.log(`server runing on port: ${PORT}`.bgBlue);
