@@ -1,8 +1,4 @@
-const {
-  paymentRequestValidation,
-  rasxodFioValidation,
-  rasxodQueryValidation,
-} = require("../utils/validation");
+const { paymentRequestValidation, rasxodFioValidation, rasxodQueryValidation } = require("../utils/validation");
 const { resFunc } = require("../utils/resFunc");
 const { validationResponse } = require("../utils/response.validation");
 const { errorCatch } = require("../utils/errorCatch");
@@ -15,15 +11,11 @@ const {
   updateRasxodService,
   getByGroupTasks,
 } = require("./rasxod.fio.service");
-const {
-  getByIdaccount_numberService,
-} = require("../spravochnik/account.number/account.number.service");
+const { getByIdaccount_numberService } = require("../spravochnik/account.number/account.number.service");
 const { getByIdBatalonService } = require("../region/batalon/db");
 const { getByIdWorkerTaskService } = require("./rasxod.fio.service");
 const { returnStringSumma } = require("../utils/return.summa");
-const {
-  getByIddeductionService,
-} = require("../spravochnik/deduction/deduction.service");
+const { getByIddeductionService } = require("../spravochnik/deduction/deduction.service");
 const { returnStringDate } = require("../utils/date.functions");
 const ExcelJS = require("exceljs");
 const path = require("path");
@@ -31,25 +23,12 @@ const path = require("path");
 const getPaymentRequest = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { account_number_id, batalon_id, to, from } = validationResponse(
-      paymentRequestValidation,
-      req.query
-    );
+    const { account_number_id, batalon_id, to, from } = validationResponse(paymentRequestValidation, req.query);
 
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
 
     await getByIdBatalonService(user_id, batalon_id, false, true, req.i18n);
-    const data = await paymentRequestService(
-      account_number_id,
-      batalon_id,
-      from,
-      to
-    );
+    const data = await paymentRequestService(account_number_id, batalon_id, from, to);
 
     let summa = 0;
     for (let item of data) {
@@ -89,36 +68,19 @@ const createRasxod = async (req, res) => {
       return res.error(req.i18n.t("validationError"), 400);
     }
 
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
 
-    console.log("------------");
-
-    const batalon = await getByIdBatalonService(
-      user_id,
-      data.batalon_id,
-      false,
-      true,
-      req.i18n
-    );
+    const batalon = await getByIdBatalonService(user_id, data.batalon_id, false, true, req.i18n);
 
     if (batalon_account_number_id) {
-      const check = batalon.account_numbers.find(
-        (item) => item.id === batalon_account_number_id
-      );
+      const check = batalon.account_numbers.find((item) => item.id === batalon_account_number_id);
       if (!check) {
         return res.error(req.i18n.t("accountNumberNotFound"), 404);
       }
     }
 
     if (batalon_gazna_number_id) {
-      const check = batalon.gazna_numbers.find(
-        (item) => item.id === batalon_gazna_number_id
-      );
+      const check = batalon.gazna_numbers.find((item) => item.id === batalon_gazna_number_id);
       if (!check) {
         return res.error(req.i18n.t("gaznaNumberNotFound"), 404);
       }
@@ -126,23 +88,13 @@ const createRasxod = async (req, res) => {
 
     data.deductions = await Promise.all(
       data.deductions.map(async (item) => {
-        const deduction = await getByIddeductionService(
-          user_id,
-          item.deduction_id,
-          null,
-          req.i18n
-        );
+        const deduction = await getByIddeductionService(user_id, item.deduction_id, null, req.i18n);
         return deduction;
       })
     );
 
     for (let task of data.worker_tasks) {
-      await getByIdWorkerTaskService(
-        data.batalon_id,
-        task.worker_task_id,
-        user_id,
-        req.i18n
-      );
+      await getByIdWorkerTaskService(data.batalon_id, task.worker_task_id, user_id, req.i18n);
     }
 
     const result = await createRasxodDocService({
@@ -162,45 +114,36 @@ const createRasxod = async (req, res) => {
 const getRasxod = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { from, to, account_number_id, page, limit, batalon_id } =
-      validationResponse(rasxodQueryValidation, req.query);
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    const { from, to, account_number_id, page, limit, batalon_id } = validationResponse(rasxodQueryValidation, req.query);
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
     if (batalon_id) {
       await getByIdBatalonService(user_id, batalon_id, false, null, req.i18n);
     }
     const offset = (page - 1) * limit;
-    const { total, data, summa_from, summa_to } = await getRasxodService(
-      user_id,
-      account_number_id,
-      from,
-      to,
-      offset,
-      limit,
-      batalon_id
-    );
+    const result = await getRasxodService(user_id, account_number_id, from, to, offset, limit, batalon_id);
 
-    for (let doc of data) {
+    for (let doc of result.data) {
       doc.summa = Math.round(doc.summa * 100) / 100;
     }
 
-    const pageCount = Math.ceil(total / limit);
+    const pageCount = Math.ceil(result.total / limit);
 
     const meta = {
       pageCount: pageCount,
-      count: total,
+      count: result.total,
       currentPage: page,
       nextPage: page >= pageCount ? null : page + 1,
       backPage: page === 1 ? null : page - 1,
-      from_balance: returnStringSumma(Math.round(summa_from * 100) / 100),
-      to_balance: returnStringSumma(Math.round(summa_to * 100) / 100),
+      summa: returnStringSumma(Math.round(result.summa * 100) / 100),
+      summa_75: returnStringSumma(Math.round(result.summa_75 * 100) / 100),
+      summa_25: returnStringSumma(Math.round(result.summa_25 * 100) / 100),
+      summa_1_25: returnStringSumma(Math.round(result.summa_1_25 * 100) / 100),
+      summa_25_2: returnStringSumma(Math.round(result.summa_25_2 * 100) / 100),
+      summa_12: returnStringSumma(Math.round(result.summa_12 * 100) / 100),
+      worker_summa: returnStringSumma(Math.round(result.worker_summa * 100) / 100),
     };
 
-    return res.success(req.i18n.t("getSuccess"), 200, meta, data);
+    return res.success(req.i18n.t("getSuccess"), 200, meta, result.data);
   } catch (error) {
     errorCatch(error, res);
   }
@@ -210,20 +153,9 @@ const getByIdRasxod = async (req, res) => {
   try {
     const user_id = req.user.id;
     const account_number_id = req.query.account_number_id;
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
     const id = req.params.id;
-    const data = await getByIdRasxodService(
-      user_id,
-      account_number_id,
-      id,
-      true,
-      req.i18n
-    );
+    const data = await getByIdRasxodService(user_id, account_number_id, id, true, req.i18n);
 
     return res.success(req.i18n.t("getSuccess"), 200, null, data);
   } catch (error) {
@@ -253,13 +185,7 @@ const updateRasxod = async (req, res) => {
     const id = req.params.id;
     const from = req.query.from;
     const to = req.query.to;
-    const oldData = await getByIdRasxodService(
-      user_id,
-      account_number_id,
-      id,
-      null,
-      req.i18n
-    );
+    const oldData = await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n);
 
     const { error, value: data } = rasxodFioValidation.validate({
       ...req.body,
@@ -270,40 +196,17 @@ const updateRasxod = async (req, res) => {
       return res.error(req.i18n.t("validationError"), 400);
     }
 
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
-    await getByIdBatalonService(
-      user_id,
-      data.batalon_id,
-      false,
-      true,
-      req.i18n
-    );
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
+    await getByIdBatalonService(user_id, data.batalon_id, false, true, req.i18n);
     for (let task of data.worker_tasks) {
-      const test = oldData.worker_tasks.find(
-        (item) => item.task_id === task.task_id
-      );
+      const test = oldData.worker_tasks.find((item) => item.task_id === task.task_id);
       if (!test || oldData.batalon_id !== data.batalon_id) {
-        await getByIdWorkerTaskService(
-          data.batalon_id,
-          task.task_id,
-          user_id,
-          req.i18n
-        );
+        await getByIdWorkerTaskService(data.batalon_id, task.task_id, user_id, req.i18n);
       }
     }
     data.deductions = await Promise.all(
       data.deductions.map(async (item) => {
-        const deduction = await getByIddeductionService(
-          user_id,
-          item.deduction_id,
-          null,
-          req.i18n
-        );
+        const deduction = await getByIddeductionService(user_id, item.deduction_id, null, req.i18n);
         return deduction;
       })
     );
@@ -319,28 +222,12 @@ const updateRasxod = async (req, res) => {
 const exportExcelData = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { from, to, account_number_id, batalon_id } = validationResponse(
-      rasxodQueryValidation,
-      req.query
-    );
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    const { from, to, account_number_id, batalon_id } = validationResponse(rasxodQueryValidation, req.query);
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
     if (batalon_id) {
       await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n);
     }
-    const { total, data, summa_from, summa_to } = await getRasxodService(
-      user_id,
-      account_number_id,
-      from,
-      to,
-      null,
-      null,
-      batalon_id
-    );
+    const { total, data, summa_from, summa_to } = await getRasxodService(user_id, account_number_id, from, to, null, null, batalon_id);
     const workbook = new ExcelJS.Workbook();
     const file_name = `rasxod_batalon_${new Date().getTime()}.xlsx`;
     const worksheet = workbook.addWorksheet(`rasxod_docs_${total}`);
@@ -361,12 +248,8 @@ const exportExcelData = async (req, res) => {
     const rasxod_sumCell = worksheet.getCell("E4");
     const commentCell = worksheet.getCell("F4");
     titleCell.value = `Батальонлар учун қилинган чиқимлар`;
-    periodCell.value = `${returnStringDate(
-      new Date(from)
-    )} дан ${returnStringDate(new Date(to))} гача бўлган чиқимлар`;
-    summa_fromCell.value = `${returnStringDate(
-      new Date(from)
-    )} гача бўлган чиқимлар жами : ${returnStringSumma(summa_from)}`;
+    periodCell.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))} гача бўлган чиқимлар`;
+    summa_fromCell.value = `${returnStringDate(new Date(from))} гача бўлган чиқимлар жами : ${returnStringSumma(summa_from)}`;
     doc_numCell.value = "Ҳужжат рақами";
     doc_dateCell.value = `Ҳужжат санаси`;
     clientCell.value = `Батальон  номи`;
@@ -387,14 +270,7 @@ const exportExcelData = async (req, res) => {
       innCell.value = rasxod.batalon_str;
       rasxod_sumCell.value = rasxod.summa;
       commentCell.value = rasxod.opisanie;
-      const css_array = [
-        doc_dateCell,
-        doc_numCell,
-        clientCell,
-        innCell,
-        commentCell,
-        rasxod_sumCell,
-      ];
+      const css_array = [doc_dateCell, doc_numCell, clientCell, innCell, commentCell, rasxod_sumCell];
       css_array.forEach((element, index) => {
         let horizontal = "center";
         let bold = true;
@@ -425,13 +301,9 @@ const exportExcelData = async (req, res) => {
     const itogo_stringCell = worksheet.getCell(`A${row_number}`);
     const itogoCell = worksheet.getCell(`E${row_number}`);
     const summa_toCell = worksheet.getCell(`A${row_number + 1}`);
-    itogo_stringCell.value = `${returnStringDate(
-      new Date(from)
-    )} дан ${returnStringDate(new Date(to))}-гача бўлган  итого :`;
+    itogo_stringCell.value = `${returnStringDate(new Date(from))} дан ${returnStringDate(new Date(to))}-гача бўлган  итого :`;
     itogoCell.value = summa_to;
-    summa_toCell.value = `${returnStringDate(
-      new Date(to)
-    )} гача бўлган чиқимлар жами : ${returnStringSumma(summa_to)}`;
+    summa_toCell.value = `${returnStringDate(new Date(to))} гача бўлган чиқимлар жами : ${returnStringSumma(summa_to)}`;
     const css_array = [
       titleCell,
       summa_fromCell,
@@ -461,8 +333,7 @@ const exportExcelData = async (req, res) => {
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
-      if (index === 1 || index === 2 || index === 9 || index === 11)
-        horizontal = "left";
+      if (index === 1 || index === 2 || index === 9 || index === 11) horizontal = "left";
       if (index === 10) (size = 8), (horizontal = "right");
       // if (
       //   index === 9 ||
@@ -511,20 +382,9 @@ const exportRasxodByIdExcelData = async (req, res) => {
     const account_number_id = req.query.account_number_id;
     const id = req.params.id;
 
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
 
-    const data = await getByIdRasxodService(
-      user_id,
-      account_number_id,
-      id,
-      null,
-      req.i18n
-    );
+    const data = await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n);
 
     const tasks = await getByGroupTasks([id]);
 
@@ -623,9 +483,7 @@ const exportRasxodByIdExcelData = async (req, res) => {
         "1/25": Math.round((task.summa * 0.25) / 1.25),
         "25/2": Math.round(((task.summa * 0.25) / 1.25) * 0.25),
         12: Math.round(((task.summa * 0.25) / 1.25) * 0.12),
-        worker_summa: Math.round(
-          (task.summa * 0.25) / 1.25 - ((task.summa * 0.25) / 1.25) * 0.12
-        ),
+        worker_summa: Math.round((task.summa * 0.25) / 1.25 - ((task.summa * 0.25) / 1.25) * 0.12),
         podpis: "",
       };
 
@@ -721,20 +579,9 @@ const exportRasxodByIdExcelData2 = async (req, res) => {
     const account_number_id = req.query.account_number_id;
     const id = req.params.id;
 
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
 
-    const data = await getByIdRasxodService(
-      user_id,
-      account_number_id,
-      id,
-      null,
-      req.i18n
-    );
+    const data = await getByIdRasxodService(user_id, account_number_id, id, null, req.i18n);
 
     const tasks = await getByGroupTasks([id]);
 
@@ -805,9 +652,7 @@ const exportRasxodByIdExcelData2 = async (req, res) => {
         fio: task.fio,
         xisob_raqam: task.xisob_raqam,
         karta_raqam: task.account_number,
-        worker_summa: Math.round(
-          (task.summa * 0.25) / 1.25 - ((task.summa * 0.25) / 1.25) * 0.12
-        ),
+        worker_summa: Math.round((task.summa * 0.25) / 1.25 - ((task.summa * 0.25) / 1.25) * 0.12),
         podpis: "",
       };
 
@@ -894,28 +739,12 @@ const exportRasxodByIdExcelData2 = async (req, res) => {
 const forPdfData = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { from, to, account_number_id, batalon_id } = validationResponse(
-      rasxodQueryValidation,
-      req.query
-    );
-    await getByIdaccount_numberService(
-      user_id,
-      account_number_id,
-      null,
-      req.i18n
-    );
+    const { from, to, account_number_id, batalon_id } = validationResponse(rasxodQueryValidation, req.query);
+    await getByIdaccount_numberService(user_id, account_number_id, null, req.i18n);
     if (batalon_id) {
       await getByIdBatalonService(user_id, batalon_id, true, null, req.i18n);
     }
-    const data = await getRasxodService(
-      user_id,
-      account_number_id,
-      from,
-      to,
-      null,
-      null,
-      batalon_id
-    );
+    const data = await getRasxodService(user_id, account_number_id, from, to, null, null, batalon_id);
 
     return res.success(req.i18n.t("getSuccess"), 200, null, data);
   } catch (error) {

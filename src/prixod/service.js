@@ -48,16 +48,7 @@ exports.prixodCreateService = async (data) => {
   }
 };
 
-exports.getPrixodService = async (
-  user_id,
-  from,
-  to,
-  offset,
-  limit,
-  account_number_id,
-  search,
-  organization_id
-) => {
+exports.getPrixodService = async (user_id, from, to, offset, limit, account_number_id, search, organization_id) => {
   try {
     const params = [user_id, from, to, account_number_id];
     let offset_limit = ``;
@@ -181,13 +172,7 @@ exports.getPrixodService = async (
   }
 };
 
-exports.getByIdPrixodService = async (
-  user_id,
-  id,
-  account_number_id,
-  isdeleted = false,
-  lang
-) => {
+exports.getByIdPrixodService = async (user_id, id, account_number_id, isdeleted = false, lang) => {
   try {
     let filter = ``;
     if (!isdeleted) {
@@ -253,15 +238,7 @@ exports.updatePrixodService = async (data) => {
                 summa = $6
             WHERE id = $7 RETURNING * 
         `,
-      [
-        data.organization_id,
-        data.contract_id,
-        data.opisanie,
-        data.doc_num,
-        data.doc_date,
-        data.summa,
-        data.id,
-      ]
+      [data.organization_id, data.contract_id, data.opisanie, data.doc_num, data.doc_date, data.summa, data.id]
     );
     return result.rows[0];
   } catch (error) {
@@ -271,10 +248,7 @@ exports.updatePrixodService = async (data) => {
 
 exports.deletePrixodService = async (id) => {
   try {
-    await pool.query(
-      `UPDATE prixod SET isdeleted = true WHERE id = $1 AND isdeleted = false`,
-      [id]
-    );
+    await pool.query(`UPDATE prixod SET isdeleted = true WHERE id = $1 AND isdeleted = false`, [id]);
   } catch (error) {
     throw new ErrorResponse(error, error.statusCode);
   }
